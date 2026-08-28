@@ -1,13 +1,14 @@
 /* Global Stylesheet for ECDAT */
 
 :root {
-  /* Color System - Restrained Mineral Palette */
-  --color-base: #F3F0E8;        /* Warm Ivory / Bone */
-  --color-primary: #181917;     /* Graphite */
-  --color-secondary: #343732;   /* Deep Slate */
-  --color-accent: #B95532;      /* Oxidized Copper / Vermilion */
-  --color-sage: #687563;        /* Muted Sage */
-  --color-stone: #D8D2C5;       /* Stone */
+  /* Color System - Futuristic Cyber-Quantum Dark Theme */
+  --color-base: #07050f;        /* Deep Space Midnight Black/Purple */
+  --color-primary: #f2eefa;     /* Off-White / Pale Lavender */
+  --color-secondary: #9a94b5;   /* Cool Silver-Purple Body Text */
+  --color-accent: #a855f7;      /* Bright Ultraviolet Neon Purple */
+  --color-sage: #2dd4bf;        /* Bright Electric Mint / Cyber Teal */
+  --color-stone: #1f1837;       /* Ultraviolet Deep Border / Accent Gray */
+  --color-card: rgba(16, 12, 32, 0.65); /* Deep Violet-Black Glass Card */
   
   /* Derived variables */
   --background: var(--color-base);
@@ -16,9 +17,9 @@
   /* Borders and UI */
   --border-color: var(--color-stone);
   --border-thin: 1px solid var(--border-color);
-  --border-thick: 2px solid var(--color-primary);
-  --shadow-sm: 0 1px 2px rgba(24, 25, 23, 0.05);
-  --shadow-md: 0 4px 6px rgba(24, 25, 23, 0.08);
+  --border-thick: 2px solid var(--color-accent);
+  --shadow-sm: 0 1px 2px rgba(168, 85, 247, 0.1);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(168, 85, 247, 0.15);
   --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   --transition-fast: all 0.15s ease-in-out;
 }
@@ -78,7 +79,7 @@ code, pre, .technical-label {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-sage);
+  background: var(--color-accent);
 }
 
 /* Global Helpers */
@@ -155,23 +156,157 @@ code, pre, .technical-label {
   animation: pulseDot 2s infinite ease-in-out;
 }
 
-/* Utilities for Layout */
+/* Futuristic Cyber Grid */
 .technical-grid {
   background-size: 20px 20px;
   background-image: 
-    linear-gradient(to right, rgba(24, 25, 23, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(24, 25, 23, 0.03) 1px, transparent 1px);
+    linear-gradient(to right, rgba(168, 85, 247, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(168, 85, 247, 0.02) 1px, transparent 1px);
 }
 
 .technical-card {
-  background: #FFFFFF;
+  background: var(--color-card);
+  backdrop-filter: blur(12px);
   border: var(--border-thin);
-  border-radius: 0px; /* Aerospace square sharp look */
+  border-top: var(--border-thick);
+  border-radius: 0px;
   padding: 24px;
   transition: var(--transition-smooth);
 }
 
 .technical-card:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
   box-shadow: var(--shadow-md);
+}
+
+/* Global Dark-Purple Override for CSS Module Cards */
+[class*="visualCard"],
+[class*="constellationCard"],
+[class*="stageInteractiveContainer"],
+[class*="schemaCard"],
+[class*="graphMapContainer"],
+[class*="riskCalculatorBox"],
+[class*="candidateCard"],
+[class*="flowChartBox"],
+[class*="playgroundFrame"],
+[class*="cryptoBox"],
+[class*="plannerResults"],
+[class*="blueprintContainer"],
+[class*="techLayerCard"],
+[class*="mvpBox"],
+[class*="matrixGrid"],
+[class*="impactCard"],
+[class*="memberCard"],
+[class*="mentorBox"],
+[class*="timelineItem"],
+[class*="refCard"],
+[class*="presentationFrame"],
+[class*="metricCard"],
+[class*="inventoryCard"],
+[class*="assetDetailCard"],
+[class*="pqcWorkbenchCard"],
+[class*="migrationPlannerCard"],
+[class*="taskItem"] {
+  background-color: var(--color-card) !important;
+  background: var(--color-card) !important;
+  backdrop-filter: blur(12px) !important;
+  border: var(--border-thin) !important;
+  border-top: var(--border-thick) !important;
+  box-shadow: var(--shadow-md) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Specific elements inside cards */
+[class*="discoveryMenuBtn"],
+[class*="stageTabBtn"],
+[class*="scenarioTab"],
+[class*="targetBtn"],
+[class*="matrixBtn"],
+[class*="candidateTab"],
+[class*="playgroundTabBtn"] {
+  background-color: rgba(255, 255, 255, 0.01) !important;
+  color: var(--color-secondary) !important;
+  border: var(--border-thin) !important;
+}
+
+[class*="discoveryMenuBtn"]:hover,
+[class*="stageTabBtn"]:hover,
+[class*="scenarioTab"]:hover,
+[class*="targetBtn"]:hover,
+[class*="matrixBtn"]:hover,
+[class*="candidateTab"]:hover,
+[class*="playgroundTabBtn"]:hover {
+  background-color: rgba(168, 85, 247, 0.1) !important;
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+}
+
+/* Active states for tabs/btns */
+[class*="activeMenuBtn"],
+[class*="activeStageBtn"],
+[class*="activeScenarioTab"],
+[class*="activeTargetBtn"],
+[class*="activeMatrixBtn"],
+[class*="activePlayTab"],
+[class*="activeCandTab"],
+[class*="activeFilter"] {
+  background-color: var(--color-accent) !important;
+  color: var(--color-base) !important;
+  border-color: var(--color-accent) !important;
+}
+
+/* Input Fields overrides */
+[class*="plainTextInput"],
+[class*="editorTextArea"],
+[class*="searchBar"] {
+  background-color: rgba(16, 12, 32, 0.85) !important;
+  color: var(--color-primary) !important;
+  border: var(--border-thin) !important;
+}
+
+[class*="plainTextInput"]:focus,
+[class*="editorTextArea"]:focus,
+[class*="searchBar"]:focus {
+  border-color: var(--color-accent) !important;
+}
+
+/* Tables and timelines */
+[class*="assetsTable"] th {
+  border-bottom: var(--border-thin) !important;
+}
+
+[class*="assetsTable"] td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+[class*="tableRow"]:hover {
+  background-color: rgba(168, 85, 247, 0.08) !important;
+}
+
+[class*="selectedRow"] {
+  background-color: rgba(168, 85, 247, 0.12) !important;
+  border-left: 3px solid var(--color-accent) !important;
+}
+
+/* SVG Line paths overrides for dark console flow */
+[class*="pipelineSvg"] path {
+  stroke: var(--color-stone) !important;
+}
+
+[class*="pipelineSvg"] rect {
+  fill: var(--color-card) !important;
+  stroke: var(--color-stone) !important;
+}
+
+[class*="pipelineSvg"] text {
+  fill: var(--color-primary) !important;
+}
+
+[class*="pipelineSvg"] [class*="svgCore"] rect {
+  fill: var(--color-accent) !important;
+  stroke: var(--color-accent) !important;
+}
+
+[class*="pipelineSvg"] [class*="svgCore"] text {
+  fill: var(--color-base) !important;
 }

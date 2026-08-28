@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   description: "ECDAT is an enterprise cryptographic discovery and quantum-readiness platform developed by LatentManifold for Smart India Hackathon 2026 Problem Statement SIH26164.",
 };
 
+import Quby from "@/components/Quby";
+
 export default function RootLayout({
   children,
 }: {
@@ -42,6 +44,7 @@ export default function RootLayout({
     >
       <body>
         {children}
+        <Quby />
       </body>
     </html>
   );
