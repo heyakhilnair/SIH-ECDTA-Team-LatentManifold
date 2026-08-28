@@ -1,15 +1,15 @@
 /* Global Stylesheet for ECDAT */
 
 :root {
-  /* Color System - Neo-Brutalist Neon Volt & Electric Blue Theme */
-  --color-base: #EBF200;        /* Saturated Neon Volt / Acid Yellow */
-  --color-primary: #000000;     /* Absolute Ink Black */
-  --color-secondary: #2A2D34;   /* Dark Charcoal */
-  --color-accent: #2E30FF;      /* Electric Royal Blue */
-  --color-warning: #FF007F;     /* Hot Neon Pink / Threat Crimson */
-  --color-sage: #00E575;        /* Vibrant Compliance Green */
-  --color-stone: #000000;       /* Solid Black Borders */
-  --color-card: #FFFFFF;        /* Stark White Card */
+  /* Color System - Sophisticated Designer Alabaster & French Blue Theme */
+  --color-base: #FAF9F6;        /* Alabaster / Warm Ivory Sand */
+  --color-primary: #1E1E24;     /* Heavy Ink Charcoal */
+  --color-secondary: #585A63;   /* Muted Ink Gray */
+  --color-accent: #0055FF;      /* Electric French Blue / High-Tech Cobalt */
+  --color-warning: #FF3B00;     /* Sunset Coral / Safety Orange */
+  --color-sage: #059669;        /* Jade Green / Compliance Mint */
+  --color-stone: #E6E2DA;       /* Warm Clay / Border Gray */
+  --color-card: #FFFFFF;        /* Clean White Plaster Card */
   
   /* Derived variables */
   --background: var(--color-base);
@@ -17,12 +17,12 @@
   
   /* Borders and UI */
   --border-color: var(--color-stone);
-  --border-thin: 2px solid var(--border-color);
-  --border-thick: 3px solid var(--border-color);
-  --shadow-sm: 4px 4px 0px var(--color-stone);
-  --shadow-md: 8px 8px 0px var(--color-stone); /* Thick solid flat offset shadow */
-  --transition-smooth: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-  --transition-fast: all 0.1s ease-in-out;
+  --border-thin: 1px solid var(--border-color);
+  --border-thick: 1.5px solid var(--color-primary);
+  --shadow-sm: 0 1px 3px rgba(30, 30, 36, 0.02);
+  --shadow-md: 0 12px 40px rgba(30, 30, 36, 0.04); /* Soft diffuse designer shadow */
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-fast: all 0.15s ease-in-out;
 }
 
 /* Reset and Defaults */
@@ -46,16 +46,15 @@ html, body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), sans-serif;
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   color: var(--color-primary);
 }
 
 p {
-  line-height: 1.5;
+  line-height: 1.6;
   font-size: 0.95rem;
   color: var(--color-secondary);
-  font-weight: 600;
 }
 
 code, pre, .technical-label {
@@ -65,8 +64,8 @@ code, pre, .technical-label {
 
 /* Scrollbar customization - Technical look */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -75,8 +74,9 @@ code, pre, .technical-label {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-primary);
-  border: 2px solid var(--color-base);
+  background: var(--color-stone);
+  border: 1px solid var(--color-base);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -99,31 +99,31 @@ code, pre, .technical-label {
   border: var(--border-thin);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .mono-tag-accent {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  background-color: var(--color-warning);
-  color: #FFFFFF;
+  background-color: rgba(255, 59, 0, 0.08);
+  color: var(--color-warning);
   padding: 4px 8px;
-  border: var(--border-thin);
+  border: 1px solid rgba(255, 59, 0, 0.15);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .mono-tag-sage {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  background-color: var(--color-sage);
-  color: #FFFFFF;
+  background-color: rgba(5, 150, 105, 0.08);
+  color: var(--color-sage);
   padding: 4px 8px;
-  border: var(--border-thin);
+  border: 1px solid rgba(5, 150, 105, 0.15);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 /* Animations */
@@ -136,38 +136,38 @@ code, pre, .technical-label {
 @keyframes pulseDot {
   0% {
     transform: scale(0.9);
-    opacity: 0.9;
+    opacity: 0.8;
   }
   50% {
-    transform: scale(1.2);
+    transform: scale(1.15);
     opacity: 1;
   }
   100% {
     transform: scale(0.9);
-    opacity: 0.9;
+    opacity: 0.8;
   }
 }
 
 .pulsing-dot {
   display: inline-block;
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   background-color: var(--color-warning);
   border-radius: 50%;
   animation: pulseDot 2s infinite ease-in-out;
 }
 
-/* Neo-Brutalist Grid lines - Dark Contrast */
+/* Futuristic Cyber Grid - Light Mode */
 .technical-grid {
-  background-size: 40px 40px;
+  background-size: 30px 30px;
   background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgba(30, 30, 36, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 30, 36, 0.02) 1px, transparent 1px);
 }
 
 .technical-card {
   background: var(--color-card);
-  border: var(--border-thick);
+  border: var(--border-thin);
   border-radius: 0px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -175,8 +175,8 @@ code, pre, .technical-label {
 }
 
 .technical-card:hover {
-  transform: translate(-4px, -4px);
-  box-shadow: 12px 12px 0px var(--color-stone);
+  border-color: var(--color-accent);
+  box-shadow: 0 12px 50px rgba(30, 30, 36, 0.05);
 }
 
 /* Global Override for CSS Module Cards */
@@ -209,7 +209,7 @@ code, pre, .technical-label {
 [class*="taskItem"] {
   background-color: var(--color-card) !important;
   background: var(--color-card) !important;
-  border: var(--border-thick) !important;
+  border: var(--border-thin) !important;
   border-radius: 0px !important;
   box-shadow: var(--shadow-md) !important;
   color: var(--color-primary) !important;
@@ -229,9 +229,9 @@ code, pre, .technical-label {
 [class*="timelineItem"]:hover,
 [class*="refCard"]:hover,
 [class*="metricCard"]:hover {
-  border-color: var(--color-stone) !important;
-  box-shadow: 12px 12px 0px var(--color-stone) !important;
-  transform: translate(-4px, -4px) !important;
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 15px 50px rgba(30, 30, 36, 0.05) !important;
+  transform: translateY(-2px) !important;
 }
 
 /* Specific elements inside cards */
@@ -243,11 +243,11 @@ code, pre, .technical-label {
 [class*="candidateTab"],
 [class*="playgroundTabBtn"],
 [class*="filterBtn"] {
-  background-color: var(--color-card) !important;
-  color: var(--color-primary) !important;
+  background-color: var(--color-base) !important;
+  color: var(--color-secondary) !important;
   border: var(--border-thin) !important;
   font-family: var(--font-mono) !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 [class*="discoveryMenuBtn"]:hover,
@@ -258,9 +258,9 @@ code, pre, .technical-label {
 [class*="candidateTab"]:hover,
 [class*="playgroundTabBtn"]:hover,
 [class*="filterBtn"]:hover {
-  background-color: var(--color-accent) !important;
-  color: #FFFFFF !important;
-  border-color: var(--color-stone) !important;
+  background-color: rgba(0, 85, 255, 0.05) !important;
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
 }
 
 /* Active states for tabs/btns */
@@ -272,16 +272,16 @@ code, pre, .technical-label {
 [class*="activePlayTab"],
 [class*="activeCandTab"],
 [class*="activeFilter"] {
-  background-color: var(--color-primary) !important;
-  color: var(--color-base) !important;
-  border-color: var(--color-stone) !important;
+  background-color: var(--color-accent) !important;
+  color: #FFFFFF !important;
+  border-color: var(--color-accent) !important;
 }
 
 /* Input Fields overrides */
 [class*="plainTextInput"],
 [class*="editorTextArea"],
 [class*="searchBar"] {
-  background-color: var(--color-card) !important;
+  background-color: var(--color-base) !important;
   color: var(--color-primary) !important;
   border: var(--border-thin) !important;
 }
@@ -292,20 +292,20 @@ code, pre, .technical-label {
   border-color: var(--color-accent) !important;
 }
 
-/* Keep playground console panels and terminal logs pitch black for maximum console vibes */
+/* Keep playground console panels and terminal logs dark charcoal for Stripe-like developer contrast */
 [class*="terminalLogs"],
 [class*="consoleLogsMini"],
 [class*="diffPre"] {
-  background-color: #000000 !important;
-  color: var(--color-base) !important;
+  background-color: #1E1E24 !important;
+  color: #E6E2DA !important;
   border: var(--border-thin) !important;
 }
 
 /* Tables and timelines */
 [class*="assetsTable"] th {
-  border-bottom: var(--border-thick) !important;
+  border-bottom: var(--border-thin) !important;
   background-color: var(--color-base) !important;
-  color: var(--color-primary) !important;
+  color: var(--color-secondary) !important;
 }
 
 [class*="assetsTable"] td {
@@ -317,8 +317,8 @@ code, pre, .technical-label {
 }
 
 [class*="selectedRow"] {
-  background-color: rgba(46, 48, 255, 0.08) !important;
-  border-left: 4px solid var(--color-accent) !important;
+  background-color: rgba(0, 85, 255, 0.03) !important;
+  border-left: 3px solid var(--color-accent) !important;
 }
 
 /* SVG Line paths overrides for high-contrast light grid */
@@ -329,7 +329,7 @@ code, pre, .technical-label {
 [class*="pipelineSvg"] rect {
   fill: var(--color-card) !important;
   stroke: var(--color-stone) !important;
-  stroke-width: 1.5px !important;
+  stroke-width: 1px !important;
 }
 
 [class*="pipelineSvg"] text {
@@ -337,12 +337,12 @@ code, pre, .technical-label {
 }
 
 [class*="pipelineSvg"] [class*="svgCore"] rect {
-  fill: var(--color-primary) !important;
-  stroke: var(--color-primary) !important;
+  fill: var(--color-accent) !important;
+  stroke: var(--color-accent) !important;
 }
 
 [class*="pipelineSvg"] [class*="svgCore"] text {
-  fill: var(--color-base) !important;
+  fill: #FFFFFF !important;
 }
 
 /* Clipboard Copy Button Utility */
@@ -359,6 +359,6 @@ code, pre, .technical-label {
 }
 
 [class*="copyTextBtn"]:hover {
-  color: var(--color-warning) !important;
+  color: var(--color-primary) !important;
   text-decoration: underline !important;
 }
