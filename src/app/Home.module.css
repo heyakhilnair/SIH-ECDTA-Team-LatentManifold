@@ -854,7 +854,7 @@
   color: var(--color-secondary);
 }
 
-/* 19 - QUANTUM RISK & INTERACTIVE CALCULATOR */
+/* 19 - QUANTUM RISK & CALCULATOR */
 .riskSection {
   padding: 80px 0;
   background-color: var(--color-base);
@@ -1306,6 +1306,396 @@
   margin: 10px 0;
 }
 
+/* 28 - DYNAMIC PLAYGROUND SECTION */
+.playgroundSection {
+  padding: 80px 0;
+  background-color: var(--color-base);
+  border-bottom: var(--border-thin);
+}
+
+.playgroundFrame {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  border-top: var(--border-thick);
+}
+
+.playgroundTabs {
+  display: flex;
+  border-bottom: var(--border-thin);
+}
+
+@media (max-width: 600px) {
+  .playgroundTabs {
+    flex-direction: column;
+  }
+}
+
+.playgroundTabBtn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-right: var(--border-thin);
+  padding: 16px 20px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: center;
+}
+
+.playgroundTabBtn:last-child {
+  border-right: none;
+}
+
+@media (max-width: 600px) {
+  .playgroundTabBtn {
+    border-right: none;
+    border-bottom: var(--border-thin);
+  }
+}
+
+.playgroundTabBtn:hover {
+  background-color: var(--color-base);
+}
+
+.activePlayTab {
+  background-color: var(--color-base);
+  color: var(--color-accent);
+}
+
+.playgroundContent {
+  padding: 32px;
+  background-color: #FCFBF9;
+}
+
+.playgroundSplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .playgroundSplit {
+    grid-template-columns: 1fr;
+  }
+}
+
+.paneLabel {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-sage);
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.codeEditorPane, .terminalOutputPane, .cryptoBox {
+  display: flex;
+  flex-direction: column;
+}
+
+.editorTextArea {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  padding: 16px;
+  border: var(--border-thin);
+  background-color: #FFFFFF;
+  color: var(--color-primary);
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+}
+
+.editorTextArea:focus {
+  border-color: var(--color-primary);
+}
+
+.runAuditBtn {
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border: 1px solid var(--color-primary);
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.runAuditBtn:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--color-primary);
+}
+
+.runAuditBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.terminalLogs {
+  background-color: #181917;
+  border: 1px solid var(--color-secondary);
+  padding: 16px;
+  height: 250px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #A9B2A6;
+  line-height: 1.4;
+}
+
+.terminalPlaceholder {
+  color: var(--color-sage);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.logLine {
+  margin-bottom: 6px;
+  white-space: pre-wrap;
+}
+
+.remediationBox {
+  margin-top: 24px;
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  border-left: 3px solid var(--color-accent);
+}
+
+.remedHeader {
+  padding: 12px 16px;
+  border-bottom: var(--border-thin);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.diffPre {
+  padding: 16px;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-x: auto;
+  color: var(--color-primary);
+  background-color: #FCFBF9;
+}
+
+/* Tab 2: Shor's Simulator */
+.messageInputBox {
+  margin-bottom: 24px;
+}
+
+.plainTextInput {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 12px;
+  border: var(--border-thin);
+  background-color: #FFFFFF;
+  color: var(--color-primary);
+  outline: none;
+}
+
+.plainTextInput:focus {
+  border-color: var(--color-primary);
+}
+
+.cryptoBox {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  border-top: var(--border-thick);
+}
+
+.cryptoBoxHeader {
+  padding: 12px 16px;
+  border-bottom: var(--border-thin);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.cryptoContent {
+  padding: 20px;
+}
+
+.cipherPreview {
+  background-color: var(--color-base);
+  padding: 12px;
+  border: var(--border-thin);
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+}
+
+.cipherCode {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  margin-top: 4px;
+  word-break: break-all;
+}
+
+.attackBtn {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: var(--color-accent);
+  color: #FFFFFF;
+  border: 1px solid var(--color-accent);
+  padding: 10px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.attackBtn:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.attackBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.consoleLogsMini {
+  background-color: #181917;
+  border: 1px solid var(--color-secondary);
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #A9B2A6;
+  min-height: 80px;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+.miniPlaceholder {
+  color: var(--color-sage);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+/* Tab 3: Planner */
+.scenarioSelector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.scenarioTab {
+  flex: 1;
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  padding: 12px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: center;
+}
+
+.scenarioTab:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.activeScenarioTab {
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border-color: var(--color-primary);
+}
+
+.plannerResults {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  padding: 24px;
+}
+
+.plannerMetricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  border-bottom: 1px dashed var(--color-stone);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .plannerMetricsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metricResultItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.metricResultItem span {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--color-sage);
+  margin-bottom: 4px;
+}
+
+.metricResultItem h4 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.plannerSteps h5 {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  margin-bottom: 12px;
+  letter-spacing: 0.05em;
+}
+
+.plannerList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plannerList li {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  margin-bottom: 8px;
+  padding-left: 12px;
+  border-left: 2px solid var(--color-accent);
+}
+
 /* 24 - ARCHITECTURE */
 .archSection {
   padding: 80px 0;
@@ -1453,94 +1843,6 @@
   font-size: 0.9rem;
   color: var(--color-secondary);
   font-family: var(--font-mono);
-}
-
-/* 28 - DEMO / PROTOTYPE */
-.demoSection {
-  padding: 80px 0;
-  background-color: var(--color-base);
-  border-bottom: var(--border-thin);
-}
-
-.demoFrame {
-  background-color: #181917;
-  border: 1px solid var(--color-secondary);
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.frameHeader {
-  background-color: #262824;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid var(--color-secondary);
-}
-
-.frameDot {
-  width: 8px;
-  height: 8px;
-  background-color: var(--color-accent);
-  border-radius: 50%;
-  box-shadow: 0 0 6px var(--color-accent);
-}
-
-.frameHeader span {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  color: var(--color-stone);
-  font-weight: 700;
-}
-
-.frameBody {
-  padding: 60px 40px;
-  text-align: center;
-  color: var(--color-base);
-}
-
-.frameBody h3 {
-  color: var(--color-base);
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  margin-bottom: 12px;
-}
-
-.frameBody p {
-  color: var(--color-stone);
-  font-size: 0.9rem;
-  max-width: 500px;
-  margin: 0 auto 32px auto;
-}
-
-.loaderLine {
-  height: 2px;
-  background-color: var(--color-secondary);
-  width: 150px;
-  margin: 0 auto 32px auto;
-  position: relative;
-  overflow: hidden;
-}
-
-.loaderLine::after {
-  content: '';
-  position: absolute;
-  left: -50px;
-  width: 50px;
-  height: 100%;
-  background-color: var(--color-accent);
-  animation: moveLoader 2s infinite ease-in-out;
-}
-
-@keyframes moveLoader {
-  0% { left: -50px; }
-  100% { left: 150px; }
-}
-
-.demoLinks {
-  display: flex;
-  justify-content: center;
 }
 
 /* 30 - CHALLENGES MATRIX */

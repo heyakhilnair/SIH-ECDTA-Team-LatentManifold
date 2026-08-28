@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "./Home.module.css";
@@ -26,6 +26,37 @@ export default function Home() {
   // State for Interactive Graph Node
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
 
+  // Playground Terminal Simulator States
+  const [scanCode, setScanCode] = useState(`import (
+  "crypto/rsa"
+  "crypto/sha1"
+)
+
+func ConnectSecurity() {
+  // Establish connection
+  key, _ := rsa.GenerateKey(rand.Reader, 2048)
+  hasher := sha1.New()
+  // ...
+}`);
+  const [scanStatus, setScanStatus] = useState("idle"); // idle, scanning, complete
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
+  const [activeTabPlayground, setActiveTabPlayground] = useState("scanner"); // scanner, simulator, planner
+
+  // Shor's Simulator States
+  const [secretMessage, setSecretMessage] = useState("SIH-2026-SECRET-KEY");
+  const [encryptedClassical, setEncryptedClassical] = useState("");
+  const [encryptedQuantum, setEncryptedQuantum] = useState("");
+  const [classicalAttackStatus, setClassicalAttackStatus] = useState("idle"); // idle, attacking, cracked
+  const [quantumAttackStatus, setQuantumAttackStatus] = useState("idle"); // idle, attacking, blocked
+  const [classicalAttackLog, setClassicalAttackLog] = useState("");
+  const [quantumAttackLog, setQuantumAttackLog] = useState("");
+
+  // What-If Planner Scenario
+  const [plannerScenario, setPlannerScenario] = useState("standard"); // standard, hybrid, accelerated
+
+  // Ref for terminal scrolling
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+
   const calculateRiskPriority = () => {
     const sum = dataLifetime + migrationTime;
     const difference = threatHorizon - sum;
@@ -42,6 +73,136 @@ export default function Home() {
   };
 
   const currentRisk = calculateRiskPriority();
+
+  // Run Code Scanner Simulation
+  const runCodeScan = () => {
+    setScanStatus("scanning");
+    setTerminalLogs([]);
+    
+    const logs = [
+      "[ECDAT-PARSE] Initializing tree-sitter AST scanning engine...",
+      "[ECDAT-PARSE] Target file: main.go (Golang source template)",
+      "[ECDAT-AST] Traversing AST nodes... Found 2 imports.",
+      "[ECDAT-AST] FLAG: import \"crypto/rsa\" is marked as CLASSICAL_ASYMMETRIC",
+      "[ECDAT-AST] FLAG: import \"crypto/sha1\" is marked as LEGACY_VULNERABLE",
+      "[ECDAT-AST] Analyzing function 'ConnectSecurity()'...",
+      "[ECDAT-AST] FLAG: rsa.GenerateKey(..., 2048) -> Key length 2048 bits is susceptible to Shor's factoring algorithm.",
+      "[ECDAT-CBOM] Mapping discovered assets to canonical CBOM nodes...",
+      "[ECDAT-CBOM] Generated asset Node ID: ALGO-RSA-2048-001",
+      "[ECDAT-CBOM] Generated asset Node ID: HASH-SHA1-002",
+      "[ECDAT-GRAPH] Calculating blast radius... 1 dependent path discovered.",
+      "[ECDAT-RISK] Evaluating quantum exposure (Mosca calculation)...",
+      "[ECDAT-RISK] Exposure detected. System marked: HIGH PRIORITY RISK.",
+      "[ECDAT-PQC] Querying post-quantum alternatives...",
+      "[ECDAT-PQC] Recommended modernizer candidate: ML-KEM-768 (Kyber)",
+      "[ECDAT-COMPLIANCE] Verification report: FAILED (RSA-2048/SHA-1 in use).",
+      "[ECDAT-MIGRATE] Generating code modernization patch diff..."
+    ];
+
+    let currentLogIndex = 0;
+    const interval = setInterval(() => {
+      if (currentLogIndex < logs.length) {
+        setTerminalLogs((prev) => [...prev, logs[currentLogIndex]]);
+        currentLogIndex++;
+        if (terminalEndRef.current) {
+          terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      } else {
+        clearInterval(interval);
+        setScanStatus("complete");
+      }
+    }, 250);
+  };
+
+  // Encrypt secrets for simulator
+  useEffect(() => {
+    // Mock Base64-like cypher for classical and lattice-like text for quantum
+    if (secretMessage) {
+      setEncryptedClassical(btoa(secretMessage).substring(0, 16) + "== [RSA-2048]");
+      setEncryptedQuantum("Latt_[" + Array.from(secretMessage).map(c => c.charCodeAt(0).toString(16)).join(".").substring(0, 20) + "...] (ML-KEM)");
+    } else {
+      setEncryptedClassical("");
+      setEncryptedQuantum("");
+    }
+  }, [secretMessage]);
+
+  // Simulate Classical Shor's Attack
+  const simulateClassicalAttack = () => {
+    setClassicalAttackStatus("attacking");
+    setClassicalAttackLog("Initializing virtual Shor's Quantum factoring processor...");
+    
+    setTimeout(() => {
+      setClassicalAttackLog("Mapping prime factorization constraints on 4096 logical qubits...");
+    }, 800);
+    
+    setTimeout(() => {
+      setClassicalAttackLog("Executing modular exponentiation period-finding function...");
+    }, 1600);
+
+    setTimeout(() => {
+      setClassicalAttackStatus("cracked");
+      setClassicalAttackLog(`CRACKED: Factorization of N solved in 2.4 seconds.\nDecrypted Message: "${secretMessage}"`);
+    }, 2400);
+  };
+
+  // Simulate Quantum-safe Attack
+  const simulateQuantumAttack = () => {
+    setQuantumAttackStatus("attacking");
+    setQuantumAttackLog("Initializing virtual Shor's Quantum factoring processor...");
+    
+    setTimeout(() => {
+      setQuantumAttackLog("Shor's factoring aborted: ML-KEM is not based on prime integer factorization.");
+    }, 800);
+    
+    setTimeout(() => {
+      setQuantumAttackLog("Executing lattice basis reduction attacks (BKZ-90 simulator)...");
+    }, 1600);
+
+    setTimeout(() => {
+      setQuantumAttackStatus("blocked");
+      setQuantumAttackLog("BLOCKED: Lattice dimension 768 remains secure.\nRemaining attack complexity: 2^150 operations.");
+    }, 2400);
+  };
+
+  const getPlannerMetrics = () => {
+    switch (plannerScenario) {
+      case "hybrid":
+        return {
+          cost: "Medium",
+          time: "4.5 Years",
+          risk: "LOW (Dual-safe coverage)",
+          steps: [
+            "1. Generate dual-algorithm certificates (ECDSA + ML-DSA).",
+            "2. Establish hybrid key negotiation in API Gateways.",
+            "3. Progressively decommission pure RSA/ECC channels."
+          ]
+        };
+      case "accelerated":
+        return {
+          cost: "High",
+          time: "2.1 Years",
+          risk: "ZERO EXPOSURE",
+          steps: [
+            "1. Absolute migration to ML-KEM and ML-DSA immediately.",
+            "2. Emergency key rollover across KMS and HSM partitions.",
+            "3. Enforce strict PR compliance blocking legacy algorithms."
+          ]
+        };
+      default:
+        return {
+          cost: "Low",
+          time: "8.5 Years",
+          risk: "HIGH EXPOSURE (Mosca overlap)",
+          steps: [
+            "1. Discover classical crypto assets in code bases.",
+            "2. Wait for vendor libraries to bundle FIPS PQC targets.",
+            "3. Migrate infrastructure sections ad-hoc."
+          ]
+        };
+    }
+  };
+
+  const currentPlanner = getPlannerMetrics();
 
   const stages = [
     {
@@ -260,8 +421,8 @@ export default function Home() {
           </p>
           
           <div className={styles.heroActions}>
-            <a href="#how-it-works" className={styles.primaryBtn}>
-              EXPLORE THE SYSTEM &rarr;
+            <a href="#playground" className={styles.primaryBtn}>
+              ENTER MIGRATION WORKSPACE &rarr;
             </a>
             <a href="/evidence" className={styles.secondaryBtn}>
               VIEW EVIDENCE &rarr;
@@ -426,7 +587,7 @@ export default function Home() {
                 </div>
                 <div className={styles.gapCard}>
                   <h5>03 — MIGRATION GAP</h5>
-                  <p>Organizations need actionable recommendations: what should replace it, what hybrid schemes fit latency constraints, and in what order components must be upgraded.</p>
+                  <p>Organizations need actionable recommendations: what should replace it, what hybrid schemes fit legacy limits, and in what order components must be upgraded.</p>
                 </div>
               </div>
             </div>
@@ -953,11 +1114,244 @@ export default function Home() {
         </div>
       </section>
 
+      {/* 28 - DYNAMIC PLAYGROUND SECTION (THE WORKSPACE CHALLENGE) */}
+      <section id="playground" className={styles.playgroundSection}>
+        <div className="container">
+          <div className={styles.sectionHeader}>
+            <span className="mono-tag-accent">09 — INTERACTIVE PLAYGROUND</span>
+            <h2>ECDAT LIVE SIMULATION CENTER</h2>
+            <p className={styles.descriptionCenter}>
+              Test ECDAT's core capabilities in real-time. Execute an AST parser scan or simulate a Shor's algorithm quantum attack on classical RSA.
+            </p>
+          </div>
+
+          <div className={styles.playgroundFrame}>
+            <div className={styles.playgroundTabs}>
+              <button 
+                className={`${styles.playgroundTabBtn} ${activeTabPlayground === "scanner" ? styles.activePlayTab : ""}`}
+                onClick={() => setActiveTabPlayground("scanner")}
+              >
+                1. AST CODE SCANNER
+              </button>
+              <button 
+                className={`${styles.playgroundTabBtn} ${activeTabPlayground === "simulator" ? styles.activePlayTab : ""}`}
+                onClick={() => setActiveTabPlayground("simulator")}
+              >
+                2. SHOR'S ATTACK SIMULATOR
+              </button>
+              <button 
+                className={`${styles.playgroundTabBtn} ${activeTabPlayground === "planner" ? styles.activePlayTab : ""}`}
+                onClick={() => setActiveTabPlayground("planner")}
+              >
+                3. WHAT-IF SCENARIO PLANNER
+              </button>
+            </div>
+
+            <div className={styles.playgroundContent}>
+              {/* Tab 1: AST Code Scanner */}
+              {activeTabPlayground === "scanner" && (
+                <div className={styles.scannerPlayground}>
+                  <div className={styles.playgroundSplit}>
+                    <div className={styles.codeEditorPane}>
+                      <span className={styles.paneLabel}>SOURCE CODE INPUT (GOLANG)</span>
+                      <textarea
+                        value={scanCode}
+                        onChange={(e) => setScanCode(e.target.value)}
+                        className={styles.editorTextArea}
+                        rows={10}
+                      />
+                      <button 
+                        onClick={runCodeScan}
+                        className={styles.runAuditBtn}
+                        disabled={scanStatus === "scanning"}
+                      >
+                        {scanStatus === "scanning" ? "SCANNING Stack..." : "[ RUN QUANTUM COMPLIANCE AUDIT ]"}
+                      </button>
+                    </div>
+
+                    <div className={styles.terminalOutputPane}>
+                      <span className={styles.paneLabel}>ECDAT PARSER TERMINAL</span>
+                      <div className={styles.terminalLogs}>
+                        {terminalLogs.length === 0 && (
+                          <span className={styles.terminalPlaceholder}>Click 'RUN QUANTUM COMPLIANCE AUDIT' to execute tree-sitter scanning pipeline.</span>
+                        )}
+                        {terminalLogs.map((log, i) => (
+                          <div key={i} className={styles.logLine}>{log}</div>
+                        ))}
+                        <div ref={terminalEndRef} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {scanStatus === "complete" && (
+                    <div className={styles.remediationBox}>
+                      <div className={styles.remedHeader}>
+                        <span className={styles.pulsingDot}></span>
+                        <span>ECDAT PATCH RECOMMENDATION DIFF</span>
+                      </div>
+                      <pre className={styles.diffPre}>
+{`diff --git a/main.go b/main.go
+index 8f2b4c1..9a3f2d2 100644
+--- a/main.go
++++ b/main.go
+@@ -2,2 +2,2 @@ import (
+-	"crypto/rsa"
+-	"crypto/sha1"
++	"github.com/latentmanifold/ecdat/pqc/mlkem"
++	"crypto/sha256"
+@@ -6,3 +6,3 @@ func ConnectSecurity() {
+-	key, _ := rsa.GenerateKey(rand.Reader, 2048)
+-	hasher := sha1.New()
++	key, _ := mlkem.GenerateKey768()
++	hasher := sha256.New()`}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab 2: Shor's Attack Simulator */}
+              {activeTabPlayground === "simulator" && (
+                <div className={styles.simulatorPlayground}>
+                  <div className={styles.messageInputBox}>
+                    <span className={styles.paneLabel}>ENTER SECURE DATA STRING TO ENCRYPT</span>
+                    <input 
+                      type="text" 
+                      value={secretMessage}
+                      onChange={(e) => setSecretMessage(e.target.value)}
+                      className={styles.plainTextInput}
+                      placeholder="Type credit card numbers, passwords, etc."
+                    />
+                  </div>
+
+                  <div className={styles.playgroundSplit}>
+                    {/* Classical Stack */}
+                    <div className={styles.cryptoBox}>
+                      <div className={styles.cryptoBoxHeader}>
+                        <span>CLASSICAL ASYMMETRIC (RSA-2048)</span>
+                        <span className="mono-tag-accent">VULNERABLE</span>
+                      </div>
+                      <div className={styles.cryptoContent}>
+                        <div className={styles.cipherPreview}>
+                          <strong>Ciphertext:</strong>
+                          <code className={styles.cipherCode}>{encryptedClassical}</code>
+                        </div>
+                        
+                        <button 
+                          onClick={simulateClassicalAttack}
+                          className={styles.attackBtn}
+                          disabled={classicalAttackStatus === "attacking"}
+                        >
+                          {classicalAttackStatus === "attacking" ? "FACTORING N..." : "SIMULATE SHOR'S ATTACK"}
+                        </button>
+
+                        <div className={styles.consoleLogsMini}>
+                          {classicalAttackLog ? (
+                            <pre><code>{classicalAttackLog}</code></pre>
+                          ) : (
+                            <span className={styles.miniPlaceholder}>Awaiting simulator trigger.</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quantum safe Stack */}
+                    <div className={styles.cryptoBox} style={{ borderTopColor: "var(--color-sage)" }}>
+                      <div className={styles.cryptoBoxHeader}>
+                        <span>POST-QUANTUM CRYPTO (ML-KEM-768)</span>
+                        <span className="mono-tag-sage">SAFE</span>
+                      </div>
+                      <div className={styles.cryptoContent}>
+                        <div className={styles.cipherPreview}>
+                          <strong>Ciphertext:</strong>
+                          <code className={styles.cipherCode}>{encryptedQuantum}</code>
+                        </div>
+                        
+                        <button 
+                          onClick={simulateQuantumAttack}
+                          className={styles.attackBtn}
+                          style={{ backgroundColor: "var(--color-sage)", borderColor: "var(--color-sage)" }}
+                          disabled={quantumAttackStatus === "attacking"}
+                        >
+                          {quantumAttackStatus === "attacking" ? "SOLVING LATTICES..." : "SIMULATE SHOR'S ATTACK"}
+                        </button>
+
+                        <div className={styles.consoleLogsMini}>
+                          {quantumAttackLog ? (
+                            <pre><code>{quantumAttackLog}</code></pre>
+                          ) : (
+                            <span className={styles.miniPlaceholder}>Awaiting simulator trigger.</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 3: What-If Planner */}
+              {activeTabPlayground === "planner" && (
+                <div className={styles.plannerPlayground}>
+                  <div className={styles.scenarioSelector}>
+                    <button 
+                      onClick={() => setPlannerScenario("standard")}
+                      className={`${styles.scenarioTab} ${plannerScenario === "standard" ? styles.activeScenarioTab : ""}`}
+                    >
+                      STANDARD TRANSITION
+                    </button>
+                    <button 
+                      onClick={() => setPlannerScenario("hybrid")}
+                      className={`${styles.scenarioTab} ${plannerScenario === "hybrid" ? styles.activeScenarioTab : ""}`}
+                    >
+                      HYBRID DUAL-MODE DEPLOYMENT
+                    </button>
+                    <button 
+                      onClick={() => setPlannerScenario("accelerated")}
+                      className={`${styles.scenarioTab} ${plannerScenario === "accelerated" ? styles.activeScenarioTab : ""}`}
+                    >
+                      ACCELERATED COVERT MIGRATION
+                    </button>
+                  </div>
+
+                  <div className={styles.plannerResults}>
+                    <div className={styles.plannerMetricsGrid}>
+                      <div className={styles.metricResultItem}>
+                        <span>PROJECTED TRANSITION TIME</span>
+                        <h4>{currentPlanner.time}</h4>
+                      </div>
+                      <div className={styles.metricResultItem}>
+                        <span>BUDGET LEVEL</span>
+                        <h4>{currentPlanner.cost}</h4>
+                      </div>
+                      <div className={styles.metricResultItem}>
+                        <span>RESIDUAL QUANTUM RISK</span>
+                        <h4 style={{ color: currentPlanner.risk.includes("HIGH") ? "var(--color-accent)" : "var(--color-sage)" }}>
+                          {currentRisk.level === "CRITICAL" && plannerScenario === "standard" ? "CRITICAL" : currentPlanner.risk}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className={styles.plannerSteps}>
+                      <h5>MIGRATION SEQUENCE CHECKLIST</h5>
+                      <ul className={styles.plannerList}>
+                        {currentPlanner.steps.map((st, i) => (
+                          <li key={i}>{st}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 24 - SECTION: ARCHITECTURE BLUEPRINT */}
       <section id="architecture" className={styles.archSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <span className="mono-tag-sage">09 — BLUEPRINT</span>
+            <span className="mono-tag-sage">10 — BLUEPRINT</span>
             <h2>INSIDE ECDAT</h2>
             <p className={styles.descriptionCenter}>
               A comprehensive view of the modular cryptographic discovery fabric, normalization pipeline, and decision layers.
@@ -1013,7 +1407,7 @@ export default function Home() {
       <section className={styles.techSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <span className="mono-tag">10 — STACK</span>
+            <span className="mono-tag">11 — STACK</span>
             <h2>ECDAT TECHNOLOGY STACK</h2>
           </div>
 
@@ -1058,7 +1452,7 @@ export default function Home() {
       <section className={styles.mvpSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <span className="mono-tag-accent">11 — ROADMAP</span>
+            <span className="mono-tag-accent">12 — ROADMAP</span>
             <h2>WHAT WE ARE ACTUALLY BUILDING</h2>
             <p className={styles.descriptionCenter}>
               We maintain a clear distinction between the full system architecture design and what is active in our MVP.
@@ -1091,33 +1485,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 28 - DEMO / PROTOTYPE */}
-      <section id="demo" className={styles.demoSection}>
-        <div className="container">
-          <div className={styles.demoFrame}>
-            <div className={styles.frameHeader}>
-              <span className={styles.frameDot}></span>
-              <span>ECDAT CONSOLE PANEL</span>
-            </div>
-            <div className={styles.frameBody}>
-              <h3>PROTOTYPE IN ACTIVE DEVELOPMENT</h3>
-              <p>The core scanning engine and graph mapping services are undergoing integration benchmarking.</p>
-              <div className={styles.loaderLine}></div>
-              <div className={styles.demoLinks}>
-                <a href="/presentation" className={styles.primaryBtn}>
-                  EXPLORE INTERACTIVE SLIDES &rarr;
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* 30 - CHALLENGES MATRIX */}
       <section className={styles.matrixSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <span className="mono-tag-sage">12 — CONSTRAINTS</span>
+            <span className="mono-tag-sage">13 — CONSTRAINTS</span>
             <h2>ENGINEERING CHALLENGES</h2>
           </div>
 
@@ -1145,7 +1517,7 @@ export default function Home() {
       <section id="impact" className={styles.impactSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <span className="mono-tag">13 — IMPACT</span>
+            <span className="mono-tag">14 — IMPACT</span>
             <h2>FROM INVENTORY TO READINESS</h2>
           </div>
 
@@ -1174,7 +1546,7 @@ export default function Home() {
       <section id="team" className={styles.teamSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
-            <span className="mono-tag-accent">14 — ROSTER</span>
+            <span className="mono-tag-accent">15 — ROSTER</span>
             <h2>LATENTMANIFOLD</h2>
             <p className={styles.descriptionCenter}>
               Six engineers. One cryptographic visibility problem.
