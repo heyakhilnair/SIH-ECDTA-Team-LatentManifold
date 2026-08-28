@@ -51,9 +51,9 @@ export default function Navbar() {
         </div>
 
         <div className={styles.actionGroup}>
-          <a href="#demo" className={styles.actionBtn}>
-            [ EXPLORE ECDAT ]
-          </a>
+          <Link href="/prototype" className={styles.actionBtn}>
+            [ VIEW PROTOTYPE ]
+          </Link>
         </div>
       </div>
     </nav>
