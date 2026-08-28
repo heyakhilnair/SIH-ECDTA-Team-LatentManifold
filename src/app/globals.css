@@ -344,3 +344,21 @@ code, pre, .technical-label {
 [class*="pipelineSvg"] [class*="svgCore"] text {
   fill: #FFFFFF !important;
 }
+
+/* Clipboard Copy Button Utility */
+[class*="copyTextBtn"] {
+  font-family: var(--font-mono) !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--color-accent) !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: var(--transition-fast) !important;
+}
+
+[class*="copyTextBtn"]:hover {
+  color: var(--color-primary) !important;
+  text-decoration: underline !important;
+}

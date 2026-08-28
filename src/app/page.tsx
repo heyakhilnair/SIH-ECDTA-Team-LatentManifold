@@ -40,6 +40,29 @@ func ConnectSecurity() {
 }`);
   const [scanStatus, setScanStatus] = useState("idle"); // idle, scanning, complete
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
+  
+  // Copy button state
+  const [copied, setCopied] = useState(false);
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const patchDiff = `diff --git a/main.go b/main.go
+index 8f2b4c1..9a3f2d2 100644
+--- a/main.go
++++ b/main.go
+@@ -2,2 +2,2 @@ import (
+-	"crypto/rsa"
+-	"crypto/sha1"
++	"github.com/latentmanifold/ecdat/pqc/mlkem"
++	"crypto/sha256"
+@@ -6,3 +6,3 @@ func ConnectSecurity() {
+-	key, _ := rsa.GenerateKey(rand.Reader, 2048)
+-	hasher := sha1.New()
++	key, _ := mlkem.GenerateKey768()
++	hasher := sha256.New()`;
   const [activeTabPlayground, setActiveTabPlayground] = useState("scanner"); // scanner, simulator, planner
 
   // Shor's Simulator States
@@ -1185,9 +1208,17 @@ func ConnectSecurity() {
 
                   {scanStatus === "complete" && (
                     <div className={styles.remediationBox}>
-                      <div className={styles.remedHeader}>
-                        <span className={styles.pulsingDot}></span>
-                        <span>ECDAT PATCH RECOMMENDATION DIFF</span>
+                      <div className={styles.remedHeader} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span className={styles.pulsingDot}></span>
+                          <span>ECDAT PATCH RECOMMENDATION DIFF</span>
+                        </div>
+                        <button 
+                          className={styles.copyTextBtn}
+                          onClick={() => handleCopyCode(patchDiff)}
+                        >
+                          {copied ? "COPIED!" : "[ COPY ]"}
+                        </button>
                       </div>
                       <pre className={styles.diffPre}>
 {`diff --git a/main.go b/main.go

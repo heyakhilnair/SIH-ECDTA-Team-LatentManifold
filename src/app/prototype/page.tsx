@@ -37,6 +37,14 @@ export default function Prototype() {
     q5: false
   });
 
+  // Copy button state
+  const [copied, setCopied] = useState(false);
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   // Stateful checkboxes for migration tasks
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({
     task1: true,
@@ -653,7 +661,15 @@ export default function Prototype() {
                           <strong>COMPLIANCE:</strong> {compiledReport.compliance}
                         </div>
                         
-                        <span className={styles.visualLabel} style={{ marginTop: "16px" }}>2. CODE ADAPTER WRAPPER MODULE</span>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: "16px" }}>
+                          <span className={styles.visualLabel}>2. CODE ADAPTER WRAPPER MODULE</span>
+                          <button 
+                            className={styles.copyTextBtn}
+                            onClick={() => handleCopyCode(compiledReport.code)}
+                          >
+                            {copied ? "COPIED!" : "[ COPY ]"}
+                          </button>
+                        </div>
                         <pre className={styles.codeSnippetPre}>
                           <code>{compiledReport.code}</code>
                         </pre>

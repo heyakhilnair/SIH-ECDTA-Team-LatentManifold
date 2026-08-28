@@ -117,3 +117,33 @@
     padding: 0 16px;
   }
 }
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-warning);
+  background-color: rgba(234, 88, 12, 0.1);
+  border: 1px solid rgba(234, 88, 12, 0.2);
+  padding: 6px 10px;
+  margin-right: 16px;
+  border-radius: 2px;
+  transition: var(--transition-fast);
+}
+
+.statusBadge:hover {
+  background-color: rgba(234, 88, 12, 0.2);
+  box-shadow: 0 0 8px rgba(234, 88, 12, 0.2);
+}
+
+.glowingDot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--color-warning);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--color-warning);
+  animation: pulseDot 2s infinite ease-in-out;
+}

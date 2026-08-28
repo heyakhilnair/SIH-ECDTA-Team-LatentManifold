@@ -51,6 +51,15 @@ export default function Navbar() {
         </div>
 
         <div className={styles.actionGroup}>
+          <span 
+            className={styles.statusBadge}
+            onClick={() => window.dispatchEvent(new Event("trigger-quby-speech"))}
+            style={{ cursor: "pointer" }}
+            title="Click to audit active posture alerts"
+          >
+            <span className={styles.glowingDot}></span>
+            3 AUDIT ALERTS
+          </span>
           <Link href="/prototype" className={styles.actionBtn}>
             [ VIEW PROTOTYPE ]
           </Link>
