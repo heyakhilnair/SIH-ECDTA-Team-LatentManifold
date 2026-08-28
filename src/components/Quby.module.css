@@ -1,4 +1,4 @@
-/* Quby Mascot Stylesheet - High Contrast YC Neo-Brutalist Theme */
+/* Quby Mascot Stylesheet - High Legibility Steel-Gray Theme */
 
 .qubyWrapper {
   position: fixed;
@@ -16,8 +16,8 @@
 .speechBubble {
   width: 280px;
   background-color: var(--color-card);
-  border: var(--border-thick);
-  box-shadow: var(--shadow-md);
+  border: var(--border-thin);
+  box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
   padding: 16px;
   animation: fadeIn 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
   color: var(--color-primary);
@@ -31,16 +31,15 @@
   padding-bottom: 8px;
   margin-bottom: 10px;
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-accent);
 }
 
 .closeBtn {
   background: transparent;
   border: none;
-  color: var(--color-primary);
+  color: var(--color-secondary);
   font-size: 1.1rem;
-  font-weight: 800;
   cursor: pointer;
   line-height: 1;
 }
@@ -62,7 +61,7 @@
 
 .bubbleFooter {
   font-size: 0.6rem;
-  color: var(--color-accent);
+  color: var(--color-sage);
   font-weight: 700;
 }
 
@@ -94,32 +93,34 @@
   position: absolute;
   width: 100%;
   height: 100%;
-  border: 2px solid var(--color-accent);
+  border: 1.5px solid var(--color-accent);
   border-radius: 50%;
   transform: rotateX(70deg) rotateY(20deg);
   animation: spin1 3s linear infinite;
+  opacity: 0.8;
 }
 
 .ring2 {
   position: absolute;
   width: 100%;
   height: 100%;
-  border: 2px solid var(--color-warning);
+  border: 1.5px solid var(--color-warning);
   border-radius: 50%;
   transform: rotateX(60deg) rotateY(-30deg);
   animation: spin2 4s linear infinite;
+  opacity: 0.8;
 }
 
 /* Qubit Core */
 .qubitCore {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   background-color: var(--color-primary);
-  border: 2px solid var(--color-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.2);
   animation: corePulse 2s ease-in-out infinite alternate;
 }
 
@@ -153,9 +154,11 @@
 @keyframes corePulse {
   0% {
     background-color: var(--color-accent);
+    box-shadow: 0 0 10px var(--color-accent);
   }
   100% {
     background-color: var(--color-warning);
+    box-shadow: 0 0 15px var(--color-warning);
   }
 }
 

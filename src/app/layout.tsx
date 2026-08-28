@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Syne, Plus_Jakarta_Sans, Azeret_Mono } from "next/font/google";
+import { Outfit, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
-  variable: "--font-syne",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   weight: ["700", "800"],
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
 });
 
-const azeretMono = Azeret_Mono({
-  variable: "--font-azeret-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
@@ -35,11 +35,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plusJakartaSans.variable} ${syne.variable} ${azeretMono.variable}`}
+      className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable}`}
       style={{
-        "--font-sans": "var(--font-plus-jakarta)",
-        "--font-display": "var(--font-syne)",
-        "--font-mono": "var(--font-azeret-mono)",
+        "--font-sans": "var(--font-inter)",
+        "--font-display": "var(--font-outfit)",
+        "--font-mono": "var(--font-jetbrains-mono)",
       } as React.CSSProperties}
     >
       <body>

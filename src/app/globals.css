@@ -1,14 +1,14 @@
 /* Global Stylesheet for ECDAT */
 
 :root {
-  /* Color System - High-End Designer / YC Startup Light Mode */
-  --color-base: #FAF8F5;        /* Plaster / Warm Cream */
-  --color-primary: #121314;     /* Heavy Ink Charcoal */
-  --color-secondary: #5A5D62;   /* Slate Muted */
-  --color-accent: #2E62F6;      /* Electric Cobalt Blue */
-  --color-warning: #FF5100;     /* Safety Chrome Orange */
-  --color-sage: #10B981;        /* Cyber Emerald Mint */
-  --color-stone: #E5E0D8;       /* Muted Plaster / Clay */
+  /* Color System - Premium Ice-Steel / YC SaaS Light Mode */
+  --color-base: #F8FAFC;        /* Ice-Gray / Clean Plaster */
+  --color-primary: #0F172A;     /* Slate Black / High Readability */
+  --color-secondary: #475569;   /* Slate Gray */
+  --color-accent: #2563EB;      /* Electric Cobalt Blue */
+  --color-warning: #EA580C;     /* Safety Neon Orange */
+  --color-sage: #0D9488;        /* Neon Emerald Teal */
+  --color-stone: #E2E8F0;       /* Silver Plaster / Light Gray Border */
   --color-card: #FFFFFF;        /* Clean White Plaster Card */
   
   /* Derived variables */
@@ -16,11 +16,11 @@
   --foreground: var(--color-primary);
   
   /* Borders and UI */
-  --border-color: var(--color-primary); /* High-contrast sharp borders */
+  --border-color: var(--color-stone);
   --border-thin: 1px solid var(--border-color);
-  --border-thick: 2px solid var(--border-color);
-  --shadow-sm: 2px 2px 0px var(--color-primary);
-  --shadow-md: 4px 4px 0px var(--color-primary); /* Neo-brutalist / high-contrast designer shadows */
+  --border-thick: 1.5px solid var(--color-primary);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.03);
+  --shadow-md: 0 10px 40px rgba(15, 23, 42, 0.04); /* Soft diffuse designer shadow */
   --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   --transition-fast: all 0.15s ease-in-out;
 }
@@ -46,14 +46,14 @@ html, body {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), sans-serif;
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   color: var(--color-primary);
 }
 
 p {
   line-height: 1.6;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--color-secondary);
 }
 
@@ -64,8 +64,8 @@ code, pre, .technical-label {
 
 /* Scrollbar customization - Technical look */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -75,7 +75,8 @@ code, pre, .technical-label {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-stone);
-  border: 2px solid var(--color-base);
+  border: 1px solid var(--color-base);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -91,8 +92,8 @@ code, pre, .technical-label {
 
 .mono-tag {
   font-family: var(--font-mono), monospace;
-  font-size: 0.75rem;
-  background-color: var(--color-stone);
+  font-size: 0.7rem;
+  background-color: var(--color-base);
   color: var(--color-primary);
   padding: 4px 8px;
   border: var(--border-thin);
@@ -103,11 +104,11 @@ code, pre, .technical-label {
 
 .mono-tag-accent {
   font-family: var(--font-mono), monospace;
-  font-size: 0.75rem;
-  background-color: var(--color-warning);
-  color: #FFFFFF;
+  font-size: 0.7rem;
+  background-color: rgba(234, 88, 12, 0.1);
+  color: var(--color-warning);
   padding: 4px 8px;
-  border: var(--border-thin);
+  border: 1px solid rgba(234, 88, 12, 0.2);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
@@ -115,11 +116,11 @@ code, pre, .technical-label {
 
 .mono-tag-sage {
   font-family: var(--font-mono), monospace;
-  font-size: 0.75rem;
-  background-color: var(--color-sage);
-  color: #FFFFFF;
+  font-size: 0.7rem;
+  background-color: rgba(13, 148, 136, 0.1);
+  color: var(--color-sage);
   padding: 4px 8px;
-  border: var(--border-thin);
+  border: 1px solid rgba(13, 148, 136, 0.2);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
@@ -160,13 +161,13 @@ code, pre, .technical-label {
 .technical-grid {
   background-size: 30px 30px;
   background-image: 
-    linear-gradient(to right, rgba(18, 19, 20, 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(18, 19, 20, 0.025) 1px, transparent 1px);
+    linear-gradient(to right, rgba(15, 23, 42, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
 }
 
 .technical-card {
   background: var(--color-card);
-  border: var(--border-thick);
+  border: var(--border-thin);
   border-radius: 0px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -174,8 +175,8 @@ code, pre, .technical-label {
 }
 
 .technical-card:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px var(--color-primary);
+  border-color: var(--color-accent);
+  box-shadow: 0 12px 50px rgba(15, 23, 42, 0.06);
 }
 
 /* Global Override for CSS Module Cards */
@@ -208,7 +209,7 @@ code, pre, .technical-label {
 [class*="taskItem"] {
   background-color: var(--color-card) !important;
   background: var(--color-card) !important;
-  border: var(--border-thick) !important;
+  border: var(--border-thin) !important;
   border-radius: 0px !important;
   box-shadow: var(--shadow-md) !important;
   color: var(--color-primary) !important;
@@ -228,8 +229,9 @@ code, pre, .technical-label {
 [class*="timelineItem"]:hover,
 [class*="refCard"]:hover,
 [class*="metricCard"]:hover {
-  transform: translate(-2px, -2px) !important;
-  box-shadow: 6px 6px 0px var(--color-primary) !important;
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 15px 50px rgba(15, 23, 42, 0.06) !important;
+  transform: translateY(-2px) !important;
 }
 
 /* Specific elements inside cards */
@@ -242,10 +244,10 @@ code, pre, .technical-label {
 [class*="playgroundTabBtn"],
 [class*="filterBtn"] {
   background-color: var(--color-base) !important;
-  color: var(--color-primary) !important;
+  color: var(--color-secondary) !important;
   border: var(--border-thin) !important;
   font-family: var(--font-mono) !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
 }
 
 [class*="discoveryMenuBtn"]:hover,
@@ -256,8 +258,9 @@ code, pre, .technical-label {
 [class*="candidateTab"]:hover,
 [class*="playgroundTabBtn"]:hover,
 [class*="filterBtn"]:hover {
-  background-color: var(--color-accent) !important;
-  color: #FFFFFF !important;
+  background-color: rgba(37, 99, 235, 0.08) !important;
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
 }
 
 /* Active states for tabs/btns */
@@ -269,8 +272,9 @@ code, pre, .technical-label {
 [class*="activePlayTab"],
 [class*="activeCandTab"],
 [class*="activeFilter"] {
-  background-color: var(--color-primary) !important;
-  color: var(--color-base) !important;
+  background-color: var(--color-accent) !important;
+  color: #FFFFFF !important;
+  border-color: var(--color-accent) !important;
 }
 
 /* Input Fields overrides */
@@ -292,15 +296,16 @@ code, pre, .technical-label {
 [class*="terminalLogs"],
 [class*="consoleLogsMini"],
 [class*="diffPre"] {
-  background-color: #121314 !important;
+  background-color: #0F172A !important;
   color: #E2E8F0 !important;
   border: var(--border-thin) !important;
 }
 
 /* Tables and timelines */
 [class*="assetsTable"] th {
-  border-bottom: var(--border-thick) !important;
-  background-color: var(--color-stone) !important;
+  border-bottom: var(--border-thin) !important;
+  background-color: var(--color-base) !important;
+  color: var(--color-secondary) !important;
 }
 
 [class*="assetsTable"] td {
@@ -312,8 +317,8 @@ code, pre, .technical-label {
 }
 
 [class*="selectedRow"] {
-  background-color: var(--color-stone) !important;
-  border-left: 4px solid var(--color-accent) !important;
+  background-color: rgba(37, 99, 235, 0.05) !important;
+  border-left: 3px solid var(--color-accent) !important;
 }
 
 /* SVG Line paths overrides for high-contrast light grid */
@@ -323,8 +328,8 @@ code, pre, .technical-label {
 
 [class*="pipelineSvg"] rect {
   fill: var(--color-card) !important;
-  stroke: var(--color-primary) !important;
-  stroke-width: 1.5px !important;
+  stroke: var(--color-stone) !important;
+  stroke-width: 1px !important;
 }
 
 [class*="pipelineSvg"] text {
@@ -332,10 +337,10 @@ code, pre, .technical-label {
 }
 
 [class*="pipelineSvg"] [class*="svgCore"] rect {
-  fill: var(--color-primary) !important;
-  stroke: var(--color-primary) !important;
+  fill: var(--color-accent) !important;
+  stroke: var(--color-accent) !important;
 }
 
 [class*="pipelineSvg"] [class*="svgCore"] text {
-  fill: var(--color-base) !important;
+  fill: #FFFFFF !important;
 }
