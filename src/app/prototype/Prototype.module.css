@@ -972,3 +972,602 @@
   color: var(--color-secondary);
   line-height: 1.3;
 }
+
+/* Extended CSS for interactive ECDAT components */
+
+.exportBtn {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: var(--color-accent);
+  color: #FFFFFF;
+  border: 1px solid var(--color-accent);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.exportBtn:hover {
+  background-color: transparent;
+  color: var(--color-accent);
+}
+
+.complianceSelectorBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.complianceLabel {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: bold;
+  color: var(--color-secondary);
+}
+
+.complianceBtns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.complianceBtn {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  background-color: transparent;
+  border: 1px solid var(--color-stone);
+  color: var(--color-secondary);
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.complianceBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.activeComplianceBtn {
+  background-color: var(--color-secondary);
+  color: var(--color-base);
+  border-color: var(--color-secondary);
+}
+
+/* CBOM Graph Visualizer Card */
+.graphContainerCard {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  display: flex;
+  flex-direction: column;
+}
+
+.graphPanelBody {
+  padding: 24px;
+}
+
+.svgWrapper {
+  border: var(--border-thin);
+  background-color: var(--color-base);
+  border-radius: 4px;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.interactiveSvg {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  user-select: none;
+}
+
+.svgRootNode {
+  fill: var(--color-primary);
+  stroke: var(--color-stone);
+  stroke-width: 2px;
+}
+
+.svgRepoNode {
+  fill: var(--color-secondary);
+  stroke: var(--color-stone);
+  stroke-width: 2px;
+}
+
+.svgFileNode {
+  fill: #FFFFFF;
+  stroke: var(--color-primary);
+  stroke-width: 2px;
+  cursor: pointer;
+  transition: r 0.2s ease-in-out, fill 0.2s;
+}
+
+.svgFileNode:hover {
+  r: 15;
+  fill: var(--color-base);
+}
+
+.svgActiveNode {
+  fill: var(--color-accent) !important;
+  stroke: var(--color-primary);
+  stroke-width: 2.5px;
+  r: 14px;
+  cursor: pointer;
+}
+
+.svgAlgoNodeVuln {
+  fill: var(--color-accent);
+  stroke: var(--color-primary);
+  stroke-width: 1.5px;
+  cursor: pointer;
+  animation: pulseVulnNode 2.5s infinite;
+}
+
+.svgAlgoNodeSafe {
+  fill: var(--color-sage);
+  stroke: var(--color-secondary);
+  stroke-width: 1.5px;
+  cursor: pointer;
+}
+
+.svgInteractiveNode {
+  cursor: pointer;
+}
+
+.svgNodeText {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  fill: var(--color-base);
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.svgNodeTextBold {
+  font-family: var(--font-display);
+  font-size: 8px;
+  fill: var(--color-base);
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.svgNodeTextMini {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  fill: var(--color-primary);
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.svgAlgoLabel {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  fill: #FFFFFF;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.graphControlOverlay {
+  background-color: var(--color-base);
+  border: var(--border-thin);
+  padding: 16px 20px;
+  border-radius: 4px;
+}
+
+.graphControlOverlay h5 {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-stone);
+  padding-bottom: 6px;
+}
+
+.graphInspectorGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  margin-bottom: 16px;
+}
+
+.graphInspectorGrid p {
+  margin-bottom: 4px;
+}
+
+.graphRemediateBtn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: bold;
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border: 1px solid var(--color-primary);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.graphRemediateBtn:hover {
+  background-color: transparent;
+  color: var(--color-primary);
+}
+
+.graphSuccessMsg {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--color-sage);
+}
+
+/* AST Code Scanner Playground Card */
+.astPlaygroundCard {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+}
+
+.langSelector {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  background-color: var(--color-base);
+  border: var(--border-thin);
+  outline: none;
+}
+
+.playgroundMain {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 20px;
+  padding: 24px;
+}
+
+@media (max-width: 800px) {
+  .playgroundMain {
+    grid-template-columns: 1fr;
+  }
+}
+
+.codeTextEditorColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.codeTextArea {
+  font-family: 'JetBrains Mono', 'IBM Plex Mono', Courier, monospace;
+  font-size: 0.75rem;
+  background-color: #0b0f19;
+  color: #c9d1d9;
+  border: var(--border-thin);
+  padding: 16px;
+  resize: vertical;
+  line-height: 1.5;
+  outline: none;
+  border-radius: 4px 4px 0 0;
+}
+
+.scanAstBtn {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border: 1px solid var(--color-primary);
+  border-top: none;
+  padding: 12px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.scanAstBtn:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-top: 1px solid var(--color-primary);
+}
+
+.astTreeSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.astNodeListScroll {
+  background-color: var(--color-base);
+  border: var(--border-thin);
+  border-radius: 4px;
+  padding: 16px;
+  height: 220px;
+  overflow-y: auto;
+}
+
+.astTreeRoot {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-primary);
+}
+
+.astTreeNode {
+  font-weight: bold;
+  padding: 2px 0;
+}
+
+.astTreeNodeIndent1 {
+  padding-left: 14px;
+  color: var(--color-secondary);
+}
+
+.astTreeNodeIndent2 {
+  padding-left: 28px;
+  color: #4a5568;
+}
+
+.astTreeNodeIndent3 {
+  padding-left: 42px;
+  color: #718096;
+}
+
+.astNodeWarning {
+  color: var(--color-accent) !important;
+  font-weight: bold;
+}
+
+.astEmpty {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+  text-align: center;
+  padding-top: 80px;
+}
+
+.playgroundConsole {
+  background-color: #000000;
+  border: 1px solid #333;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.consoleHeader {
+  background-color: #111;
+  color: #888;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  padding: 4px 8px;
+  border-bottom: 1px solid #222;
+  letter-spacing: 0.05em;
+}
+
+.consoleContent {
+  padding: 8px 12px;
+  height: 100px;
+  overflow-y: auto;
+}
+
+.consoleLine {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #38bdf8; /* terminal blue */
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+/* TLS 1.3 Handshake Simulator Card */
+.handshakeCard {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+}
+
+.suiteSelectorGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.suiteBtn {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: transparent;
+  border: var(--border-thin);
+  color: var(--color-secondary);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.suiteBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.activeSuiteBtn {
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border-color: var(--color-primary);
+}
+
+.handshakeBody {
+  padding: 24px;
+}
+
+.handshakeDiagramWrapper {
+  display: grid;
+  grid-template-columns: 140px 1fr 140px;
+  gap: 10px;
+  align-items: center;
+  background-color: var(--color-base);
+  border: var(--border-thin);
+  border-radius: 4px;
+  padding: 24px 16px;
+  height: 240px;
+}
+
+@media (max-width: 600px) {
+  .handshakeDiagramWrapper {
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 20px;
+  }
+}
+
+.endpointColumn {
+  text-align: center;
+}
+
+.endpointColumn h5 {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-secondary);
+  margin-bottom: 8px;
+}
+
+.endpointBox {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  padding: 16px 8px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.handshakeAnimationSpace {
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 10px 0;
+}
+
+.timingLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background-color: var(--color-stone);
+  z-index: 1;
+}
+
+.packetLine {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  padding: 4px 12px;
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  border-radius: 12px;
+  z-index: 2;
+  text-align: center;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.pClientToServer {
+  border-left: 3px solid var(--color-accent);
+}
+
+.pServerToClient {
+  border-right: 3px solid var(--color-sage);
+}
+
+.animatingPacket {
+  animation: pulsePacket 0.6s ease-in-out;
+}
+
+.handshakeControlsBar {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.runHandshakeBtn {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border: 1px solid var(--color-primary);
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.runHandshakeBtn:hover:not(:disabled) {
+  background-color: transparent;
+  color: var(--color-primary);
+}
+
+.handshakeStatsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 760px) {
+  .handshakeStatsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.handshakeLogsPanel {
+  background-color: #000;
+  border: 1px solid #333;
+  padding: 12px;
+  border-radius: 4px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.logsConsole {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+.performanceMetricsPanel {
+  background-color: var(--color-base);
+  border: var(--border-thin);
+  padding: 16px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.handshakeTable {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.handshakeTable td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--color-stone);
+}
+
+.handshakeTable td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+  width: 130px;
+}
+
+/* Animations */
+@keyframes pulseVulnNode {
+  0% { box-shadow: 0 0 0 0 rgba(185, 85, 50, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(185, 85, 50, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(185, 85, 50, 0); }
+}
+
+@keyframes pulsePacket {
+  0% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
