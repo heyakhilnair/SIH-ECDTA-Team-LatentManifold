@@ -34,9 +34,9 @@
 .pulsingDot {
   width: 10px;
   height: 10px;
-  background-color: var(--color-accent);
+  background-color: var(--color-warning);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--color-accent);
+  box-shadow: 0 0 8px var(--color-warning);
   animation: pulseDot 2s infinite ease-in-out;
 }
 
@@ -44,7 +44,7 @@
   font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--color-sage);
+  color: var(--color-secondary);
   border: 1px solid var(--color-stone);
   padding: 4px 8px;
 }
@@ -88,7 +88,7 @@
 }
 
 .progressBar {
-  background-color: var(--color-accent);
+  background-color: var(--color-warning);
   height: 100%;
   transition: width 0.15s ease-in-out;
 }
@@ -96,7 +96,7 @@
 .progressLog {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: var(--color-sage);
+  color: var(--color-secondary);
 }
 
 /* Quick Metrics Bar */
@@ -128,7 +128,7 @@
 .metricCard span {
   font-family: var(--font-mono);
   font-size: 0.65rem;
-  color: var(--color-sage);
+  color: var(--color-secondary);
   display: block;
   margin-bottom: 4px;
   letter-spacing: 0.05em;
@@ -137,16 +137,20 @@
 .metricCard h3 {
   font-family: var(--font-display);
   font-size: 1.8rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--color-primary);
 }
 
 .redValue {
-  color: var(--color-accent) !important;
+  color: var(--color-warning) !important;
+}
+
+.greenValue {
+  color: var(--color-sage) !important;
 }
 
 .amberValue {
-  color: #E27B3C !important;
+  color: var(--color-warning) !important;
 }
 
 .metricSub {
@@ -163,14 +167,50 @@
 }
 
 .miniBar {
-  background-color: var(--color-primary);
+  background-color: var(--color-accent);
   height: 100%;
+}
+
+/* Left Column & Tab Selector */
+.leftColumnWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.leftTabSelector {
+  display: flex;
+  border-bottom: var(--border-thin);
+}
+
+.leftTabBtn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 14px 20px;
+  font-family: var(--font-display);
+  font-weight: 750;
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition-fast);
+  border-bottom: 2px solid transparent;
+}
+
+.leftTabBtn:hover {
+  color: var(--color-primary);
+}
+
+.activeLeftTabBtn {
+  color: var(--color-accent);
+  border-bottom: 2px solid var(--color-accent);
 }
 
 /* Core Panel Layout */
 .panelsGrid {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
+  grid-template-columns: 1.25fr 0.75fr;
   gap: 32px;
   align-items: start;
 }
@@ -266,7 +306,7 @@
 .assetsTable th {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: var(--color-sage);
+  color: var(--color-secondary);
   padding: 12px 20px;
   border-bottom: var(--border-thin);
 }
@@ -309,8 +349,9 @@
   font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--color-base);
-  background-color: var(--color-sage);
+  color: var(--color-sage);
+  background-color: rgba(13, 148, 136, 0.1);
+  border: 1px solid rgba(13, 148, 136, 0.2);
   padding: 2px 6px;
   border-radius: 2px;
 }
@@ -319,8 +360,9 @@
   font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--color-base);
-  background-color: var(--color-accent);
+  color: var(--color-warning);
+  background-color: rgba(234, 88, 12, 0.1);
+  border: 1px solid rgba(234, 88, 12, 0.2);
   padding: 2px 6px;
   border-radius: 2px;
 }
@@ -328,8 +370,310 @@
 .emptyTable {
   text-align: center;
   font-family: var(--font-mono);
-  color: var(--color-sage);
+  color: var(--color-secondary);
   padding: 40px !important;
+}
+
+/* Systems Forecaster Tab Workspace */
+.forecasterWorkspace {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.forecasterSubCard {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.subCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: var(--border-thin);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.panelIntro {
+  font-size: 0.9rem;
+  color: var(--color-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+/* Lattice Visualizer Grid */
+.latticeLabGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .latticeLabGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.latticeVisualizerColumn {
+  display: flex;
+  justify-content: center;
+}
+
+.latticeGridSim {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 16px;
+  width: 220px;
+  height: 220px;
+  background-color: var(--color-base);
+  border: var(--border-thin);
+  padding: 20px;
+  position: relative;
+  align-content: center;
+  justify-content: center;
+}
+
+.latticeNodeSim {
+  width: 6px;
+  height: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.gridPoint {
+  width: 4px;
+  height: 4px;
+  background-color: var(--color-primary);
+  border-radius: 50%;
+  display: block;
+}
+
+.latticeInputsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mathEquationBox {
+  background-color: #0F172A;
+  color: #38BDF8;
+  padding: 12px;
+  border-radius: 0px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border: var(--border-thin);
+}
+
+.mathExplanation {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* Moser Timeline Forecaster */
+.sliderControlGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 500px) {
+  .sliderControlGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sliderBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sliderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.rangeSlider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--color-stone);
+  outline: none;
+  border-radius: 2px;
+}
+
+.rangeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--color-accent);
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: var(--shadow-sm);
+}
+
+.rangeSlider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--color-accent);
+  cursor: pointer;
+  border-radius: 50%;
+  border: 2px solid #FFFFFF;
+  box-shadow: var(--shadow-sm);
+}
+
+.timelineReportGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  border-bottom: 1px dashed var(--color-stone);
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 600px) {
+  .timelineReportGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.timelineMetricItem span {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-secondary);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.timelineMetricItem h4 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.timelineMetricItem p {
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+  line-height: 1.3;
+  margin-top: 4px;
+}
+
+.complianceTimelineMap h5 {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+
+.gateList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gateItem {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  border-left: 2px solid var(--color-stone);
+  padding-left: 16px;
+}
+
+.gateYear {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  flex-shrink: 0;
+  width: 40px;
+}
+
+.gateText {
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+}
+
+/* Agility Maturity index */
+.maturityScoreHeader {
+  border-bottom: var(--border-thin);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.scoreText span {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-secondary);
+}
+
+.scoreText h4 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.scoreText p {
+  font-size: 0.85rem;
+  color: var(--color-secondary);
+}
+
+.maturityQuestions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.questionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border: var(--border-thin);
+  padding: 16px;
+  background-color: var(--color-base);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.questionItem:hover {
+  border-color: var(--color-accent);
+}
+
+.questionItem h6 {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+
+.questionItem p {
+  font-size: 0.8rem;
+  color: var(--color-secondary);
+  line-height: 1.3;
 }
 
 /* Details Column */
@@ -372,7 +716,7 @@
 .detailRow span {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: var(--color-sage);
+  color: var(--color-secondary);
 }
 
 .monoText {
@@ -391,7 +735,7 @@
   font-family: var(--font-mono);
   font-size: 0.65rem;
   font-weight: 700;
-  color: var(--color-sage);
+  color: var(--color-secondary);
   margin-bottom: 16px;
   text-transform: uppercase;
 }
@@ -418,15 +762,15 @@
 .vNodeLib { background-color: var(--color-base); color: var(--color-secondary); }
 
 .vNodeAlgSafe {
-  background-color: var(--color-sage);
-  color: var(--color-base);
-  border-color: var(--color-sage);
+  background-color: rgba(13, 148, 136, 0.1);
+  color: var(--color-sage);
+  border-color: rgba(13, 148, 136, 0.2);
 }
 
 .vNodeAlgVuln {
-  background-color: var(--color-accent);
-  color: var(--color-base);
-  border-color: var(--color-accent);
+  background-color: rgba(234, 88, 12, 0.1);
+  color: var(--color-warning);
+  border-color: rgba(234, 88, 12, 0.2);
 }
 
 .vSub {
@@ -464,8 +808,8 @@
 }
 
 .targetBtn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
 
 .activeTargetBtn {
@@ -502,7 +846,7 @@
 }
 
 .miniProgressBar {
-  background-color: var(--color-accent);
+  background-color: var(--color-warning);
   height: 100%;
 }
 
@@ -529,7 +873,7 @@
 .statBox span {
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  color: var(--color-sage);
+  color: var(--color-secondary);
   display: block;
   text-transform: uppercase;
   margin-bottom: 4px;
@@ -551,13 +895,14 @@
 }
 
 .codeSnippetPre {
-  background-color: #181917;
-  color: #A9B2A6;
+  background-color: #0F172A;
+  color: #E2E8F0;
   padding: 16px;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   line-height: 1.4;
   overflow-x: auto;
+  border: var(--border-thin);
 }
 
 /* Migration checklist card */
@@ -590,7 +935,7 @@
 }
 
 .taskItem:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-accent);
 }
 
 .taskCompleted {
