@@ -18,6 +18,31 @@ export default function Home() {
   // State for Challenges matrix
   const [activeChallenge, setActiveChallenge] = useState(0);
 
+  // State for Interactive Mosca Risk Calculator
+  const [dataLifetime, setDataLifetime] = useState(8);
+  const [migrationTime, setMigrationTime] = useState(5);
+  const [threatHorizon, setThreatHorizon] = useState(12);
+
+  // State for Interactive Graph Node
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+
+  const calculateRiskPriority = () => {
+    const sum = dataLifetime + migrationTime;
+    const difference = threatHorizon - sum;
+
+    if (sum > threatHorizon) {
+      return { level: "CRITICAL", class: styles.badgeCritical, color: "var(--color-accent)", text: `X + Y (${sum} years) exceeds Z (${threatHorizon} years). You are EXPOSED NOW to Harvest-Now-Decipher-Later attacks.` };
+    } else if (difference <= 2) {
+      return { level: "HIGH", class: styles.badgeHigh, color: "#E27B3C", text: `X + Y (${sum} years) is close to Z (${threatHorizon} years). Transition must begin immediately to avoid exposure.` };
+    } else if (difference <= 6) {
+      return { level: "MEDIUM", class: styles.badgeMedium, color: "#D3A248", text: `X + Y (${sum} years) is within Z (${threatHorizon} years). Active transition planning is required.` };
+    } else {
+      return { level: "LOW", class: styles.badgeLow, color: "var(--color-sage)", text: `Data lifetime and migration times are safe. Monitor quantum timeline shifts.` };
+    }
+  };
+
+  const currentRisk = calculateRiskPriority();
+
   const stages = [
     {
       num: "01",
@@ -245,58 +270,97 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 09 - HERO VISUAL FLOW (CONVERGENCE & EMERGENCE) */}
+      {/* 09 - HERO VISUAL FLOW (CONVERGENCE & EMERGENCE ANIMATED SVG) */}
       <section className={styles.visualSection}>
         <div className="container">
           <div className={styles.visualCard}>
             <div className={styles.cardHeader}>
-              <span className={styles.cardTitle}>ECDAT CONVERGENCE & EMERGENCE PIPELINE</span>
-              <span className="mono-tag-sage">ARCHITECTED</span>
+              <span className={styles.cardTitle}>ENTERPRISE CRYPTOGRAPHIC INGESTION & PIPELINE ENGINE</span>
+              <span className="mono-tag-accent">ACTIVE VISUALIZATION</span>
             </div>
             
-            <div className={styles.pipelineContainer}>
-              {/* Left Column: Enterprise Sources */}
-              <div className={styles.pipelineCol}>
-                <h4 className={styles.colTitle}>ENTERPRISE SOURCES</h4>
-                <div className={styles.sourceList}>
-                  <div className={styles.sourceNode}>CODE</div>
-                  <div className={styles.sourceNode}>BINARIES</div>
-                  <div className={styles.sourceNode}>LIBRARIES</div>
-                  <div className={styles.sourceNode}>CONTAINERS</div>
-                  <div className={styles.sourceNode}>CERTIFICATES</div>
-                  <div className={styles.sourceNode}>CLOUD</div>
-                  <div className={styles.sourceNode}>KUBERNETES</div>
-                  <div className={styles.sourceNode}>NETWORK</div>
-                  <div className={styles.sourceNode}>HSM / KMS</div>
-                  <div className={styles.sourceNode}>SBOM</div>
-                </div>
-              </div>
+            <div className={styles.svgWrapper}>
+              <svg width="100%" height="340" viewBox="0 0 1000 340" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.pipelineSvg}>
+                {/* Background Grid Pattern */}
+                <defs>
+                  <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(24, 25, 23, 0.02)" strokeWidth="1"/>
+                  </pattern>
+                  <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="var(--color-stone)" stopOpacity="0.4" />
+                    <stop offset="50%" stopColor="var(--color-accent)" stopOpacity="0.8" />
+                    <stop offset="100%" stopColor="var(--color-sage)" stopOpacity="0.8" />
+                  </linearGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
 
-              {/* Center: ECDAT Core */}
-              <div className={styles.pipelineCenter}>
-                <div className={styles.ecdatCoreNode}>
-                  <div className={styles.corePulse}></div>
-                  <span className={styles.coreText}>ECDAT</span>
-                  <span className={styles.coreSub}>DISCOVERY ENGINE</span>
-                </div>
-                <div className={styles.connectorLines}>
-                  <svg className={styles.svgLines} width="100%" height="100%">
-                    <path d="M0,50 L100,50" stroke="var(--color-stone)" strokeWidth="2" strokeDasharray="5,5" />
-                  </svg>
-                </div>
-              </div>
+                {/* Stream Paths */}
+                {/* Code, Binary, Cert, Net to ECDAT Core */}
+                <path d="M 100 60 Q 300 60 480 150" stroke="var(--color-stone)" strokeWidth="1.5" strokeDasharray="6,4" className={styles.animPath} />
+                <path d="M 100 120 Q 300 120 480 160" stroke="var(--color-stone)" strokeWidth="1.5" strokeDasharray="6,4" className={styles.animPath} />
+                <path d="M 100 180 Q 300 180 480 170" stroke="var(--color-stone)" strokeWidth="1.5" strokeDasharray="6,4" className={styles.animPath} />
+                <path d="M 100 240 Q 300 240 480 180" stroke="var(--color-stone)" strokeWidth="1.5" strokeDasharray="6,4" className={styles.animPath} />
+                <path d="M 100 300 Q 300 300 480 190" stroke="var(--color-stone)" strokeWidth="1.5" strokeDasharray="6,4" className={styles.animPath} />
 
-              {/* Right Column: Structured Intelligence */}
-              <div className={styles.pipelineCol}>
-                <h4 className={styles.colTitle}>STRUCTURED OUTPUT</h4>
-                <div className={styles.outputList}>
-                  <div className={styles.outputNode}>CBOM INVENTORY</div>
-                  <div className={styles.outputNode}>KNOWLEDGE GRAPH</div>
-                  <div className={styles.outputNode}>QUANTUM RISK ENGINE</div>
-                  <div className={styles.outputNode}>PQC RECOMMENDATION</div>
-                  <div className={styles.outputNode}>MIGRATION PLAN</div>
-                </div>
-              </div>
+                {/* ECDAT to Outputs */}
+                <path d="M 520 170 Q 700 120 900 60" stroke="url(#lineGrad)" strokeWidth="2" strokeDasharray="8,6" className={styles.animPathSlow} />
+                <path d="M 520 170 Q 700 150 900 120" stroke="url(#lineGrad)" strokeWidth="2" strokeDasharray="8,6" className={styles.animPathSlow} />
+                <path d="M 520 170 Q 700 170 900 180" stroke="url(#lineGrad)" strokeWidth="2" strokeDasharray="8,6" className={styles.animPathSlow} />
+                <path d="M 520 170 Q 700 190 900 240" stroke="url(#lineGrad)" strokeWidth="2" strokeDasharray="8,6" className={styles.animPathSlow} />
+                <path d="M 520 170 Q 700 220 900 300" stroke="url(#lineGrad)" strokeWidth="2" strokeDasharray="8,6" className={styles.animPathSlow} />
+
+                {/* Source Nodes */}
+                <g className={styles.svgNode}>
+                  <rect x="20" y="40" width="130" height="36" fill="#FFFFFF" stroke="var(--color-stone)" />
+                  <text x="85" y="62" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">CODE & BINARIES</text>
+                </g>
+                <g className={styles.svgNode}>
+                  <rect x="20" y="100" width="130" height="36" fill="#FFFFFF" stroke="var(--color-stone)" />
+                  <text x="85" y="122" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">LIBRARIES & DEPS</text>
+                </g>
+                <g className={styles.svgNode}>
+                  <rect x="20" y="160" width="130" height="36" fill="#FFFFFF" stroke="var(--color-stone)" />
+                  <text x="85" y="182" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">CERTIFICATES</text>
+                </g>
+                <g className={styles.svgNode}>
+                  <rect x="20" y="220" width="130" height="36" fill="#FFFFFF" stroke="var(--color-stone)" />
+                  <text x="85" y="242" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">CONTAINERS & CLOUD</text>
+                </g>
+                <g className={styles.svgNode}>
+                  <rect x="20" y="280" width="130" height="36" fill="#FFFFFF" stroke="var(--color-stone)" />
+                  <text x="85" y="302" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">NETWORK / TLS</text>
+                </g>
+
+                {/* Central Core: ECDAT */}
+                <g className={styles.svgCore}>
+                  <rect x="420" y="125" width="160" height="90" fill="var(--color-primary)" stroke="var(--color-primary)" />
+                  <rect x="425" y="130" width="150" height="80" fill="none" stroke="var(--color-accent)" strokeWidth="1" strokeDasharray="4,2" />
+                  <text x="500" y="168" fill="var(--color-base)" fontFamily="var(--font-display)" fontSize="20" textAnchor="middle" fontWeight="900" letterSpacing="0.05em">ECDAT</text>
+                  <text x="500" y="190" fill="var(--color-stone)" fontFamily="var(--font-mono)" fontSize="8" textAnchor="middle" fontWeight="700">DISCOVERY CORE</text>
+                </g>
+
+                {/* Output Nodes */}
+                <g className={styles.svgNodeOutput}>
+                  <rect x="850" y="40" width="130" height="36" fill="#FFFFFF" stroke="var(--color-primary)" strokeWidth="1.5" />
+                  <text x="915" y="62" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">CANONICAL CBOM</text>
+                </g>
+                <g className={styles.svgNodeOutput}>
+                  <rect x="850" y="100" width="130" height="36" fill="#FFFFFF" stroke="var(--color-primary)" strokeWidth="1.5" />
+                  <text x="915" y="122" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">DEPENDENCY GRAPH</text>
+                </g>
+                <g className={styles.svgNodeOutput}>
+                  <rect x="850" y="160" width="130" height="36" fill="#FFFFFF" stroke="var(--color-primary)" strokeWidth="1.5" />
+                  <text x="915" y="182" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">QUANTUM RISK INDEX</text>
+                </g>
+                <g className={styles.svgNodeOutput}>
+                  <rect x="850" y="220" width="130" height="36" fill="#FFFFFF" stroke="var(--color-primary)" strokeWidth="1.5" />
+                  <text x="915" y="242" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">PQC RECOMMENDATION</text>
+                </g>
+                <g className={styles.svgNodeOutput}>
+                  <rect x="850" y="280" width="130" height="36" fill="#FFFFFF" stroke="var(--color-primary)" strokeWidth="1.5" />
+                  <text x="915" y="302" fill="var(--color-primary)" fontFamily="var(--font-mono)" fontSize="11" textAnchor="middle" fontWeight="bold">MIGRATION ROADMAP</text>
+                </g>
+              </svg>
             </div>
           </div>
         </div>
@@ -568,14 +632,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 18 - SECTION: KNOWLEDGE GRAPH */}
+      {/* 18 - SECTION: KNOWLEDGE GRAPH WITH INTERACTIVE HOVER */}
       <section className={styles.graphSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
             <span className="mono-tag-sage">05 — RELATIONSHIP INTELLIGENCE</span>
             <h2>INVENTORY IS NOT ENOUGH. RELATIONSHIPS MATTER.</h2>
             <p className={styles.descriptionCenter}>
-              ECDAT connects cryptographic assets with applications, dependencies, data, infrastructure, and other contextual relationships.
+              ECDAT connects cryptographic assets with applications, dependencies, data, infrastructure, and other contextual relationships. Hover over the nodes below to inspect relationships.
             </p>
           </div>
 
@@ -583,18 +647,59 @@ export default function Home() {
             <div className={styles.graphVisualColumn}>
               <div className={styles.graphMapContainer}>
                 <div className={styles.graphNodeGroup}>
-                  <div className={styles.graphNodeApp}>APPLICATION<div className={styles.nodeSub}>Payment Gateway</div></div>
+                  <div 
+                    className={`${styles.graphNodeApp} ${hoveredNode === "app" ? styles.nodeHighlighted : ""}`}
+                    onMouseEnter={() => setHoveredNode("app")}
+                    onMouseLeave={() => setHoveredNode(null)}
+                  >
+                    APPLICATION
+                    <div className={styles.nodeSub}>Payment Gateway</div>
+                  </div>
                   <div className={styles.graphEdge}>uses &rarr;</div>
-                  <div className={styles.graphNodeLib}>LIBRARY<div className={styles.nodeSub}>OpenSSL v1.1.1</div></div>
+                  <div 
+                    className={`${styles.graphNodeLib} ${hoveredNode === "lib" ? styles.nodeHighlighted : ""}`}
+                    onMouseEnter={() => setHoveredNode("lib")}
+                    onMouseLeave={() => setHoveredNode(null)}
+                  >
+                    LIBRARY
+                    <div className={styles.nodeSub}>OpenSSL v1.1.1</div>
+                  </div>
                   <div className={styles.graphEdge}>implements &rarr;</div>
-                  <div className={styles.graphNodeAlg}>ALGORITHM<div className={styles.nodeSub}>RSA-2048</div></div>
+                  <div 
+                    className={`${styles.graphNodeAlg} ${hoveredNode === "alg" ? styles.nodeHighlighted : ""}`}
+                    onMouseEnter={() => setHoveredNode("alg")}
+                    onMouseLeave={() => setHoveredNode(null)}
+                  >
+                    ALGORITHM
+                    <div className={styles.nodeSub}>RSA-2048</div>
+                  </div>
                   <div className={styles.graphEdge}>protects &rarr;</div>
-                  <div className={styles.graphNodeData}>DATA<div className={styles.nodeSub}>Credit Card Numbers</div></div>
+                  <div 
+                    className={`${styles.graphNodeData} ${hoveredNode === "data" ? styles.nodeHighlighted : ""}`}
+                    onMouseEnter={() => setHoveredNode("data")}
+                    onMouseLeave={() => setHoveredNode(null)}
+                  >
+                    DATA
+                    <div className={styles.nodeSub}>Credit Card Numbers</div>
+                  </div>
                 </div>
-                <div className={styles.graphNodeGroup2}>
-                  <div className={styles.graphNodeApp} style={{ opacity: 0.7 }}>CONTAINER<div className={styles.nodeSub}>payment-prod-01</div></div>
-                  <div className={styles.graphEdge}>runs on &rarr;</div>
-                  <div className={styles.graphNodeLib} style={{ opacity: 0.7 }}>INFRASTRUCTURE<div className={styles.nodeSub}>AWS EKS Cluster</div></div>
+                
+                <div className={styles.graphInfoBox}>
+                  {hoveredNode === "app" && (
+                    <p className={styles.graphInfoText}><strong>APPLICATION (Payment Gateway):</strong> Mission-critical deployment. High exposure score. Entrypoint of user actions.</p>
+                  )}
+                  {hoveredNode === "lib" && (
+                    <p className={styles.graphInfoText}><strong>LIBRARY (OpenSSL v1.1.1):</strong> Statically linked inside binaries. Triggers CVE alerts. Needs complete hybrid updates.</p>
+                  )}
+                  {hoveredNode === "alg" && (
+                    <p className={styles.graphInfoText}><strong>ALGORITHM (RSA-2048):</strong> Classical asymmetric algorithm. Vulnerable to Shor's algorithm. Calculated Quantum Risk is CRITICAL.</p>
+                  )}
+                  {hoveredNode === "data" && (
+                    <p className={styles.graphInfoText}><strong>DATA (Credit Card Numbers):</strong> Encrypted data at rest. Retention requirements exceed 10 years, creating immediate harvest risk.</p>
+                  )}
+                  {!hoveredNode && (
+                    <p className={styles.graphInfoTextPlaceholder}>Hover over any node above to inspect dependency context details.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -622,7 +727,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 19 - SECTION: QUANTUM RISK */}
+      {/* 19 - SECTION: QUANTUM RISK WITH INTERACTIVE CALCULATOR */}
       <section className={styles.riskSection}>
         <div className="container">
           <div className={styles.sectionHeader}>
@@ -636,59 +741,101 @@ export default function Home() {
                 A cryptographic algorithm can be technically vulnerable without every instance requiring immediate action.
               </p>
               <p className={styles.subPara}>
-                ECDAT applies Mosca's Theorem (Theorem of Risk) to calculate priority. We model:
+                ECDAT applies Mosca's Theorem (Theorem of Risk) to calculate priority. Adjust the sliders on the right to simulate your risk posture:
               </p>
               
-              <ul className={styles.riskList}>
-                <li><strong>Data Lifetime (X)</strong>: How long must the encrypted data remain secure?</li>
-                <li><strong>Migration Time (Y)</strong>: How long will it take to update the systems to PQC?</li>
-                <li><strong>Threat Horizon (Z)</strong>: When will a cryptanalytically relevant quantum computer (CRQC) be available?</li>
-              </ul>
-              
-              <p className={styles.subPara}>
-                If <strong>X + Y &gt; Z</strong>, the organization is already exposed to harvest-now-decipher-later attacks, elevating priority immediately.
-              </p>
+              <div className={styles.calcInputs}>
+                <div className={styles.sliderGroup}>
+                  <div className={styles.sliderHeader}>
+                    <span>Data Lifetime (X): <strong>{dataLifetime} years</strong></span>
+                    <span className={styles.sliderSub}>How long must your data remain secure?</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    value={dataLifetime} 
+                    onChange={(e) => setDataLifetime(parseInt(e.target.value))} 
+                    className={styles.rangeSlider}
+                  />
+                </div>
+
+                <div className={styles.sliderGroup}>
+                  <div className={styles.sliderHeader}>
+                    <span>Migration Time (Y): <strong>{migrationTime} years</strong></span>
+                    <span className={styles.sliderSub}>How long to transition your stacks to PQC?</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="10" 
+                    value={migrationTime} 
+                    onChange={(e) => setMigrationTime(parseInt(e.target.value))} 
+                    className={styles.rangeSlider}
+                  />
+                </div>
+
+                <div className={styles.sliderGroup}>
+                  <div className={styles.sliderHeader}>
+                    <span>Threat Horizon (Z): <strong>{threatHorizon} years</strong></span>
+                    <span className={styles.sliderSub}>When will a quantum computer break RSA?</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="1" 
+                    max="20" 
+                    value={threatHorizon} 
+                    onChange={(e) => setThreatHorizon(parseInt(e.target.value))} 
+                    className={styles.rangeSlider}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className={styles.riskCalculatorBox}>
               <div className={styles.calculatorHeader}>
-                <span>MOSCA RISK EQUATION MODEL</span>
-                <span className="mono-tag-accent">RISK ENGINE v1.0</span>
+                <span>MOSCA EQUATION RISK EVALUATOR</span>
+                <span className="mono-tag-accent" style={{ backgroundColor: currentRisk.color, color: "#FFFFFF" }}>{currentRisk.level}</span>
               </div>
               <div className={styles.calcBody}>
                 <div className={styles.calcFormula}>
                   <div className={styles.calcTerm}>
-                    <span className={styles.termLabel}>Data Lifetime</span>
-                    <span className={styles.termVar}>X</span>
+                    <span className={styles.termLabel}>Data (X)</span>
+                    <span className={styles.termVar}>{dataLifetime}y</span>
                   </div>
                   <span className={styles.calcOp}>+</span>
                   <div className={styles.calcTerm}>
-                    <span className={styles.termLabel}>Migration Time</span>
-                    <span className={styles.termVar}>Y</span>
+                    <span className={styles.termLabel}>Migrate (Y)</span>
+                    <span className={styles.termVar}>{migrationTime}y</span>
                   </div>
-                  <span className={styles.calcOp}>&gt;</span>
+                  <span className={styles.calcOp}>{dataLifetime + migrationTime > threatHorizon ? ">" : "<="}</span>
                   <div className={styles.calcTerm}>
-                    <span className={styles.termLabel}>Threat Horizon</span>
-                    <span className={styles.termVar}>Z</span>
+                    <span className={styles.termLabel}>Threat (Z)</span>
+                    <span className={styles.termVar}>{threatHorizon}y</span>
                   </div>
                 </div>
 
-                <div className={styles.calcStatusList}>
-                  <div className={styles.calcStatusRow}>
+                <div className={styles.riskStatusBox} style={{ borderLeftColor: currentRisk.color }}>
+                  <h4 style={{ color: currentRisk.color }}>PRIORITY: {currentRisk.level}</h4>
+                  <p>{currentRisk.text}</p>
+                </div>
+
+                <div className={styles.calcStatusList} style={{ marginTop: "24px" }}>
+                  <div className={`${styles.calcStatusRow} ${currentRisk.level === "CRITICAL" ? styles.rowHighlight : ""}`}>
                     <span className={`${styles.statusBadge} ${styles.badgeCritical}`}>CRITICAL</span>
-                    <span className={styles.statusLabel}>X + Y &gt; Z (EXPOSED NOW)</span>
+                    <span className={styles.statusLabel}>X + Y &gt; Z (Exposed now)</span>
                   </div>
-                  <div className={styles.calcStatusRow}>
+                  <div className={`${styles.calcStatusRow} ${currentRisk.level === "HIGH" ? styles.rowHighlight : ""}`}>
                     <span className={`${styles.statusBadge} ${styles.badgeHigh}`}>HIGH</span>
-                    <span className={styles.statusLabel}>X + Y &asymp; Z (MIGRATE IMMEDIATELY)</span>
+                    <span className={styles.statusLabel}>X + Y &asymp; Z (Start immediately)</span>
                   </div>
-                  <div className={styles.calcStatusRow}>
+                  <div className={`${styles.calcStatusRow} ${currentRisk.level === "MEDIUM" ? styles.rowHighlight : ""}`}>
                     <span className={`${styles.statusBadge} ${styles.badgeMedium}`}>MEDIUM</span>
-                    <span className={styles.statusLabel}>X + Y &lt; Z (PLAN TRANSITION)</span>
+                    <span className={styles.statusLabel}>X + Y &lt; Z (Plan transition)</span>
                   </div>
-                  <div className={styles.calcStatusRow}>
+                  <div className={`${styles.calcStatusRow} ${currentRisk.level === "LOW" ? styles.rowHighlight : ""}`}>
                     <span className={`${styles.statusBadge} ${styles.badgeLow}`}>LOW</span>
-                    <span className={styles.statusLabel}>TEMPORARY / LOW IMPACT DATA</span>
+                    <span className={styles.statusLabel}>Data is safe for now</span>
                   </div>
                 </div>
               </div>
@@ -841,7 +988,7 @@ export default function Home() {
             </div>
             <div className={styles.blueprintArrow}>&darr;</div>
             <div className={styles.blueprintLayer}>
-              <div className={styles.layerHeader}>NORMALIZATION LAYER</div>
+              <div className={styles.layerHeader}>EVIDENCE NORMALIZATION</div>
               <div className={styles.layerNodes}>
                 <div>Deduplication Engine</div>
                 <div>Terminology Normalizer</div>
