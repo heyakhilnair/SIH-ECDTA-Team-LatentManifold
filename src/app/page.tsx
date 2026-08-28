@@ -63,7 +63,34 @@ index 8f2b4c1..9a3f2d2 100644
 -	hasher := sha1.New()
 +	key, _ := mlkem.GenerateKey768()
 +	hasher := sha256.New()`;
-  const [activeTabPlayground, setActiveTabPlayground] = useState("scanner"); // scanner, simulator, planner
+  const [activeTabPlayground, setActiveTabPlayground] = useState("scanner"); // scanner, simulator, planner, game
+
+  // Game states
+  const [gameLevel, setGameLevel] = useState(1); // 1, 2, 3, completed
+  const [harvestedCount, setHarvestedCount] = useState(0);
+  const [currentNetworkPacket, setCurrentNetworkPacket] = useState({ id: 1, type: "RSA-1024 (Vulnerable)", safe: false });
+  const [shorPeriodVal, setShorPeriodVal] = useState("");
+  const [latticePlayerNoise, setLatticePlayerNoise] = useState(50);
+  const [gameLogs, setGameLogs] = useState<string[]>(["[GAME INITIALIZED] Prepare cryptanalytic hack..."]);
+
+  // Game loop effect for Level 1 packet rolling
+  useEffect(() => {
+    if (activeTabPlayground !== "game" || gameLevel !== 1) return;
+    const packets = [
+      { id: 1, type: "RSA-1024 (Vulnerable)", safe: false },
+      { id: 2, type: "AES-256 (Safe)", safe: true },
+      { id: 3, type: "SHA-1 (Vulnerable)", safe: false },
+      { id: 4, type: "ML-KEM-768 (Safe)", safe: true },
+      { id: 5, type: "Triple-DES (Vulnerable)", safe: false },
+      { id: 6, type: "Curve25519 (Vulnerable to Shor's)", safe: false },
+      { id: 7, type: "ML-DSA-65 (Safe)", safe: true },
+    ];
+    const interval = setInterval(() => {
+      const idx = Math.floor(Math.random() * packets.length);
+      setCurrentNetworkPacket(packets[idx]);
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [activeTabPlayground, gameLevel]);
 
   // Shor's Simulator States
   const [secretMessage, setSecretMessage] = useState("SIH-2026-SECRET-KEY");
@@ -1168,6 +1195,12 @@ index 8f2b4c1..9a3f2d2 100644
               >
                 3. WHAT-IF SCENARIO PLANNER
               </button>
+              <button 
+                className={`${styles.playgroundTabBtn} ${activeTabPlayground === "game" ? styles.activePlayTab : ""}`}
+                onClick={() => setActiveTabPlayground("game")}
+              >
+                4. HACK-RUN GAME
+              </button>
             </div>
 
             <div className={styles.playgroundContent}>
@@ -1370,6 +1403,172 @@ index 8f2b4c1..9a3f2d2 100644
                         ))}
                       </ul>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Quantum Cryptanalysis Hack-Run Game */}
+              {activeTabPlayground === "game" && (
+                <div className={styles.gameContainer}>
+                  <div className={styles.gameHeader}>
+                    <h4>LEVEL {gameLevel}: {gameLevel === 1 ? "HARVEST-NOW-DECIPHER-LATER" : gameLevel === 2 ? "SHOR'S PERIOD FINDER" : gameLevel === 3 ? "LATTICE DECRYPTION BARRIER" : "HACK COMPLETE!"}</h4>
+                    <span className="mono-tag-accent">SYSTEM POSTURE: {gameLevel <= 3 ? "ATTACKING" : "SECURED"}</span>
+                  </div>
+
+                  {gameLevel === 1 && (
+                    <div className={styles.gameLevelBox}>
+                      <p><strong>Goal:</strong> Intercept 3 vulnerable classic cryptographic key handshakes flowing through the network. Avoid quantum-safe assets.</p>
+                      
+                      <div className={styles.packetScanner}>
+                        <div className={styles.packetStream}>
+                          <span className={styles.pulsingDot}></span>
+                          <span style={{ marginLeft: "8px" }}>LIVE PACKET STREAM:</span>
+                          <strong style={{ color: currentNetworkPacket.safe ? "var(--color-sage)" : "var(--color-accent)", marginLeft: "8px" }}>
+                            {currentNetworkPacket.type}
+                          </strong>
+                        </div>
+                        <div className={styles.progressBarWrapper}>
+                          <div className={styles.progressBar} style={{ width: `${(harvestedCount / 3) * 100}%` }}></div>
+                        </div>
+                        <span>Assets Harvested: {harvestedCount}/3</span>
+                      </div>
+
+                      <button 
+                        className={styles.actionBtn}
+                        onClick={() => {
+                          if (!currentNetworkPacket.safe) {
+                            const newCount = harvestedCount + 1;
+                            setHarvestedCount(newCount);
+                            setGameLogs(prev => [`[HARVESTED] Intercepted vulnerable ${currentNetworkPacket.type}!`, ...prev]);
+                            if (newCount >= 3) {
+                              setGameLevel(2);
+                              setGameLogs(prev => ["[LEVEL 1 COMPLETED] Successfully harvested 3 keys. Moving to Level 2: Shor's Period Finder.", ...prev]);
+                            }
+                          } else {
+                            setGameLogs(prev => ["[WARNING] Selected quantum-safe packet. Ingestion blocked by ML-KEM wrapper!", ...prev]);
+                          }
+                        }}
+                      >
+                        [ HARVEST CURRENT PACKET ]
+                      </button>
+                    </div>
+                  )}
+
+                  {gameLevel === 2 && (
+                    <div className={styles.gameLevelBox}>
+                      <p><strong>Goal:</strong> Factorize the public RSA key modulus <code>N = 77</code>. Find the repeating period <code>r</code> of the modular wave function.</p>
+                      
+                      <div className={styles.shorInterface}>
+                        <div style={{ margin: "12px 0" }}>
+                          <span>ENTER PERIOD VALUE (r): </span>
+                          <input 
+                            type="number"
+                            placeholder="Hint: try 30"
+                            value={shorPeriodVal}
+                            onChange={(e) => setShorPeriodVal(e.target.value)}
+                            className={styles.plainTextInput}
+                            style={{ padding: "6px 12px", marginLeft: "12px" }}
+                          />
+                        </div>
+                      </div>
+
+                      <button 
+                        className={styles.actionBtn}
+                        onClick={() => {
+                          if (shorPeriodVal === "30") {
+                            setGameLevel(3);
+                            setGameLogs(prev => ["[SOLVED] Period r=30 found! Primes solved: p=7, q=11. Decrypted Secret: 'SIH-2026-WINNER'. Moving to Level 3: Lattice CVP Barrier.", ...prev]);
+                          } else {
+                            setGameLogs(prev => ["[FAIL] Period value incorrect. Periodic wave did not match modulus parameters.", ...prev]);
+                          }
+                        }}
+                      >
+                        [ EXECUTE SHOR FACTORING ]
+                      </button>
+                    </div>
+                  )}
+
+                  {gameLevel === 3 && (
+                    <div className={styles.gameLevelBox}>
+                      <p><strong>Goal:</strong> Attack the post-quantum ML-KEM lattice. Slide to align your decryption vector with the target point.</p>
+                      
+                      <div className={styles.latticeGame}>
+                        <div style={{ margin: "12px 0" }}>
+                          <label>LATTICE NOISE VECTOR (e): {latticePlayerNoise}%</label>
+                          <input 
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={latticePlayerNoise}
+                            onChange={(e) => setLatticePlayerNoise(parseInt(e.target.value))}
+                            className={styles.sliderInput}
+                          />
+                        </div>
+                        <div className={styles.latticeTargetBox}>
+                          <span>Target Vector (with noise): <strong>{42 + Math.round(latticePlayerNoise / 5)}</strong></span>
+                          <span style={{ marginLeft: "24px" }}>Player Vector: <strong>{42}</strong></span>
+                        </div>
+                        <p className={styles.subtext}>Notice: As long as noise vector is greater than 0%, the Closest Vector Problem remains unsolvable and key agreement is secure.</p>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+                        <button 
+                          className={styles.actionBtn}
+                          onClick={() => {
+                            if (latticePlayerNoise === 0) {
+                              setGameLevel(4);
+                              setGameLogs(prev => ["[SUCCESS] Cracked! Decrypted with zero noise vectors.", ...prev]);
+                            } else {
+                              setGameLogs(prev => ["[BLOCKED] Cryptanalysis failed. The noise vector introduces mathematical lattice complexity!", ...prev]);
+                            }
+                          }}
+                        >
+                          [ ATTEMPT DECRYPTION ]
+                        </button>
+                        <button 
+                          className={styles.actionBtn}
+                          style={{ backgroundColor: "var(--color-accent)", color: "#FFFFFF" }}
+                          onClick={() => {
+                            setGameLevel(4);
+                            setGameLogs(prev => ["[ECDAT ENFORCED] Post-Quantum ML-KEM wrappers activated. Secure boundary established!", ...prev]);
+                          }}
+                        >
+                          [ ACTIVATE ECDAT DEFENSE ]
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {gameLevel === 4 && (
+                    <div className={styles.gameLevelBox} style={{ textAlign: "center", padding: "24px 0" }}>
+                      <h3 style={{ color: "var(--color-accent)" }}>HACK COMPLETED!</h3>
+                      <p style={{ marginTop: "12px", marginBottom: "20px" }}>You successfully completed the cryptanalytic lifecycle. Classical assets fell to Shor's algorithm, but post-quantum ML-KEM lattices remained secure under mathematical noise vectors!</p>
+                      <button 
+                        className={styles.actionBtn}
+                        onClick={() => {
+                          setGameLevel(1);
+                          setHarvestedCount(0);
+                          setShorPeriodVal("");
+                          setLatticePlayerNoise(50);
+                          setGameLogs(["[GAME RESTART] Prepare cryptanalytic hack..."]);
+                        }}
+                      >
+                        [ PLAY AGAIN ]
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Game logs terminal console */}
+                  <div className={styles.gameLogsConsole}>
+                    <div className={styles.consoleHeader}>
+                      <span className={styles.pulsingDot}></span>
+                      <span style={{ marginLeft: "8px" }}>CRYPTANALYST CONSOLE OUTPUT</span>
+                    </div>
+                    <pre className={styles.consoleLogs}>
+                      {gameLogs.map((log, i) => (
+                        <div key={i}>{log}</div>
+                      ))}
+                    </pre>
                   </div>
                 </div>
               )}
