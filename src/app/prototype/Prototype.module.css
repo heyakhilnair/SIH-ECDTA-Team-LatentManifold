@@ -339,7 +339,7 @@
   gap: 24px;
 }
 
-.assetDetailCard, .migrationPlannerCard {
+.assetDetailCard, .migrationPlannerCard, .pqcWorkbenchCard {
   background-color: #FFFFFF;
   border: var(--border-thin);
 }
@@ -356,7 +356,7 @@
   color: var(--color-secondary);
 }
 
-.detailsBody {
+.detailsBody, .workbenchBody {
   padding: 20px;
 }
 
@@ -393,6 +393,7 @@
   font-weight: 700;
   color: var(--color-sage);
   margin-bottom: 16px;
+  text-transform: uppercase;
 }
 
 .visualFlow {
@@ -440,6 +441,123 @@
   font-size: 0.7rem;
   color: var(--color-stone);
   font-weight: 900;
+}
+
+/* PQC Workbench Specific Styles */
+.targetSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.targetBtn {
+  background-color: #FFFFFF;
+  border: var(--border-thin);
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: var(--color-secondary);
+}
+
+.targetBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.activeTargetBtn {
+  background-color: var(--color-base);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  font-weight: 700;
+  border-left-width: 3px;
+}
+
+.compilePqcBtn {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border: 1px solid var(--color-primary);
+  padding: 12px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.compilePqcBtn:hover {
+  background-color: transparent;
+  color: var(--color-primary);
+}
+
+.miniProgress {
+  background-color: var(--color-base);
+  height: 4px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.miniProgressBar {
+  background-color: var(--color-accent);
+  height: 100%;
+}
+
+.compileReport {
+  margin-top: 24px;
+  border-top: 1px solid var(--color-stone);
+  padding-top: 20px;
+}
+
+.reportStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.statBox {
+  background-color: var(--color-base);
+  border: var(--border-thin);
+  padding: 12px;
+  text-align: center;
+}
+
+.statBox span {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--color-sage);
+  display: block;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.statBox strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--color-accent);
+}
+
+.complianceNote {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+  border-left: 2px solid var(--color-sage);
+  padding-left: 10px;
+  margin-bottom: 20px;
+}
+
+.codeSnippetPre {
+  background-color: #181917;
+  color: #A9B2A6;
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  overflow-x: auto;
 }
 
 /* Migration checklist card */

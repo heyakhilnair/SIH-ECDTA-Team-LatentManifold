@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import styles from "./Prototype.module.css";
@@ -11,6 +11,12 @@ export default function Prototype() {
   const [searchQuery, setSearchQuery] = useState("");
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+
+  // PQC Workbench States
+  const [selectedPqcTarget, setSelectedPqcTarget] = useState("hybrid-mlkem");
+  const [compilingPqc, setCompilingPqc] = useState(false);
+  const [compileProgress, setCompileProgress] = useState(0);
+  const [compiledReport, setCompiledReport] = useState<any | null>(null);
 
   // Stateful checkboxes for migration tasks
   const [completedTasks, setCompletedTasks] = useState<Record<string, boolean>>({
@@ -37,6 +43,37 @@ export default function Prototype() {
     { id: "task4", label: "Establish ML-DSA firmware signatures", desc: "Integrate FIPS 204 signatures in continuous build validation." },
     { id: "task5", label: "Perform full compliance auditing", desc: "Validate that all endpoints negotiate post-quantum ciphers." }
   ];
+
+  const pqcTargets = {
+    "RSA-2048": [
+      { id: "hybrid-mlkem", name: "Hybrid X25519 + ML-KEM-768", latency: "38 µs", keySize: "1216 Bytes", compliance: "FIPS 203 Compliant (Draft)", code: `import "github.com/latentmanifold/ecdat/pqc/hybrid"\n\n// Initialize dual safe key exchange\nkeyExchange := hybrid.NewX25519MLKEM768()` },
+      { id: "pure-mlkem", name: "Pure ML-KEM-768 (Kyber)", latency: "26 µs", keySize: "1184 Bytes", compliance: "FIPS 203 Compliant", code: `import "github.com/latentmanifold/ecdat/pqc/mlkem"\n\n// Generate Kyber key pair\npubKey, privKey, _ := mlkem.GenerateKey768()` },
+      { id: "mceliece", name: "Classic McEliece-6960119", latency: "140 µs", keySize: "1047319 Bytes", compliance: "NIST Alternative Round 4", code: `import "github.com/latentmanifold/ecdat/pqc/mceliece"\n\n// Best suited for cold archival storage\nencap, decap := mceliece.Init6960119()` }
+    ],
+    "ECDH-P256": [
+      { id: "hybrid-mlkem", name: "Hybrid X25519 + ML-KEM-768", latency: "38 µs", keySize: "1216 Bytes", compliance: "FIPS 203 Compliant (Draft)", code: `import "github.com/latentmanifold/ecdat/pqc/hybrid"\n\nkeyExchange := hybrid.NewX25519MLKEM768()` },
+      { id: "pure-mlkem", name: "Pure ML-KEM-768 (Kyber)", latency: "26 µs", keySize: "1184 Bytes", compliance: "FIPS 203 Compliant", code: `import "github.com/latentmanifold/ecdat/pqc/mlkem"\n\npubKey, privKey, _ := mlkem.GenerateKey768()` },
+      { id: "bike", name: "BIKE-L3 (Code-based)", latency: "95 µs", keySize: "3246 Bytes", compliance: "NIST Round 4 Candidate", code: `import "github.com/latentmanifold/ecdat/pqc/bike"\n\nkem := bike.NewLevel3()` }
+    ],
+    "SHA-1": [
+      { id: "sha256", name: "SHA-256", latency: "4 µs", keySize: "32 Bytes", compliance: "FIPS 180-4 Compliant", code: `import "crypto/sha256"\n\nhasher := sha256.New()` },
+      { id: "sha3", name: "SHA3-256 (Keccak)", latency: "8 µs", keySize: "32 Bytes", compliance: "FIPS 202 Compliant", code: `import "golang.org/x/crypto/sha3"\n\nhasher := sha3.New256()` },
+      { id: "blake3", name: "BLAKE3 (Parallel Hash)", latency: "1.5 µs", keySize: "32 Bytes", compliance: "Non-FIPS (High-Perf Alternative)", code: `import "github.com/zeebo/blake3"\n\nhasher := blake3.New()` }
+    ]
+  };
+
+  const selectedAsset = initialAssets.find(a => a.id === selectedAssetId) || initialAssets[0];
+
+  // Reset PQC target when selected asset changes
+  useEffect(() => {
+    setCompiledReport(null);
+    if (selectedAsset.algorithm in pqcTargets) {
+      const targets = pqcTargets[selectedAsset.algorithm as keyof typeof pqcTargets];
+      setSelectedPqcTarget(targets[0].id);
+    } else {
+      setSelectedPqcTarget("");
+    }
+  }, [selectedAssetId]);
 
   // Calculate migration progress percentage
   const totalTasks = Object.keys(completedTasks).length;
@@ -66,7 +103,28 @@ export default function Prototype() {
     }, 150);
   };
 
-  const selectedAsset = initialAssets.find(a => a.id === selectedAssetId) || initialAssets[0];
+  // Compile / modernize action
+  const handlePqcCompile = () => {
+    setCompilingPqc(true);
+    setCompileProgress(0);
+    setCompiledReport(null);
+
+    const interval = setInterval(() => {
+      setCompileProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setCompilingPqc(false);
+          
+          // Generate final report
+          const targets = pqcTargets[selectedAsset.algorithm as keyof typeof pqcTargets];
+          const activeTarget = targets.find(t => t.id === selectedPqcTarget);
+          setCompiledReport(activeTarget);
+          return 100;
+        }
+        return prev + 20;
+      });
+    }, 100);
+  };
 
   const filteredAssets = initialAssets.filter(asset => {
     const matchesSearch = asset.file.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -260,7 +318,72 @@ export default function Prototype() {
                 </div>
               </div>
 
-              {/* Box 2: Interactive Migration Tasks Checklist */}
+              {/* Box 2: Post-Quantum Transition Workbench (THE NEW CRAZY FEATURE!) */}
+              {!selectedAsset.safe && selectedAsset.algorithm in pqcTargets && (
+                <div className={styles.pqcWorkbenchCard}>
+                  <div className={styles.detailsCardHeader}>
+                    <span>PQC TRANSITION WORKBENCH</span>
+                    <span className="mono-tag-accent">REMEDIATION COMPILER</span>
+                  </div>
+
+                  <div className={styles.workbenchBody}>
+                    <span className={styles.visualLabel}>1. SELECT TRANSITION ALGORITHM CANDIDATE</span>
+                    <div className={styles.targetSelector}>
+                      {pqcTargets[selectedAsset.algorithm as keyof typeof pqcTargets].map((target) => (
+                        <button
+                          key={target.id}
+                          className={`${styles.targetBtn} ${selectedPqcTarget === target.id ? styles.activeTargetBtn : ""}`}
+                          onClick={() => {
+                            setSelectedPqcTarget(target.id);
+                            setCompiledReport(null);
+                          }}
+                        >
+                          {target.name}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={handlePqcCompile}
+                      className={styles.compilePqcBtn}
+                      disabled={compilingPqc}
+                    >
+                      {compilingPqc ? `COMPILING PQC ADAPTER ${compileProgress}%...` : `[ CONFIGURE QUANTUM-SAFE ADAPTER ]`}
+                    </button>
+
+                    {compilingPqc && (
+                      <div className={styles.miniProgress}>
+                        <div className={styles.miniProgressBar} style={{ width: `${compileProgress}%` }}></div>
+                      </div>
+                    )}
+
+                    {compiledReport && (
+                      <div className={styles.compileReport}>
+                        <div className={styles.reportStats}>
+                          <div className={styles.statBox}>
+                            <span>LATENCY DELTA</span>
+                            <strong>{compiledReport.latency}</strong>
+                          </div>
+                          <div className={styles.statBox}>
+                            <span>PUBLIC KEY SIZE</span>
+                            <strong>{compiledReport.keySize}</strong>
+                          </div>
+                        </div>
+                        <div className={styles.complianceNote}>
+                          <strong>COMPLIANCE:</strong> {compiledReport.compliance}
+                        </div>
+                        
+                        <span className={styles.visualLabel} style={{ marginTop: "16px" }}>2. CODE ADAPTER WRAPPER MODULE</span>
+                        <pre className={styles.codeSnippetPre}>
+                          <code>{compiledReport.code}</code>
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Box 3: Interactive Migration Tasks Checklist */}
               <div className={styles.migrationPlannerCard}>
                 <div className={styles.detailsCardHeader}>
                   <span>TOPOLOGICAL TRANSITION WORKLIST</span>
