@@ -1,14 +1,14 @@
 /* Global Stylesheet for ECDAT */
 
 :root {
-  /* Color System - Premium Ice-Steel / YC SaaS Light Mode */
-  --color-base: #F8FAFC;        /* Ice-Gray / Clean Plaster */
-  --color-primary: #0F172A;     /* Slate Black / High Readability */
-  --color-secondary: #475569;   /* Slate Gray */
-  --color-accent: #2563EB;      /* Electric Cobalt Blue */
-  --color-warning: #EA580C;     /* Safety Neon Orange */
-  --color-sage: #0D9488;        /* Neon Emerald Teal */
-  --color-stone: #E2E8F0;       /* Silver Plaster / Light Gray Border */
+  /* Color System - Sophisticated Designer Alabaster & French Blue Theme */
+  --color-base: #FAF9F6;        /* Alabaster / Warm Ivory Sand */
+  --color-primary: #1E1E24;     /* Heavy Ink Charcoal */
+  --color-secondary: #585A63;   /* Muted Ink Gray */
+  --color-accent: #0055FF;      /* Electric French Blue / High-Tech Cobalt */
+  --color-warning: #FF3B00;     /* Sunset Coral / Safety Orange */
+  --color-sage: #059669;        /* Jade Green / Compliance Mint */
+  --color-stone: #E6E2DA;       /* Warm Clay / Border Gray */
   --color-card: #FFFFFF;        /* Clean White Plaster Card */
   
   /* Derived variables */
@@ -19,8 +19,8 @@
   --border-color: var(--color-stone);
   --border-thin: 1px solid var(--border-color);
   --border-thick: 1.5px solid var(--color-primary);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.03);
-  --shadow-md: 0 10px 40px rgba(15, 23, 42, 0.04); /* Soft diffuse designer shadow */
+  --shadow-sm: 0 1px 3px rgba(30, 30, 36, 0.02);
+  --shadow-md: 0 12px 40px rgba(30, 30, 36, 0.04); /* Soft diffuse designer shadow */
   --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   --transition-fast: all 0.15s ease-in-out;
 }
@@ -105,10 +105,10 @@ code, pre, .technical-label {
 .mono-tag-accent {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  background-color: rgba(234, 88, 12, 0.1);
+  background-color: rgba(255, 59, 0, 0.08);
   color: var(--color-warning);
   padding: 4px 8px;
-  border: 1px solid rgba(234, 88, 12, 0.2);
+  border: 1px solid rgba(255, 59, 0, 0.15);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
@@ -117,10 +117,10 @@ code, pre, .technical-label {
 .mono-tag-sage {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  background-color: rgba(13, 148, 136, 0.1);
+  background-color: rgba(5, 150, 105, 0.08);
   color: var(--color-sage);
   padding: 4px 8px;
-  border: 1px solid rgba(13, 148, 136, 0.2);
+  border: 1px solid rgba(5, 150, 105, 0.15);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 600;
@@ -161,8 +161,8 @@ code, pre, .technical-label {
 .technical-grid {
   background-size: 30px 30px;
   background-image: 
-    linear-gradient(to right, rgba(15, 23, 42, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, rgba(30, 30, 36, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(30, 30, 36, 0.02) 1px, transparent 1px);
 }
 
 .technical-card {
@@ -176,7 +176,7 @@ code, pre, .technical-label {
 
 .technical-card:hover {
   border-color: var(--color-accent);
-  box-shadow: 0 12px 50px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 12px 50px rgba(30, 30, 36, 0.05);
 }
 
 /* Global Override for CSS Module Cards */
@@ -230,7 +230,7 @@ code, pre, .technical-label {
 [class*="refCard"]:hover,
 [class*="metricCard"]:hover {
   border-color: var(--color-accent) !important;
-  box-shadow: 0 15px 50px rgba(15, 23, 42, 0.06) !important;
+  box-shadow: 0 15px 50px rgba(30, 30, 36, 0.05) !important;
   transform: translateY(-2px) !important;
 }
 
@@ -258,7 +258,7 @@ code, pre, .technical-label {
 [class*="candidateTab"]:hover,
 [class*="playgroundTabBtn"]:hover,
 [class*="filterBtn"]:hover {
-  background-color: rgba(37, 99, 235, 0.08) !important;
+  background-color: rgba(0, 85, 255, 0.05) !important;
   color: var(--color-accent) !important;
   border-color: var(--color-accent) !important;
 }
@@ -296,8 +296,8 @@ code, pre, .technical-label {
 [class*="terminalLogs"],
 [class*="consoleLogsMini"],
 [class*="diffPre"] {
-  background-color: #0F172A !important;
-  color: #E2E8F0 !important;
+  background-color: #1E1E24 !important;
+  color: #E6E2DA !important;
   border: var(--border-thin) !important;
 }
 
@@ -317,7 +317,7 @@ code, pre, .technical-label {
 }
 
 [class*="selectedRow"] {
-  background-color: rgba(37, 99, 235, 0.05) !important;
+  background-color: rgba(0, 85, 255, 0.03) !important;
   border-left: 3px solid var(--color-accent) !important;
 }
 
