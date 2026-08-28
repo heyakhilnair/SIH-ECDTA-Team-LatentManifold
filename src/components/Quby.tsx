@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./Quby.module.css";
 
 export default function Quby() {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handleSpeechEvent = () => {
+      setOpen(true);
+    };
+    window.addEventListener("trigger-quby-speech", handleSpeechEvent);
+    return () => window.removeEventListener("trigger-quby-speech", handleSpeechEvent);
+  }, []);
 
   return (
     <div className={styles.qubyWrapper}>

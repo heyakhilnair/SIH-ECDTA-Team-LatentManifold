@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 };
 
 import Quby from "@/components/Quby";
+import CommandPalette from "@/components/CommandPalette";
 
 export default function RootLayout({
   children,
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body>
         {children}
         <Quby />
+        <CommandPalette />
       </body>
     </html>
   );

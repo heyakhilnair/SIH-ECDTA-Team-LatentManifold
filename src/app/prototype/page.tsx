@@ -122,6 +122,14 @@ export default function Prototype() {
     }, 150);
   };
 
+  useEffect(() => {
+    const handleRescanEvent = () => {
+      handleRescan();
+    };
+    window.addEventListener("trigger-ecdat-rescan", handleRescanEvent);
+    return () => window.removeEventListener("trigger-ecdat-rescan", handleRescanEvent);
+  }, []);
+
   // Compile / modernize action
   const handlePqcCompile = () => {
     setCompilingPqc(true);
