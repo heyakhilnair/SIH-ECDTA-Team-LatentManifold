@@ -1,28 +1,28 @@
 /* Global Stylesheet for ECDAT */
 
 :root {
-  /* Color System - Fuji Zen Dawn Theme (Sakura, Sumi Ink, and Dawn Crimson) */
-  --color-base: #F5F3F7;        /* Misty Wisteria / Silent Dawn Frost (Base backdrop) */
-  --color-primary: #181926;     /* Sumi Calligraphy Ink (Deep Navy-Black for text) */
-  --color-secondary: #5C5E6E;   /* Ink Shadow Gray (Muted text) */
-  --color-accent: #FF3355;      /* Sunrise Crimson / Rising Sun (Primary brand color) */
-  --color-warning: #FF5E00;     /* Sunset Coral / Sulfur springs (Alerts) */
-  --color-sage: #0D9488;        /* Matcha Green / Forest Pine (Compliance) */
-  --color-stone: #E1DBE8;       /* Wisteria Clay (Borders) */
-  --color-card: #FFFFFF;        /* Zen White Plaster Card */
+  /* Color System - High-Altitude Expedition & Survival Orange Theme (Nimsdai / UTMF Fuji) */
+  --color-base: #F3F4F6;        /* Glacier Slate Mist (High-altitude snow backdrop) */
+  --color-primary: #0B0F19;     /* Abyssal Rock Slate (Deep navy-black for absolute contrast) */
+  --color-secondary: #4B5563;   /* Mountain Ridge Gray (Muted text) */
+  --color-accent: #FF4D00;      /* Expedition Survival Orange / Alpenglow (Primary brand highlight) */
+  --color-warning: #FF0055;     /* Emergency Beacon Crimson (Alerts) */
+  --color-sage: #10B981;        /* High-Visibility Safety Green (Compliance) */
+  --color-stone: #0B0F19;       /* Deep Mountain Slate (Borders and shadows) */
+  --color-card: #FFFFFF;        /* Stark White Card */
   
   /* Derived variables */
   --background: var(--color-base);
   --foreground: var(--color-primary);
   
-  /* Borders and UI */
+  /* Borders and UI - Structural and Solid */
   --border-color: var(--color-stone);
-  --border-thin: 1px solid var(--border-color);
-  --border-thick: 1.5px solid var(--color-primary);
-  --shadow-sm: 0 1px 3px rgba(24, 25, 38, 0.02);
-  --shadow-md: 0 12px 40px rgba(24, 25, 38, 0.03); /* Soft wisteria shadow */
-  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  --transition-fast: all 0.15s ease-in-out;
+  --border-thin: 1.5px solid var(--border-color);
+  --border-thick: 2.5px solid var(--border-color);
+  --shadow-sm: 3px 3px 0px var(--color-stone);
+  --shadow-md: 6px 6px 0px var(--color-stone); /* Solid structural drop shadow */
+  --transition-smooth: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-fast: all 0.1s ease-in-out;
 }
 
 /* Reset and Defaults */
@@ -45,9 +45,9 @@ html, body {
 /* Typography Rules */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display), sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   color: var(--color-primary);
 }
 
@@ -55,6 +55,7 @@ p {
   line-height: 1.6;
   font-size: 0.95rem;
   color: var(--color-secondary);
+  font-weight: 550; /* Slightly bolder for supreme readability */
 }
 
 code, pre, .technical-label {
@@ -64,8 +65,8 @@ code, pre, .technical-label {
 
 /* Scrollbar customization - Technical look */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -74,9 +75,8 @@ code, pre, .technical-label {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-stone);
-  border: 1px solid var(--color-base);
-  border-radius: 3px;
+  background: var(--color-primary);
+  border: 2px solid var(--color-base);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -99,31 +99,31 @@ code, pre, .technical-label {
   border: var(--border-thin);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .mono-tag-accent {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  background-color: rgba(255, 51, 85, 0.08);
-  color: var(--color-accent);
+  background-color: var(--color-accent);
+  color: #FFFFFF;
   padding: 4px 8px;
-  border: 1px solid rgba(255, 51, 85, 0.15);
+  border: var(--border-thin);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .mono-tag-sage {
   font-family: var(--font-mono), monospace;
   font-size: 0.7rem;
-  background-color: rgba(13, 148, 136, 0.08);
-  color: var(--color-sage);
+  background-color: var(--color-sage);
+  color: #FFFFFF;
   padding: 4px 8px;
-  border: 1px solid rgba(13, 148, 136, 0.15);
+  border: var(--border-thin);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 /* Animations */
@@ -161,8 +161,8 @@ code, pre, .technical-label {
 .technical-grid {
   background-size: 30px 30px;
   background-image: 
-    linear-gradient(to right, rgba(24, 25, 38, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(24, 25, 38, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, rgba(11, 15, 25, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 15, 25, 0.03) 1px, transparent 1px);
 }
 
 .technical-card {
@@ -175,8 +175,8 @@ code, pre, .technical-label {
 }
 
 .technical-card:hover {
-  border-color: var(--color-accent);
-  box-shadow: 0 12px 50px rgba(24, 25, 38, 0.05);
+  transform: translate(-3px, -3px);
+  box-shadow: 8px 8px 0px var(--color-stone);
 }
 
 /* Global Override for CSS Module Cards */
@@ -229,9 +229,9 @@ code, pre, .technical-label {
 [class*="timelineItem"]:hover,
 [class*="refCard"]:hover,
 [class*="metricCard"]:hover {
-  border-color: var(--color-accent) !important;
-  box-shadow: 0 15px 50px rgba(24, 25, 38, 0.05) !important;
-  transform: translateY(-2px) !important;
+  border-color: var(--color-stone) !important;
+  box-shadow: 8px 8px 0px var(--color-stone) !important;
+  transform: translate(-3px, -3px) !important;
 }
 
 /* Specific elements inside cards */
@@ -243,11 +243,11 @@ code, pre, .technical-label {
 [class*="candidateTab"],
 [class*="playgroundTabBtn"],
 [class*="filterBtn"] {
-  background-color: var(--color-base) !important;
-  color: var(--color-secondary) !important;
+  background-color: var(--color-card) !important;
+  color: var(--color-primary) !important;
   border: var(--border-thin) !important;
   font-family: var(--font-mono) !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
 
 [class*="discoveryMenuBtn"]:hover,
@@ -258,9 +258,9 @@ code, pre, .technical-label {
 [class*="candidateTab"]:hover,
 [class*="playgroundTabBtn"]:hover,
 [class*="filterBtn"]:hover {
-  background-color: rgba(255, 51, 85, 0.05) !important;
-  color: var(--color-accent) !important;
-  border-color: var(--color-accent) !important;
+  background-color: var(--color-accent) !important;
+  color: #FFFFFF !important;
+  border-color: var(--color-stone) !important;
 }
 
 /* Active states for tabs/btns */
@@ -272,16 +272,16 @@ code, pre, .technical-label {
 [class*="activePlayTab"],
 [class*="activeCandTab"],
 [class*="activeFilter"] {
-  background-color: var(--color-accent) !important;
-  color: #FFFFFF !important;
-  border-color: var(--color-accent) !important;
+  background-color: var(--color-primary) !important;
+  color: var(--color-base) !important;
+  border-color: var(--color-stone) !important;
 }
 
 /* Input Fields overrides */
 [class*="plainTextInput"],
 [class*="editorTextArea"],
 [class*="searchBar"] {
-  background-color: var(--color-base) !important;
+  background-color: var(--color-card) !important;
   color: var(--color-primary) !important;
   border: var(--border-thin) !important;
 }
@@ -292,20 +292,20 @@ code, pre, .technical-label {
   border-color: var(--color-accent) !important;
 }
 
-/* Keep playground console panels and terminal logs dark charcoal for Stripe-like developer contrast */
+/* Keep playground console panels and terminal logs pitch black for maximum console vibes */
 [class*="terminalLogs"],
 [class*="consoleLogsMini"],
 [class*="diffPre"] {
-  background-color: #181926 !important;
-  color: #F5F3F7 !important;
+  background-color: #0B0F19 !important;
+  color: var(--color-base) !important;
   border: var(--border-thin) !important;
 }
 
 /* Tables and timelines */
 [class*="assetsTable"] th {
-  border-bottom: var(--border-thin) !important;
+  border-bottom: var(--border-thick) !important;
   background-color: var(--color-base) !important;
-  color: var(--color-secondary) !important;
+  color: var(--color-primary) !important;
 }
 
 [class*="assetsTable"] td {
@@ -317,7 +317,7 @@ code, pre, .technical-label {
 }
 
 [class*="selectedRow"] {
-  background-color: rgba(255, 51, 85, 0.03) !important;
+  background-color: rgba(255, 77, 0, 0.05) !important;
   border-left: 3px solid var(--color-accent) !important;
 }
 
@@ -329,7 +329,7 @@ code, pre, .technical-label {
 [class*="pipelineSvg"] rect {
   fill: var(--color-card) !important;
   stroke: var(--color-stone) !important;
-  stroke-width: 1px !important;
+  stroke-width: 1.5px !important;
 }
 
 [class*="pipelineSvg"] text {
@@ -337,12 +337,12 @@ code, pre, .technical-label {
 }
 
 [class*="pipelineSvg"] [class*="svgCore"] rect {
-  fill: var(--color-accent) !important;
-  stroke: var(--color-accent) !important;
+  fill: var(--color-primary) !important;
+  stroke: var(--color-primary) !important;
 }
 
 [class*="pipelineSvg"] [class*="svgCore"] text {
-  fill: #FFFFFF !important;
+  fill: var(--color-base) !important;
 }
 
 /* Clipboard Copy Button Utility */
@@ -359,6 +359,6 @@ code, pre, .technical-label {
 }
 
 [class*="copyTextBtn"]:hover {
-  color: var(--color-primary) !important;
+  color: var(--color-warning) !important;
   text-decoration: underline !important;
 }
