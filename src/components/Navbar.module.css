@@ -1,0 +1,119 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--color-base);
+  border-bottom: var(--border-thin);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logoGroup {
+  display: flex;
+  align-items: center;
+}
+
+.logoLink {
+  text-decoration: none;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: -0.03em;
+}
+
+.version {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--color-sage);
+  background-color: rgba(104, 117, 99, 0.1);
+  padding: 2px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navLink {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-secondary);
+  letter-spacing: 0.05em;
+  transition: var(--transition-fast);
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.navLink:hover {
+  color: var(--color-accent);
+}
+
+.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+}
+
+.actionBtn {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--color-primary);
+  padding: 8px 16px;
+  border: var(--border-thin);
+  transition: var(--transition-smooth);
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.actionBtn:hover {
+  background-color: var(--color-primary);
+  color: var(--color-base);
+  border-color: var(--color-primary);
+}
+
+/* Responsive navigation */
+@media (max-width: 960px) {
+  .navLinks {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navLinks {
+    display: none; /* Can implement simple burger or keep minimal for mobile */
+  }
+  .container {
+    padding: 0 16px;
+  }
+}

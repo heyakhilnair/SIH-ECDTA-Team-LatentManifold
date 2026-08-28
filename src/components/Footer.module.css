@@ -1,0 +1,120 @@
+.footer {
+  background-color: var(--color-primary); /* Graphite */
+  color: var(--color-base); /* Bone */
+  padding: 48px 0 24px 0;
+  width: 100%;
+  border-top: var(--border-thick);
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.topSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.brandInfo {
+  max-width: 400px;
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-base);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.description {
+  font-size: 0.85rem;
+  color: var(--color-stone);
+  line-height: 1.5;
+}
+
+.sihBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+  .sihBlock {
+    align-items: flex-start;
+  }
+}
+
+.sihBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.pulsingDot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--color-accent);
+}
+
+.bannerText {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-stone);
+}
+
+.sihDetails {
+  font-size: 0.8rem;
+  color: var(--color-stone);
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--color-secondary);
+  margin: 32px 0 20px 0;
+}
+
+.bottomSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.copyright {
+  font-size: 0.75rem;
+  color: var(--color-stone);
+}
+
+.metadata {
+  display: flex;
+  gap: 16px;
+}
+
+.metaItem {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--color-stone);
+  border: 1px solid var(--color-secondary);
+  padding: 4px 8px;
+}
+
+@media (max-width: 768px) {
+  .bottomSection {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

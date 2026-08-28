@@ -1,0 +1,177 @@
+/* Global Stylesheet for ECDAT */
+
+:root {
+  /* Color System - Restrained Mineral Palette */
+  --color-base: #F3F0E8;        /* Warm Ivory / Bone */
+  --color-primary: #181917;     /* Graphite */
+  --color-secondary: #343732;   /* Deep Slate */
+  --color-accent: #B95532;      /* Oxidized Copper / Vermilion */
+  --color-sage: #687563;        /* Muted Sage */
+  --color-stone: #D8D2C5;       /* Stone */
+  
+  /* Derived variables */
+  --background: var(--color-base);
+  --foreground: var(--color-primary);
+  
+  /* Borders and UI */
+  --border-color: var(--color-stone);
+  --border-thin: 1px solid var(--border-color);
+  --border-thick: 2px solid var(--color-primary);
+  --shadow-sm: 0 1px 2px rgba(24, 25, 23, 0.05);
+  --shadow-md: 0 4px 6px rgba(24, 25, 23, 0.08);
+  --transition-smooth: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-fast: all 0.15s ease-in-out;
+}
+
+/* Reset and Defaults */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+/* Typography Rules */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--color-primary);
+}
+
+p {
+  line-height: 1.6;
+  font-size: 1rem;
+  color: var(--color-secondary);
+}
+
+code, pre, .technical-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9em;
+}
+
+/* Scrollbar customization - Technical look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-base);
+  border-left: var(--border-thin);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-stone);
+  border: 2px solid var(--color-base);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-sage);
+}
+
+/* Global Helpers */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.mono-tag {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  background-color: var(--color-stone);
+  color: var(--color-primary);
+  padding: 2px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.mono-tag-accent {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  background-color: var(--color-accent);
+  color: var(--color-base);
+  padding: 2px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.mono-tag-sage {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  background-color: var(--color-sage);
+  color: var(--color-base);
+  padding: 2px 6px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pulseDot {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+}
+
+.pulsing-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+/* Utilities for Layout */
+.technical-grid {
+  background-size: 20px 20px;
+  background-image: 
+    linear-gradient(to right, rgba(24, 25, 23, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(24, 25, 23, 0.03) 1px, transparent 1px);
+}
+
+.technical-card {
+  background: #FFFFFF;
+  border: var(--border-thin);
+  border-radius: 0px; /* Aerospace square sharp look */
+  padding: 24px;
+  transition: var(--transition-smooth);
+}
+
+.technical-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
