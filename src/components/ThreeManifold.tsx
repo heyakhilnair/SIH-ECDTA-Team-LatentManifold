@@ -38,16 +38,19 @@ function LatentNodes() {
     return temp;
   }, [nodes]);
 
-  useFrame((state) => {
+  const time = useRef(0);
+
+  useFrame((state, delta) => {
+    time.current += delta;
     if (group.current) {
       group.current.rotation.y += 0.002;
-      group.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.2;
+      group.current.rotation.x = Math.sin(time.current * 0.2) * 0.2;
     }
     if (linesRef.current) {
       // Pulse effect on lines
       linesRef.current.children.forEach((child, i) => {
         if ((child as any).material) {
-          (child as any).material.opacity = 0.2 + Math.sin(state.clock.elapsedTime * 2 + i) * 0.2;
+          (child as any).material.opacity = 0.2 + Math.sin(time.current * 2 + i) * 0.2;
         }
       });
     }
