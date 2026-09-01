@@ -72,12 +72,14 @@ export default function WorkspaceWrapper({ children }: { children: React.ReactNo
         setTimeout(() => {
           setWorkspace(data.workspace);
         }, 1200);
+      } else {
+        setBootSequence(prev => [...prev, `[ERR] Enclave generation failed: ${data?.error || 'Unknown error'}`]);
+        setCreating(false);
       }
     } catch (err) {
       console.error("Error creating workspace", err);
       setBootSequence(prev => [...prev, "[ERR] Enclave generation failed."]);
-    } finally {
-      // Keep creating state true so button stays disabled while redirecting
+      setCreating(false);
     }
   };
 
