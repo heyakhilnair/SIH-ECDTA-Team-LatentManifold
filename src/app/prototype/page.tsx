@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Image from "next/image";
+import { Line } from "react-chartjs-2";
 import styles from "./Prototype.module.css";
 
 interface CryptographicAsset {
@@ -523,11 +523,8 @@ function encryptSensitiveData(password) {
 
   return (
     <div className="technical-grid min-h-screen flex flex-col">
-      <Navbar />
-
-      <main className={styles.workspaceWrapper}>
-        <div className="container flex-grow">
-          
+      <main className="flex-grow pt-8 pb-20">
+        <div className="container" style={{ maxWidth: "1600px", margin: "0 auto" }}>      
           {/* Dashboard Header Bar */}
           <div className={styles.dashboardHeader}>
             <div className={styles.brandGroup}>
@@ -1481,8 +1478,6 @@ function encryptSensitiveData(password) {
 
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

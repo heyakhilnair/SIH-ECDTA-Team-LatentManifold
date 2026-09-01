@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   description: "ECDAT is an enterprise cryptographic discovery and quantum-readiness platform developed by LatentManifold for Smart India Hackathon 2026 Problem Statement SIH26164.",
 };
 
-import Quby from "@/components/Quby";
-import CommandPalette from "@/components/CommandPalette";
+import MarketingWidgets from "@/components/MarketingWidgets";
+import { ClerkProvider } from "@clerk/nextjs";
 
 export default function RootLayout({
   children,
@@ -36,6 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable}`}
       style={{
         "--font-sans": "var(--font-inter)",
@@ -43,10 +44,11 @@ export default function RootLayout({
         "--font-mono": "var(--font-jetbrains-mono)",
       } as React.CSSProperties}
     >
-      <body>
-        {children}
-        <Quby />
-        <CommandPalette />
+      <body suppressHydrationWarning>
+        <ClerkProvider>
+          {children}
+          <MarketingWidgets />
+        </ClerkProvider>
       </body>
     </html>
   );

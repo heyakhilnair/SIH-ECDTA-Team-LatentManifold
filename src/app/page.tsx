@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ThreeManifold from "@/components/ThreeManifold";
+import { motion } from "framer-motion";
 import styles from "./Home.module.css";
 
 export default function Home() {
@@ -480,6 +482,15 @@ index 8f2b4c1..9a3f2d2 100644
           </div>
         </div>
       </header>
+
+      {/* 08.5 - LATENT MANIFOLD 3D VISUALIZATION */}
+      <section style={{ position: "relative", zIndex: 10, marginTop: "-40px", borderBottom: "1px solid var(--color-stone)" }}>
+        <div className="container" style={{ display: "flex", justifyContent: "center" }}>
+          <div style={{ width: "100%", maxWidth: "1200px", borderLeft: "1px solid var(--color-stone)", borderRight: "1px solid var(--color-stone)" }}>
+             <ThreeManifold />
+          </div>
+        </div>
+      </section>
 
       {/* 09 - HERO VISUAL FLOW (CONVERGENCE & EMERGENCE ANIMATED SVG) */}
       <section className={styles.visualSection}>
