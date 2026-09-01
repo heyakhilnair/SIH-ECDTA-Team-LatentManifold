@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Line } from "react-chartjs-2";
 import styles from "./Prototype.module.css";
 
 interface CryptographicAsset {
