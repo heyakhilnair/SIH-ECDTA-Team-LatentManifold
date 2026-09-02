@@ -10,7 +10,7 @@
 2. Read `docs/PRODUCT_REFERENCE.md` — complete product picture built from all 22 phase PDFs
 3. Read `docs/TRACKER.md` — find your first task
 
-**Then begin Phase 0.**
+**Then begin Phase 2.2.**
 
 ---
 
@@ -39,15 +39,18 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - `src/app/evidence/` — static 22-phase research showcase
 - `src/app/presentation/` — SIH judge presentation mode
 
+**Recently Built:**
+- FastAPI backend scaffold (Phase 0.1)
+- PostgreSQL schema (Phase 0.2)
+- Clerk Auth (Phase 1)
+- Job Lifecycle API & Celery Scaffold (Phase 2.1)
+- Frontend Enterprise Route Migration & Advanced UI specs (Phase 6)
+
 **Not yet built:**
-- FastAPI backend (Phase 0)
-- PostgreSQL + Redis (Phase 0)
-- Clerk auth (Phase 1)
-- All scanners (Phase 2)
+- Tree-sitter Scanners (Phase 2.2)
 - Normalization engine (Phase 3)
 - Risk engine (Phase 4)
 - Recommendation engine (Phase 5)
-- Frontend wiring to real API (Phase 6)
 
 ---
 
@@ -96,9 +99,9 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 **Goal:** Every vulnerable asset gets a ranked PQC recommendation  
 **Tasks:** Recommendation rule table (RSA→ML-KEM-768, SHA-1→SHA-256, etc.), constraint-aware ranking, NIST standards citations (FIPS 203/204/205), safe-asset detection (no recommendation for AES-256)
 
-### Phase 6 — Frontend Wiring
-**Goal:** Replace all hardcoded prototype state with real API data  
-**Tasks:** API client layer (`src/lib/api.ts`), authenticated sidebar layout, Command Center with SWR hooks, Evidence Viewer component, CBOM export button, Asset Detail page, job status polling
+### Phase 6 — Frontend Wiring & UI/UX Upgrade
+**Goal:** Replace hardcoded state with API data & build Enterprise Command Center  
+**Tasks:** API client layer, authenticated sidebar layout, Command Center with SWR hooks, Evidence Viewer, CBOM export, Asset Detail, job polling, Enterprise UI/UX upgrade (3D topology, technical pipeline visualization, storytelling flow)
 
 ### Phase 7 — Testing + Demo Preparation
 **Goal:** Verified correctness + stable demo  

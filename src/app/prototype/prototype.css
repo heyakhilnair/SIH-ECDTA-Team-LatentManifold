@@ -1,0 +1,195 @@
+/* Scoped Styles for the Enterprise Prototype Dashboard */
+
+.ecdat-container {
+  /* Override global variables safely for this scope */
+  --color-base: #F3F0E8;        /* Warm Ivory */
+  --color-primary: #181917;     /* Graphite */
+  --color-secondary: #5C5E5A;   
+  --color-accent: #B95532;      /* Copper */
+  --color-card: #FFFFFF;
+  --color-warning: #D3A248;
+  --color-danger: #D63939;
+  --color-safe: #2B7A4B;
+  --color-stone: #E1DFD6;
+
+  --border-color: rgba(24, 25, 23, 0.1);
+  --border-thin: 1px solid var(--border-color);
+  
+  --shadow-sm: 0 4px 12px rgba(24, 25, 23, 0.03);
+  --shadow-md: 0 12px 32px rgba(24, 25, 23, 0.05);
+
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 4rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-base);
+  color: var(--color-primary);
+  font-family: var(--font-sans), 'Inter', sans-serif;
+}
+
+.ecdat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: var(--border-thin);
+}
+
+.ecdat-header h1 {
+  font-family: var(--font-display), 'Outfit', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-primary);
+}
+
+.ecdat-card {
+  background: var(--color-card);
+  border: var(--border-thin);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ecdat-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(24, 25, 23, 0.15);
+}
+
+.ecdat-input {
+  width: 100%;
+  background: var(--color-base);
+  border: var(--border-thin);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  color: var(--color-primary);
+  transition: all 0.2s;
+  outline: none;
+}
+
+.ecdat-input:focus {
+  border-color: var(--color-accent);
+  background: var(--color-card);
+  box-shadow: 0 0 0 3px rgba(185, 85, 50, 0.1);
+}
+
+.ecdat-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--color-primary);
+  color: var(--color-card);
+  border: none;
+  border-radius: 8px;
+  padding: 0.875rem 1.5rem;
+  font-family: var(--font-mono), monospace;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ecdat-btn:hover:not(:disabled) {
+  background: var(--color-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(185, 85, 50, 0.2);
+}
+
+.ecdat-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ecdat-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: var(--border-thin);
+  background: var(--color-card);
+}
+
+.ecdat-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.ecdat-table th {
+  padding: 1rem 1.5rem;
+  background: var(--color-base);
+  color: var(--color-secondary);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: var(--border-thin);
+}
+
+.ecdat-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: var(--border-thin);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+}
+
+.ecdat-table tbody tr {
+  transition: all 0.2s;
+}
+
+.ecdat-table tbody tr:hover {
+  background: rgba(24, 25, 23, 0.015);
+}
+
+.ecdat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.ecdat-badge-neutral {
+  background: var(--color-base);
+  color: var(--color-secondary);
+  border-color: var(--color-stone);
+}
+
+.ecdat-badge-success {
+  background: rgba(43, 122, 75, 0.1);
+  color: var(--color-safe);
+  border-color: rgba(43, 122, 75, 0.2);
+}
+
+.ecdat-badge-danger {
+  background: rgba(214, 57, 57, 0.1);
+  color: var(--color-danger);
+  border-color: rgba(214, 57, 57, 0.2);
+}
+
+.ecdat-badge-active {
+  background: rgba(185, 85, 50, 0.1);
+  color: var(--color-accent);
+  border-color: rgba(185, 85, 50, 0.2);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.ecdat-spin {
+  animation: spin 1s linear infinite;
+}

@@ -1,0 +1,112 @@
+rules:
+  # Python Rules
+  - id: ecdat-md5-hash
+    patterns:
+      - pattern: hashlib.md5(...)
+    message: "Use of weak cryptographic algorithm MD5 detected. Classically vulnerable."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "MD5"
+      ecdat_type: "hash"
+
+  - id: ecdat-rsa-python
+    patterns:
+      - pattern-either:
+          - pattern: Crypto.PublicKey.RSA.generate($SIZE)
+          - pattern: Cryptodome.PublicKey.RSA.generate($SIZE)
+    message: "RSA key generation detected. Key sizes under 3072 bits are classically weak, and all RSA is quantum vulnerable."
+    languages: [python]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "RSA"
+      ecdat_type: "key_generation"
+
+  # Go Rules
+  - id: ecdat-sha1-usage
+    patterns:
+      - pattern: crypto.sha1.New()
+    message: "Use of weak cryptographic algorithm SHA-1 detected. Classically vulnerable."
+    languages: [go]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "SHA-1"
+      ecdat_type: "hash"
+
+  - id: ecdat-rsa-keygen-weak
+    patterns:
+      - pattern: rsa.GenerateKey($RAND, $SIZE)
+      - metavariable-comparison:
+          metavariable: $SIZE
+          comparison: $SIZE < 3072
+    message: "RSA key generated with less than 3072 bits. This is classically weak."
+    languages: [go]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "RSA"
+      ecdat_type: "key_generation"
+      
+  - id: ecdat-des-usage
+    patterns:
+      - pattern: des.NewCipher(...)
+    message: "DES is deprecated and highly insecure."
+    languages: [go]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "DES"
+      ecdat_type: "encryption"
+
+  - id: ecdat-ecdsa-p256
+    patterns:
+      - pattern: elliptic.P256()
+    message: "Usage of NIST P-256 curve detected. Elliptic curves are severely impacted by Shor's algorithm (quantum vulnerable)."
+    languages: [go]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "ECDSA"
+      ecdat_type: "signature"
+
+  # JavaScript/TypeScript Rules
+  - id: ecdat-js-md5-hash
+    patterns:
+      - pattern: crypto.createHash('md5')
+    message: "Use of weak cryptographic algorithm MD5 detected."
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "MD5"
+      ecdat_type: "hash"
+
+  - id: ecdat-js-sha1-hash
+    patterns:
+      - pattern: crypto.createHash('sha1')
+    message: "Use of weak cryptographic algorithm SHA-1 detected."
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "SHA-1"
+      ecdat_type: "hash"
+
+  - id: ecdat-js-des-encryption
+    patterns:
+      - pattern-either:
+          - pattern: crypto.createCipher('des', ...)
+          - pattern: crypto.createCipheriv('des', ...)
+          - pattern: crypto.createCipher('des-ede3', ...)
+          - pattern: crypto.createCipheriv('des-ede3', ...)
+    message: "Use of DES or 3DES encryption detected."
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "DES"
+      ecdat_type: "encryption"
+
+  - id: ecdat-js-rsa-generate
+    patterns:
+      - pattern: crypto.generateKeyPairSync('rsa', ...)
+    message: "RSA key pair generation detected. Ensure appropriate sizing."
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "RSA"
+      ecdat_type: "key_generation"

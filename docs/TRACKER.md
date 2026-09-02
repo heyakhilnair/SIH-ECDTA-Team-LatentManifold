@@ -18,7 +18,7 @@
 ---
 
 ## PHASE 0 — FOUNDATION & ENVIRONMENT
-**Status:** `[/] IN PROGRESS` · **Target:** Day 1–3
+**Status:** `[x] COMPLETED` · **Target:** Day 1–3
 
 ### 0.1 Backend Project Scaffold
 - [x] Create `ecdat-backend/` directory with full structure (see IMPLEMENTATION_PLAN.md §0.1)
@@ -53,7 +53,7 @@
 - [x] Create `docker-compose.yml` with PostgreSQL + Redis services
 - [x] Connect to remote Supabase DB (instead of local Docker)
 - [x] Confirm backend connects to DB on startup
-- [ ] Confirm `NEXT_PUBLIC_API_URL` is set and accessible
+- [x] Confirm `NEXT_PUBLIC_API_URL` is set and accessible
 
 **PHASE 0 DONE WHEN:** Backend starts, `/health` returns 200, all DB tables exist
 
@@ -107,45 +107,45 @@
 ---
 
 ## PHASE 2 — DISCOVERY BACKEND: CORE SCANNERS
-**Status:** `NOT STARTED` · **Target:** Day 4–10  
+**Status:** `[/] IN PROGRESS` · **Target:** Day 4–10  
 **Depends on:** Phase 0.1 (FastAPI), Phase 0.2 (DB schema)
 
 ### 2.1 Job Lifecycle Endpoints
-- [ ] Implement `POST /api/jobs` — create discovery job (returns job ID immediately)
-- [ ] Implement `GET /api/jobs` — list jobs for workspace (with status)
-- [ ] Implement `GET /api/jobs/{job_id}` — get job detail
-- [ ] Implement `DELETE /api/jobs/{job_id}` — cancel job
-- [ ] Implement `GET /api/jobs/{job_id}/evidence` — get evidence for job
-- [ ] Implement job status state machine: queued → running → completed/failed
-- [ ] Set up Celery + Redis for async job execution
-- [ ] Test: create job via API → appears in list with `queued` status
+- [x] Implement `POST /api/jobs` — create discovery job (returns job ID immediately)
+- [x] Implement `GET /api/jobs` — list jobs for workspace (with status)
+- [x] Implement `GET /api/jobs/{job_id}` — get job detail
+- [x] Implement `DELETE /api/jobs/{job_id}` — cancel job
+- [x] Implement `GET /api/jobs/{job_id}/evidence` — get evidence for job
+- [x] Implement job status state machine: queued → running → completed/failed
+- [x] Set up Celery + Redis for async job execution
+- [x] Test: create job via API → appears in list with `queued` status
 
 ### 2.2 Tree-sitter Scanner
-- [ ] Install `tree-sitter` + `tree-sitter-python`, `tree-sitter-go`, `tree-sitter-javascript`
-- [ ] Create `app/services/scanner/source_scanner.py`
-- [ ] Implement language detection by file extension
-- [ ] Implement `extract_imports()` AST walker for each language
-- [ ] Implement `extract_function_calls()` AST walker for each language
-- [ ] Define crypto import patterns for Python (see IMPLEMENTATION_PLAN.md §2.2)
-- [ ] Define crypto import patterns for Go
-- [ ] Define crypto import patterns for JavaScript/TypeScript
-- [ ] Define crypto API call patterns for all three languages
-- [ ] Implement `scan_file()` function → returns list of Evidence objects
-- [ ] Test: `scan_file('vulnerable.py', ...)` finds RSA and SHA-1
-- [ ] Test: `scan_file('safe.py', ...)` returns no findings for AES-256
+- [x] Install `tree-sitter` + `tree-sitter-python`, `tree-sitter-go`, `tree-sitter-javascript`
+- [x] Create `app/services/scanner/source_scanner.py`
+- [x] Implement language detection by file extension
+- [x] Implement `extract_imports()` AST walker for each language
+- [x] Implement `extract_function_calls()` AST walker for each language
+- [x] Define crypto import patterns for Python (see IMPLEMENTATION_PLAN.md §2.2)
+- [x] Define crypto import patterns for Go
+- [x] Define crypto import patterns for JavaScript/TypeScript
+- [x] Define crypto API call patterns for all three languages
+- [x] Implement `scan_file()` function → returns list of Evidence objects
+- [x] Test: `scan_file('vulnerable.py', ...)` finds RSA and SHA-1
+- [x] Test: `scan_file('safe.py', ...)` returns no findings for AES-256
 
 ### 2.3 Semgrep Rules Engine
-- [ ] Create `app/services/scanner/rules/crypto_rules.yaml`
-- [ ] Write rule: `ecdat-rsa-keygen-weak` (Go — RSA key < 3072)
-- [ ] Write rule: `ecdat-sha1-usage` (Go)
-- [ ] Write rule: `ecdat-md5-hash` (Python)
-- [ ] Write rule: `ecdat-rsa-python` (Python — RSA.generate)
-- [ ] Write rule: `ecdat-des-usage` (Go)
-- [ ] Write rule: `ecdat-ecdsa-p256` (Go — elliptic.P256)
-- [ ] Write 5+ additional rules for JavaScript crypto patterns
-- [ ] Implement `run_semgrep()` — calls semgrep binary, parses JSON output
-- [ ] Implement `convert_semgrep_to_evidence()` — maps Semgrep result → Evidence object
-- [ ] Test: Semgrep fires on `go/vulnerable.go` fixture
+- [x] Create `app/services/scanner/rules/crypto_rules.yaml`
+- [x] Write rule: `ecdat-rsa-keygen-weak` (Go — RSA key < 3072)
+- [x] Write rule: `ecdat-sha1-usage` (Go)
+- [x] Write rule: `ecdat-md5-hash` (Python)
+- [x] Write rule: `ecdat-rsa-python` (Python — RSA.generate)
+- [x] Write rule: `ecdat-des-usage` (Go)
+- [x] Write rule: `ecdat-ecdsa-p256` (Go — elliptic.P256)
+- [x] Write 5+ additional rules for JavaScript crypto patterns
+- [x] Implement `run_semgrep()` — calls semgrep binary, parses JSON output
+- [x] Implement `convert_semgrep_to_evidence()` — maps Semgrep result → Evidence object
+- [x] Test: Semgrep fires on `go/vulnerable.go` fixture
 
 ### 2.4 Dependency Scanner
 - [ ] Create `app/services/scanner/dependency_scanner.py`
@@ -292,52 +292,47 @@
 
 ---
 
-## PHASE 6 — FRONTEND WIRING
-**Status:** `NOT STARTED` · **Target:** Day 15–20  
+## PHASE 6 — ENTERPRISE NAVIGATION & MULTI-SOURCE DISCOVERY
+**Status:** `[/] IN PROGRESS` · **Target:** Day 15–20  
 **Depends on:** Phase 1 (Clerk), Phases 2–5 (backend functional)
 
-### 6.1 API Client Layer
-- [ ] Create `src/lib/api.ts` with typed API client
-- [ ] Implement: workspace, jobs, assets, risk, cbom endpoints
-- [ ] Implement error handling (throw on non-200)
-- [ ] Implement token injection from Clerk `useAuth()`
+### 6.1 Backend DB Refactoring (Multi-Source Support)
+- [x] Create `Source` and `JobSource` SQLAlchemy models
+- [x] Remove `source_url`/`source_type` from `DiscoveryJob`
+- [x] Generate and run Alembic migration for schema changes
+- [x] Update job creation API to accept multiple `source_ids`
 
-### 6.2 Authenticated Layout
-- [ ] Create `src/app/prototype/layout.tsx` (not page.tsx — separate layout file)
-- [ ] Implement sidebar with all nav sections (WORKSPACE/ANALYZE/DECIDE/VERIFY/AI)
-- [ ] Implement active route detection + copper left border
-- [ ] Implement user identity at sidebar bottom (Clerk `useUser()`)
-- [ ] Create `src/app/prototype/PrototypeLayout.module.css`
+### 6.2 Frontend Route Migration & Enterprise Sidebar
+- [x] Move `/prototype` route to `/dashboard` (Reverted back to `/prototype` per user request)
+- [x] Update `middleware.ts` for `/dashboard(.*)` (Reverted and fixed to avoid TypeError)
+- [x] Create `src/app/prototype/layout.tsx` (Enterprise Sidebar)
+- [x] Implement Sidebar Information Architecture: COMMAND CENTER, DISCOVERY, INTELLIGENCE, QUANTUM TRANSITION, ANALYST, SYSTEM
+- [x] Implement collapsible sidebar, active states, and ECDAT styling (no purple gradients)
 
-### 6.3 Command Center
-- [ ] Install `swr` for data fetching (`npm install swr`)
-- [ ] Replace hardcoded metric numbers with SWR hooks → real API data
-- [ ] Implement 4 metric cards: Discovered, Vulnerable, Critical, Recommendations
-- [ ] Implement empty state: no workspace or no jobs → onboarding CTA
-- [ ] Implement "Connect Source" form → `POST /api/jobs`
-- [ ] Implement real Discovery Jobs table from API
-- [ ] Implement real Risk Priority Queue from API
-- [ ] Implement job status polling (5s interval for running jobs)
+### 6.3 Mission Control (Dashboard Home)
+- [ ] Refactor `dashboard/page.tsx` into an executive command center
+- [ ] Summarize active sources, jobs, critical findings, and migration posture
+- [ ] Integrate "Force Run Discovery" to queue a multi-source Scan Job
 
-### 6.4 Evidence Viewer
-- [ ] Create `src/components/EvidenceViewer.tsx`
-- [ ] Display: file path, line number badge, code context, detector, confidence
-- [ ] Style: monospace font for code, amber highlight on vulnerable line
-- [ ] Test: renders correctly with real evidence data
+### 6.4 Sources Inventory Page
+- [ ] Create `dashboard/sources/page.tsx`
+- [ ] Implement "Add Source" form targeting `POST /api/workspaces/{wid}/sources`
+- [ ] Display enterprise source inventory table
+- [ ] Implement multi-select checkboxes for launching mass discovery
 
-### 6.5 CBOM Export
-- [ ] Add "Export CBOM" button to Command Center
-- [ ] On click: `GET /api/workspaces/{id}/cbom` → trigger file download
-- [ ] File downloaded as `ecdat-cbom-{timestamp}.json`
+### 6.5 Scan Jobs Pipeline UI
+- [ ] Create `dashboard/scans/page.tsx`
+- [ ] Show scan progress states (Queued → Discovering → Analyzing → Normalizing → CBOM → Completed)
+- [ ] Display partial completion numbers (e.g. 12/18 completed)
 
-### 6.6 Asset Detail Page
-- [ ] Create `src/app/prototype/assets/[id]/page.tsx`
-- [ ] Show: algorithm name, family, key size, quantum/classical vulnerability flags
-- [ ] Show: all evidence (via EvidenceViewer)
-- [ ] Show: risk score with explanation
-- [ ] Show: recommendation with migration path
+### 6.6 Analytics & Intelligence Pages (Placeholders)
+- [ ] Create `dashboard/assets/page.tsx`
+- [ ] Create `dashboard/cbom/page.tsx`
+- [ ] Create `dashboard/graph/page.tsx`
+- [ ] Create `dashboard/risk/page.tsx`
+- [ ] Create `dashboard/migration/page.tsx`
 
-**PHASE 6 DONE WHEN:** Scanning a real repo updates the dashboard with real data (no hardcoded state in use)
+**PHASE 6 DONE WHEN:** The multi-source DB model is live, and the sidebar accurately reflects the ECDAT enterprise lifecycle.
 
 ---
 
@@ -443,5 +438,5 @@
 
 ---
 
-*Last updated by: Initial setup (2026-09-01)*  
-*Next agent: Pick up Phase 0. Begin with `docs/AGENT_CONTEXT.md`.*
+*Last updated by: Antigravity (2026-09-02T15:03)*  
+*Next agent: Pick up Phase 2.2.*

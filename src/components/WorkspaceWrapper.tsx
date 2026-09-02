@@ -1,25 +1,36 @@
 "use client";
 
-import { useEffect, useState, createContext, useContext } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useEffect, useState, createContext, useContext, useRef } from "react";
+import { useUser, useAuth } from "@clerk/nextjs";
+import { fetchWithAuth } from "../lib/api";
 import { motion } from "framer-motion";
 
 export const WorkspaceContext = createContext<any>(null);
 
 export default function WorkspaceWrapper({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [workspace, setWorkspace] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [bootSequence, setBootSequence] = useState<string[]>([]);
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     if (!isLoaded || !user) {
       if (isLoaded && !user) setLoading(false);
       return;
     }
+    
+    // Prevent re-running if already done
+    if (workspace || !loading) return;
+    
+    let isMounted = true;
+    
+    // If it was already started by a strict mode run, don't restart, just let the original finish.
+    // Actually, in strict mode, the original interval was cleared if we had cleanup.
+    // Let's reset hasStartedRef if it's unmounted.
 
-    // Simulate boot sequence for the cool factor
     const sequence = [
       "[SYS] Authenticating Clerk JWT...",
       "[SYS] Identity verified.",
@@ -27,58 +38,72 @@ export default function WorkspaceWrapper({ children }: { children: React.ReactNo
     ];
     
     let i = 0;
+    setBootSequence([]);
+    
     const interval = setInterval(() => {
+      if (!isMounted) return;
       if (i < sequence.length) {
-        setBootSequence(prev => [...prev, sequence[i]]);
+        setBootSequence(prev => {
+          if (prev.includes(sequence[i])) return prev;
+          return [...prev, sequence[i]];
+        });
         i++;
       } else {
         clearInterval(interval);
         
-        fetch("/api/workspace")
-          .then(res => res.json())
+        fetchWithAuth("/api/workspaces/me", getToken)
           .then(data => {
-            if (data?.workspace) {
+            if (!isMounted) return;
+            if (data?.id) {
               setBootSequence(prev => [...prev, "[SYS] Workspace found. Decrypting environment..."]);
-              setTimeout(() => setWorkspace(data.workspace), 800);
+              setTimeout(() => setWorkspace(data), 800);
             } else {
               setBootSequence(prev => [...prev, "[WARN] No active workspace detected. Manual initialization required."]);
             }
           })
           .catch(err => {
+            if (!isMounted) return;
             console.error("Error fetching workspace", err);
-            setBootSequence(prev => [...prev, "[ERR] Connection refused."]);
+            if (err.message && err.message.includes("404")) {
+               setBootSequence(prev => [...prev, "[WARN] No active workspace detected. Manual initialization required."]);
+            } else {
+               setBootSequence(prev => [...prev, "[ERR] Connection refused."]);
+            }
           })
           .finally(() => {
+            if (!isMounted) return;
             setTimeout(() => setLoading(false), 500);
           });
       }
     }, 400);
 
-    return () => clearInterval(interval);
-  }, [user, isLoaded]);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isLoaded]); // Omitting getToken to prevent infinite loops from Clerk's re-renders
 
   const handleCreateWorkspace = async () => {
     setCreating(true);
     setBootSequence(prev => [...prev, "[SYS] Provisioning secure enclave...", "[SYS] Generating canonical CBOM schemas..."]);
     try {
-      const res = await fetch("/api/workspace", {
+      const data = await fetchWithAuth("/api/workspaces", getToken, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: `${user?.firstName || user?.username || 'My'} Workspace` })
       });
-      const data = await res.json();
-      if (data?.workspace) {
+      if (data?.id) {
         setBootSequence(prev => [...prev, "[OK] Enclave established. Redirecting to LatentManifold..."]);
         setTimeout(() => {
-          setWorkspace(data.workspace);
+          setWorkspace(data);
         }, 1200);
       } else {
-        setBootSequence(prev => [...prev, `[ERR] Enclave generation failed: ${data?.error || 'Unknown error'}`]);
+        setBootSequence(prev => [...prev, `[ERR] Enclave generation failed: Unknown error`]);
         setCreating(false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error creating workspace", err);
-      setBootSequence(prev => [...prev, "[ERR] Enclave generation failed."]);
+      setBootSequence(prev => [...prev, `[ERR] Enclave generation failed: ${err.message}`]);
       setCreating(false);
     }
   };

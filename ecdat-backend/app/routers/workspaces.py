@@ -27,17 +27,22 @@ async def create_workspace(
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
-    # Ensure they don't already have one
-    existing = await db.execute(select(Workspace).where(Workspace.clerk_user_id == user_id))
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Workspace already exists for this user")
-    
-    # Force the clerk_user_id to be the authenticated user
-    new_workspace = Workspace(
-        clerk_user_id=user_id,
-        name=workspace_in.name
-    )
-    db.add(new_workspace)
-    await db.commit()
-    await db.refresh(new_workspace)
-    return new_workspace
+    try:
+        # Ensure they don't already have one
+        existing = await db.execute(select(Workspace).where(Workspace.clerk_user_id == user_id))
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Workspace already exists for this user")
+        
+        # Force the clerk_user_id to be the authenticated user
+        new_workspace = Workspace(
+            clerk_user_id=user_id,
+            name=workspace_in.name
+        )
+        db.add(new_workspace)
+        await db.commit()
+        await db.refresh(new_workspace)
+        return new_workspace
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

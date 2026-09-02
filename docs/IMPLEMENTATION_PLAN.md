@@ -1890,6 +1890,47 @@ RETURN path, n ORDER BY n.tier
 
 ---
 
+## MISSION CONTROL ENTERPRISE UI/UX UPGRADE
+
+### Enterprise Command Center
+Mission Control must present ECDAT as an enterprise cryptographic security command center rather than a generic dashboard.
+
+### Cryptographic Posture Storytelling
+Dashboard must communicate:
+Discover → Understand → Assess → Recommend → Migrate → Verify
+
+### Technical Pipeline Visualization
+Represent:
+Source Injection → Discovery Engine → Crypto Detection → Evidence / Normalization → CBOM → Knowledge Graph → Quantum Risk Engine → PQC Engine → AI Analyst → Migration Planner → Verification
+
+### Enterprise Visual Language
+Use the existing ECDAT brand/color system.
+No generic AI gradients or cyberpunk color schemes.
+
+### 3D Infrastructure Visualization
+Introduce purposeful 3D/spatial visualizations for cryptographic infrastructure and dependency topology where technically justified.
+
+### Motion System
+Introduce restrained enterprise-grade motion for:
+scanning, pipeline execution, risk changes, graph traversal, migration progress, verification
+
+### Mission Control Interaction
+Force Run Discovery should visually represent the actual discovery pipeline and update dashboard state.
+
+### Asset Intelligence
+Provide drill-down from high-level posture → asset → evidence → dependency → risk → recommendation → migration → verification.
+
+### Enterprise Security
+Preserve authentication, authorization, tenant isolation, secure data handling and backend enforcement.
+
+### Performance
+3D, animations and visualization must not compromise application performance.
+
+### Accessibility
+Support keyboard navigation, readable contrast, reduced motion and accessible interaction states.
+
+---
+
 ## CROSS-CUTTING CONCERNS
 
 ### Security Requirements (applies to all phases)
@@ -1920,5 +1961,138 @@ RETURN path, n ORDER BY n.tier
 
 ---
 
+## Enterprise Discovery & Navigation Architecture
+
+This section documents the architectural and navigational model for ECDAT's enterprise scale. 
+
+**Conceptual Data Flow**
+`Organization ↓ Workspace ↓ Sources ↓ Scan Jobs ↓ Crypto Assets ↓ CBOM ↓ Knowledge Graph ↓ Risk ↓ PQC ↓ Migration ↓ Verification`
+
+**Supported Enterprise Capabilities:**
+- Single repository scans
+- Multi-repository scans (Mass-selection via checkboxes)
+- Organization-level discovery
+- Multiple source types (Git, Container, Binary, Certificate, TLS, Cloud/KMS)
+- Asynchronous Scan Jobs (Celery/Redis processing in the background)
+- Partial results viewing
+- Scan history and Job retention
+- Source health and continuous re-scanning
+
+**Target Product Information Architecture (Sidebar)**
+- **Mission Control** (`/dashboard`)
+- **DISCOVERY**
+  - Sources
+  - Scan Jobs
+  - Crypto Assets
+  - CBOM Inventory
+- **INTELLIGENCE**
+  - Dependency Graph
+  - Blast Radius
+  - Evidence
+  - Risk & Exposure
+- **QUANTUM TRANSITION**
+  - Quantum Posture
+  - PQC Workbench
+  - Migration Planner
+  - Verification
+- **ANALYST**
+  - AI Analyst
+  - Forecast & Labs
+- **SYSTEM**
+  - Activity
+  - Compliance
+  - Settings
+
+---
+
 *Read `docs/TRACKER.md` for current task completion status.*  
 *Read `docs/AGENT_CONTEXT.md` before beginning any task.*
+
+---
+
+## ADVANCED INTELLIGENCE & QUANTUM TABS IMPLEMENTATION (MATH & MODELS)
+
+To achieve the required enterprise accuracy, the upcoming UI tabs must directly reflect the mathematical models and graph algorithms established in the 22-phase product architecture. 
+
+### INTELLIGENCE TABS
+
+#### 1. Dependency Graph (`/prototype/graph`)
+**Mathematical Model / Graph Theory**: Directed Acyclic Graph (DAG) Traversal via Neo4j
+- **Backend Cypher Model**: `(:Application)-[:USES]->(:Library)-[:IMPLEMENTS]->(:Algorithm)-[:PROTECTS]->(:DataAsset)`
+- **Algorithmic Execution**: The UI renders a topological sort of the graph. When a user queries a vulnerable algorithm (e.g., `RSA:2048`), the backend executes a recursive depth-first traversal `(:Algorithm {canonical: $algo})<-[:IMPLEMENTS|USES*1..4]-(n)` to map all transitive dependencies. 
+
+#### 2. Blast Radius (`/prototype/blast-radius`)
+**Mathematical Model**: Centrality Scoring & Impact Propagation
+- **Algorithmic Execution**: The UI displays the computed "Blast Radius Score". 
+- **Math**: $R_{blast} = \sum_{i=1}^{N} (w_i \times C_i)$ where $N$ is the number of dependent applications, $w_i$ is the weight of the dependency (direct vs transitive), and $C_i$ is the business criticality of application $i$.
+- **UI Element**: An impact-analysis table that recalculates the blast radius score in real-time as the user filters by business unit.
+
+#### 3. Evidence (`/prototype/evidence`)
+**Mathematical Model**: Abstract Syntax Tree (AST) Confidence Scoring
+- **Algorithmic Execution**: Findings are not just regex matches; they are scored by an AST processor.
+- **Math**: $C_{match} \in [0, 1]$. Tree-sitter import match = $0.95$. Tree-sitter API call = $0.90$. Regex fallback = $0.60$.
+- **UI Element**: Code split-pane highlighting the exact AST node (line and column) responsible for the finding, alongside the confidence metric $C_{match}$.
+
+#### 4. Risk & Exposure (`/prototype/risk`)
+**Mathematical Model**: Mosca's Theorem (Inequality)
+- **Math**: The core engine evaluates $X + Y > Z$.
+  - $X$: Security Lifetime of Data (years) — How long the data must remain confidential.
+  - $Y$: Migration Time (years) — Time to fully transition the cryptographic infrastructure.
+  - $Z$: Estimated Time Until CRQC (years) — The Quantum Threat Horizon.
+- **Algorithmic Execution**: If $X + Y > Z$, the asset is marked `CRITICAL` (Harvest-Now-Decrypt-Later window is OPEN). If $(Z - (X+Y)) \le 2$, marked `HIGH`.
+- **UI Element**: A dynamic Mosca calculator where the user can adjust $Z$ via a slider, instantly recalculating the Risk Matrix for the entire enterprise.
+
+---
+
+### QUANTUM TRANSITION TABS
+
+#### 5. Quantum Posture (`/prototype/quantum`)
+**Mathematical Model**: Shor's and Grover's Algorithmic Degradation Models
+- **Math (Shor's Algorithm)**: Solves integer factorization and ECDLP in polynomial time $\mathcal{O}((\log N)^3)$. This completely breaks RSA, DH, and ECDSA.
+- **Math (Grover's Algorithm)**: Provides quadratic speedup $\mathcal{O}(\sqrt{N})$ for unstructured search. This reduces AES-128 effective security to ~64 bits and AES-256 to ~128 bits.
+- **UI Element**: An enterprise dashboard that stratifies assets into `Shor-Vulnerable` (requires asymmetric replacement) and `Grover-Weakened` (requires symmetric key size doubling).
+
+#### 6. PQC Workbench (`/prototype/pqc`)
+**Mathematical Model**: NIST PQC Standard Bandwidth & Latency Benchmarks
+- **Algorithmic Execution**: Maps legacy algorithms to NIST replacements based on function constraints.
+- **Math / Constraints applied in UI**:
+  - **FIPS 203 (ML-KEM-768)**: Key Encapsulation. Public key = 1184B, Ciphertext = 1088B.
+  - **FIPS 204 (ML-DSA-65)**: Digital Signature. Public key = 1952B, Signature = 3309B.
+  - **FIPS 205 (SLH-DSA-128f)**: Hash-based Signature. Signature = 17088B.
+- **UI Element**: An interactive tradeoff calculator. If a user tries to map ECDSA directly to SLH-DSA for IoT devices, the UI calculates the packet fragmentation penalty ($> 17$ KB signature) and restricts the recommendation to ML-DSA.
+
+#### 7. Migration Planner (`/prototype/migration`)
+**Mathematical Model**: Topological Dependency Sort
+- **Algorithmic Execution**: You cannot migrate an application before its underlying library supports PQC. The system applies a topological sort (Kahn's algorithm) to the Knowledge Graph to output a strict migration sequence.
+- **UI Element**: An automated Gantt chart enforcing the topological order: `HSM → Crypto Provider → PKI → Application → Client`.
+
+#### 8. Verification (`/prototype/verification`)
+**Mathematical Model**: Set Theory (CBOM Drift Detection)
+- **Math**: Evaluates the intersection of CBOM snapshots at $t_1$ and $t_2$. $\Delta_{resolved} = CBOM(t_1) \setminus CBOM(t_2)$.
+- **UI Element**: A cryptographic drift diff-viewer proving mathematical eradication of vulnerable assets.
+
+---
+
+### DISCOVERY & SYSTEM TABS
+
+#### 9. Crypto Assets (`/prototype/assets`)
+**Mathematical Model**: OID to Canonical Set Mapping
+- **Math**: Let $A_{raw}$ be the set of discovered strings `{"SHA256", "sha-256", "2.16.840.1.101.3.4.2.1"}`. The normalizer applies a bijection $f: A_{raw} \to A_{canonical}$ to deduplicate into a single entity `SHA-256`.
+- **UI Element**: A data-dense asset grid grouped strictly by $A_{canonical}$.
+
+#### 10. CBOM Inventory (`/prototype/cbom`)
+**Mathematical Model**: CycloneDX v1.6 Standard Schema Validation
+- **UI Element**: A tree-view mapping the enterprise software composition to the CycloneDX schema, exporting the exact NTRO-compliant JSON/XML formats.
+
+#### 11. Activity (`/prototype/activity`)
+**Mathematical Model**: Event Sourcing (Append-only Ledger)
+- **UI Element**: Infinite-scrolling audit ledger of all state mutations in the cryptographic baseline.
+
+#### 12. Compliance (`/prototype/compliance`)
+**Mathematical Model**: Regulatory Mapping Matrix
+- **Math**: Computes compliance scores $S_{CSF}$, $S_{CNSA}$ based on the boolean satisfiability of discovered assets against framework constraints (e.g., CNSA 2.0 requires AES-256, rejects AES-128).
+- **UI Element**: Pass/fail radial charts for auditors.
+
+#### 13. Settings (`/prototype/settings`)
+**Mathematical Model**: RBAC & Global Variables
+- **UI Element**: Interface to manipulate the global variable $Z$ (Threat Horizon) spanning across all Mosca inequalites computed in the system.

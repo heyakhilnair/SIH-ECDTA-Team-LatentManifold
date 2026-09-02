@@ -5,13 +5,48 @@ import { usePathname } from "next/navigation";
 import { SignOutButton } from "@clerk/nextjs";
 import styles from "./Sidebar.module.css";
 
-const navItems = [
-  { name: "Overview", path: "/prototype" },
-  { name: "Discovery", path: "/prototype/discovery" },
-  { name: "Assets", path: "/prototype/assets" },
-  { name: "Risk Assessment", path: "/prototype/risk" },
-  { name: "Remediation", path: "/prototype/remediation" },
-  { name: "Reports", path: "/prototype/reports" },
+const navSections = [
+  {
+    title: "Command Center",
+    items: [
+      { name: "Mission Control", path: "/prototype" },
+    ]
+  },
+  {
+    title: "Discovery",
+    items: [
+      { name: "Sources", path: "/prototype/sources" },
+      { name: "Scan Jobs", path: "/prototype/scans" },
+      { name: "Crypto Assets", path: "/prototype/assets" },
+      { name: "CBOM Inventory", path: "/prototype/cbom" },
+    ]
+  },
+  {
+    title: "Intelligence",
+    items: [
+      { name: "Dependency Graph", path: "/prototype/graph" },
+      { name: "Blast Radius", path: "/prototype/blast-radius" },
+      { name: "Evidence", path: "/prototype/evidence" },
+      { name: "Risk & Exposure", path: "/prototype/risk" },
+    ]
+  },
+  {
+    title: "Quantum Transition",
+    items: [
+      { name: "Quantum Posture", path: "/prototype/quantum" },
+      { name: "PQC Workbench", path: "/prototype/pqc" },
+      { name: "Migration Planner", path: "/prototype/migration" },
+      { name: "Verification", path: "/prototype/verification" },
+    ]
+  },
+  {
+    title: "System",
+    items: [
+      { name: "Activity", path: "/prototype/activity" },
+      { name: "Compliance", path: "/prototype/compliance" },
+      { name: "Settings", path: "/prototype/settings" },
+    ]
+  }
 ];
 
 export default function Sidebar() {
@@ -25,18 +60,23 @@ export default function Sidebar() {
         </div>
       </div>
       <nav className={styles.nav}>
-        {navItems.map((item) => {
-          const isActive = pathname === item.path || (item.path !== "/prototype" && pathname.startsWith(item.path));
-          return (
-            <Link
-              key={item.name}
-              href={item.path}
-              className={`${styles.navItem} ${isActive ? styles.active : ""}`}
-            >
-              {item.name}
-            </Link>
-          );
-        })}
+        {navSections.map((section) => (
+          <div key={section.title}>
+            <div className={styles.navSection}>{section.title}</div>
+            {section.items.map((item) => {
+              const isActive = pathname === item.path || (item.path !== "/prototype" && pathname.startsWith(item.path));
+              return (
+                <Link
+                  key={item.name}
+                  href={item.path}
+                  className={`${styles.navItem} ${isActive ? styles.active : ""}`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
       <div className={styles.footer}>
         <SignOutButton>
