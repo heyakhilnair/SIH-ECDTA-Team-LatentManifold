@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import workspaces, jobs, sources
+from app.routers import workspaces, jobs, sources, cbom
 
 app = FastAPI(title="ECDAT Backend API", version="0.1.0")
 
@@ -15,6 +15,7 @@ app.add_middleware(
 app.include_router(workspaces.router)
 app.include_router(jobs.router)
 app.include_router(sources.router)
+app.include_router(cbom.router)
 
 @app.get("/health")
 async def health_check():

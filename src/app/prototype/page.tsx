@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { fetchWithAuth } from "../../lib/api";
 import { motion } from "framer-motion";
 import { useWorkspace } from "../../components/WorkspaceWrapper";
 import Link from "next/link";
+import PageHeader from "@/components/PageHeader";
 import "./prototype.css";
 
 export default function MissionControl() {
   const { getToken, isLoaded, userId } = useAuth();
+  const { user } = useUser();
   const workspace = useWorkspace();
   
   const [jobs, setJobs] = useState<any[]>([]);
@@ -51,28 +53,121 @@ export default function MissionControl() {
 
   const activeJobsCount = jobs.filter(j => j.status === 'running' || j.status === 'queued').length;
   const completedJobsCount = jobs.filter(j => j.status === 'completed').length;
+  const activeJob = jobs.find(j => j.status === 'running' || j.status === 'queued');
+  const latestCompletedJob = jobs.filter(j => j.status === 'completed').sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())[0];
+  
+  const totalAssets = jobs.reduce((sum, job) => sum + (job.evidence_count || 0), 0);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    if (hour < 21) return "Good Evening";
+    return "Good Night";
+  };
 
   return (
     <div className="ecdat-container">
-      <motion.header 
-        className="ecdat-header"
-        initial={{ opacity: 0, y: -20 }}
+      <PageHeader 
+        breadcrumbs={[{ label: "Command Center" }, { label: "Mission Control" }]}
+        title="Mission Control"
+        description="Enterprise cryptographic discovery and migration posture."
+        actions={
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <Link href="/prototype/sources" className="ecdat-btn" style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}>
+              MANAGE SOURCES
+            </Link>
+            <Link href="/prototype/sources?force=true" className="ecdat-btn" style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", backgroundColor: "var(--color-primary)", color: "white" }}>
+              FORCE RUN DISCOVERY
+            </Link>
+          </div>
+        }
+      />
+
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ delay: 0.1 }}
+        style={{ 
+          backgroundColor: "#fff", 
+          border: "1px solid #eaeaea", 
+          borderRadius: "8px", 
+          padding: "1.5rem", 
+          marginBottom: "2rem",
+          display: "flex",
+          gap: "2rem",
+          flexWrap: "wrap",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+        }}
       >
-        <div>
-          <h1 style={{ fontSize: "2.25rem", marginBottom: "0.25rem" }}>Mission Control</h1>
-          <p>Enterprise cryptographic discovery and migration posture.</p>
+        <div style={{ flex: "2 1 400px" }}>
+          <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#111", marginBottom: "1rem", fontFamily: "var(--font-display)" }}>
+            {getGreeting()}, {user?.firstName || "Analyst"}.
+          </h2>
+          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.5rem" }}>
+            Today's Cryptographic Report
+          </div>
+          <div style={{ display: "flex", gap: "1.5rem", marginBottom: "1rem", borderBottom: "1px solid #eaeaea", paddingBottom: "1rem" }}>
+            <div>
+              <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111" }}>{sources.length}</div>
+              <div style={{ fontSize: "0.75rem", color: "#666" }}>Repositories Scanned</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111" }}>{totalAssets}</div>
+              <div style={{ fontSize: "0.75rem", color: "#666" }}>New Assets</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#b95532" }}>0 <span style={{fontSize:"0.6rem", fontWeight: "normal"}}>[DEMO]</span></div>
+              <div style={{ fontSize: "0.75rem", color: "#666" }}>Critical Findings</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111" }}>{completedJobsCount}</div>
+              <div style={{ fontSize: "0.75rem", color: "#666" }}>Scans Completed</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "2rem", fontSize: "0.8rem", color: "#666" }}>
+            <span><strong style={{ color: "#333" }}>Last Discovery:</strong> {latestCompletedJob ? new Date(latestCompletedJob.updated_at).toLocaleTimeString() : "N/A"}</span>
+            <span><strong style={{ color: "#333" }}>Posture Change:</strong> <span style={{ color: "green" }}>+4% improved [DEMO]</span></span>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Link href="/prototype/sources" className="ecdat-btn" style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}>
-            MANAGE SOURCES
-          </Link>
-          <Link href="/prototype/sources?force=true" className="ecdat-btn" style={{ padding: "0.5rem 1rem", fontSize: "0.85rem", backgroundColor: "var(--color-primary)", color: "white" }}>
-            FORCE RUN DISCOVERY
-          </Link>
+
+        <div style={{ flex: "1 1 250px", borderLeft: "1px solid #eaeaea", paddingLeft: "2rem" }}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "0.75rem" }}>
+            {activeJob ? "Discovery In Progress" : "Today's Discovery"}
+          </div>
+          {activeJob ? (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#b95532", display: "inline-block", animation: "pulse 2s infinite" }}></span>
+                <span style={{ fontWeight: 600, color: "#111", fontSize: "0.9rem" }}>Enterprise Scan #{activeJob.id.substring(0,6)}</span>
+              </div>
+              <div style={{ fontSize: "0.85rem", color: "#555", marginBottom: "0.25rem" }}>
+                Analyzing {sources.length} repositories
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#888" }}>
+                Current stage: Crypto Detection
+              </div>
+            </div>
+          ) : latestCompletedJob ? (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                <span style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#10b981", display: "inline-block" }}></span>
+                <span style={{ fontWeight: 600, color: "#111", fontSize: "0.9rem" }}>Enterprise Scan #{latestCompletedJob.id.substring(0,6)}</span>
+              </div>
+              <div style={{ fontSize: "0.85rem", color: "#555", marginBottom: "0.25rem" }}>
+                {sources.length} / {sources.length} repositories
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#888" }}>
+                Completed {new Date(latestCompletedJob.updated_at).toLocaleTimeString()}
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: "0.85rem", color: "#888", fontStyle: "italic" }}>
+              No discovery tasks run today.
+            </div>
+          )}
         </div>
-      </motion.header>
+      </motion.div>
           
       <motion.div 
         variants={containerVariants}

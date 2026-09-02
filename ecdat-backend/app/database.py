@@ -5,6 +5,8 @@ from .config import settings
 
 import uuid
 
+from sqlalchemy import NullPool
+
 engine = create_async_engine(
     settings.database_url, 
     echo=True if settings.environment == "development" else False,

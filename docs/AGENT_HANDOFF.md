@@ -45,6 +45,7 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - Clerk Auth (Phase 1)
 - Job Lifecycle API & Celery Scaffold (Phase 2.1)
 - Frontend Enterprise Route Migration & Advanced UI specs (Phase 6)
+- Enterprise Product Shell (Phase 6.3) — includes Topbar, Sidebar, PageHeader, CommandPalette search, and Settings UI
 
 **Not yet built:**
 - Tree-sitter Scanners (Phase 2.2)

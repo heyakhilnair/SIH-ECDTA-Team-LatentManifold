@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import delete
@@ -19,7 +19,7 @@ from app.services.scanner.orchestrator import run_discovery_job
 router = APIRouter(prefix="/api", tags=["Jobs"])
 
 @router.post("/workspaces/{wid}/jobs", response_model=JobStatus)
-async def create_job(wid: UUID, job_in: JobCreate, db: AsyncSession = Depends(get_db)):
+async def create_job(wid: UUID, job_in: JobCreate, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     # 1. Verify workspace exists
     result = await db.execute(select(Workspace).where(Workspace.id == wid))
     workspace = result.scalars().first()
@@ -43,9 +43,14 @@ async def create_job(wid: UUID, job_in: JobCreate, db: AsyncSession = Depends(ge
     await db.commit()
     await db.refresh(job)
 
-    # 4. Trigger Celery Task
-    # Assuming Celery task now takes (job_id, workspace_id, [source_ids])
-    run_discovery_job.delay(str(job.id), str(wid), [str(sid) for sid in job_in.source_ids])
+    # 4. Trigger Background Task
+    # Fetch actual source URLs from the database
+    from app.models.source import Source
+    sources_result = await db.execute(select(Source).where(Source.id.in_(job_in.source_ids)))
+    sources = sources_result.scalars().all()
+    source_urls = [s.configuration.get("url") for s in sources if s.configuration and s.configuration.get("url")]
+    
+    background_tasks.add_task(run_discovery_job, str(job.id), str(wid), source_urls)
 
     return JobStatus(
         id=job.id,
@@ -104,8 +109,8 @@ async def cancel_job(job_id: UUID, db: AsyncSession = Depends(get_db)):
         
     job.status = "cancelled"
     await db.commit()
-    # Note: Actually revoking a celery task requires celery.control.revoke(task_id, terminate=True)
-    # We would need to store the celery task_id on the job model to do that.
+    # Note: BackgroundTasks cannot be easily revoked once submitted. 
+    # The orchestrator could check DB status periodically, but for MVP this just updates the DB state.
     return None
 
 @router.get("/jobs/{job_id}/evidence")
@@ -124,7 +129,7 @@ async def get_job_logs(job_id: UUID, db: AsyncSession = Depends(get_db)):
     # Mocking some logs based on status
     logs = [f"Job {job.status}"]
     if job.status == "queued":
-        logs.append("Waiting for available celery worker...")
+        logs.append("Waiting in background task queue...")
     elif job.status == "running":
         logs.append("Cloning repository...")
         logs.append("Running tree-sitter scan...")

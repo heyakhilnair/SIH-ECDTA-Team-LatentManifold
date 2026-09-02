@@ -21,60 +21,33 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const commands: CommandItem[] = [
-    {
-      id: "nav-home",
-      category: "NAVIGATION",
-      title: "Go to Home Portal",
-      subtitle: "Return to the main landing portal page",
-      action: () => router.push("/"),
-      shortcut: "G H"
-    },
-    {
-      id: "nav-prototype",
-      category: "NAVIGATION",
-      title: "Go to Command Center Dashboard",
-      subtitle: "Analyze CBOM inventory and systems forecasts",
-      action: () => router.push("/prototype"),
-      shortcut: "G D"
-    },
-    {
-      id: "nav-evidence",
-      category: "NAVIGATION",
-      title: "Go to Research Evidence Room",
-      subtitle: "Inspect the 22-phase academic transition matrix",
-      action: () => router.push("/evidence"),
-      shortcut: "G E"
-    },
-    {
-      id: "nav-presentation",
-      category: "NAVIGATION",
-      title: "Go to Presentation Slides",
-      subtitle: "View the official 6-slide deck companion",
-      action: () => router.push("/presentation"),
-      shortcut: "G P"
-    },
-    {
-      id: "action-rescan",
-      category: "ACTIONS",
-      title: "Trigger Ingestion Re-Scan",
-      subtitle: "Force a metadata collection run on dashboard assets",
-      action: () => {
-        router.push("/prototype");
-        // Custom event to communicate scan trigger
-        window.dispatchEvent(new Event("trigger-ecdat-rescan"));
-      },
-      shortcut: "R S"
-    },
-    {
-      id: "action-quby",
-      category: "ACTIONS",
-      title: "Ask Quby for status update",
-      subtitle: "Open the Quantum Sentinel speech notification card",
-      action: () => {
-        window.dispatchEvent(new Event("trigger-quby-speech"));
-      },
-      shortcut: "Q A"
-    }
+    // ALGORITHMS
+    { id: "algo-1", category: "ALGORITHMS", title: "RSA-2048", subtitle: "Cryptographic Algorithm", action: () => router.push("/prototype/assets"), shortcut: "" },
+    { id: "algo-2", category: "ALGORITHMS", title: "SHA-1", subtitle: "Cryptographic Hash Function", action: () => router.push("/prototype/assets"), shortcut: "" },
+    
+    // CRYPTO ASSETS
+    { id: "asset-1", category: "CRYPTO ASSETS", title: "ASSET-001", subtitle: "src/auth/token.go • Production", action: () => router.push("/prototype/assets/ASSET-001"), shortcut: "" },
+    { id: "asset-2", category: "CRYPTO ASSETS", title: "ASSET-018", subtitle: "config/crypto.yaml • Production", action: () => router.push("/prototype/assets/ASSET-018"), shortcut: "" },
+    
+    // REPOSITORIES
+    { id: "repo-1", category: "REPOSITORIES", title: "auth-service", subtitle: "GitHub • 12 active findings", action: () => router.push("/prototype/sources"), shortcut: "" },
+    { id: "repo-2", category: "REPOSITORIES", title: "payment-gateway", subtitle: "GitHub • 4 active findings", action: () => router.push("/prototype/sources"), shortcut: "" },
+    
+    // FINDINGS
+    { id: "finding-1", category: "FINDINGS", title: "RSA-2048 in src/auth/token.go", subtitle: "High severity • Discovered today", action: () => router.push("/prototype/evidence"), shortcut: "" },
+    
+    // SCAN JOBS
+    { id: "scan-1", category: "SCAN JOBS", title: "Enterprise Scan #1042", subtitle: "Completed 18 min ago", action: () => router.push("/prototype/scans"), shortcut: "" },
+    
+    // JUMP TO
+    { id: "nav-mc", category: "JUMP TO", title: "Mission Control", subtitle: "Dashboard overview", action: () => router.push("/prototype"), shortcut: "G M" },
+    { id: "nav-cbom", category: "JUMP TO", title: "CBOM Inventory", subtitle: "CycloneDX cryptographic bills of material", action: () => router.push("/prototype/cbom"), shortcut: "G C" },
+    { id: "nav-graph", category: "JUMP TO", title: "Dependency Graph", subtitle: "Blast radius analysis", action: () => router.push("/prototype/graph"), shortcut: "G G" },
+    
+    // ACTIONS
+    { id: "action-run", category: "ACTIONS", title: "Run Discovery", subtitle: "Start a new scan job", action: () => {}, shortcut: "R D" },
+    { id: "action-add", category: "ACTIONS", title: "Add Source", subtitle: "Connect a repository or registry", action: () => {}, shortcut: "A S" },
+    { id: "action-export", category: "ACTIONS", title: "Export CBOM", subtitle: "Download CycloneDX JSON", action: () => {}, shortcut: "E C" },
   ];
 
   useEffect(() => {

@@ -17,6 +17,31 @@
 
 ---
 
+## ENTERPRISE PRODUCT SHELL (PHASE 6.3)
+**Status:** `[x] COMPLETED`
+- [x] Audit current application shell
+- [x] Implement organization context
+- [x] Implement workspace context
+- [x] Upgrade enterprise sidebar
+- [x] Implement global top bar
+- [x] Implement organization switcher
+- [x] Implement workspace switcher
+- [x] Implement global search
+- [x] Implement command palette
+- [x] Implement global New actions
+- [x] Implement notifications
+- [x] Implement active scan indicator
+- [x] Implement user menu
+- [x] Implement breadcrumbs
+- [x] Implement page header system
+- [x] Establish Settings architecture
+- [x] Integrate enterprise authorization
+- [x] Integrate shell with existing ECDAT pages
+- [x] Validate multi-source context
+- [x] Update documentation
+
+---
+
 ## PHASE 0 — FOUNDATION & ENVIRONMENT
 **Status:** `[x] COMPLETED` · **Target:** Day 1–3
 
@@ -148,94 +173,94 @@
 - [x] Test: Semgrep fires on `go/vulnerable.go` fixture
 
 ### 2.4 Dependency Scanner
-- [ ] Create `app/services/scanner/dependency_scanner.py`
-- [ ] Implement `parse_npm_manifest()` — reads `package.json`
-- [ ] Implement `parse_pip_manifest()` — reads `requirements.txt`
-- [ ] Implement `parse_go_manifest()` — reads `go.mod`
-- [ ] Define `CRYPTO_PACKAGES` registry (see IMPLEMENTATION_PLAN.md §2.4)
-- [ ] Implement manifest discovery (`find_manifests()`)
-- [ ] Test: `parse_npm_manifest()` on `package.json` with `jsonwebtoken` returns crypto finding
-- [ ] Test: `parse_pip_manifest()` on `requirements.txt` with `pycryptodome` returns finding
+- [x] Create `app/services/scanner/dependency_scanner.py`
+- [x] Implement `parse_npm_manifest()` — reads `package.json`
+- [x] Implement `parse_pip_manifest()` — reads `requirements.txt`
+- [x] Implement `parse_go_manifest()` — reads `go.mod`
+- [x] Define `CRYPTO_PACKAGES` registry (see IMPLEMENTATION_PLAN.md §2.4)
+- [x] Implement manifest discovery (`find_manifests()`)
+- [x] Test: `parse_npm_manifest()` on `package.json` with `jsonwebtoken` returns crypto finding
+- [x] Test: `parse_pip_manifest()` on `requirements.txt` with `pycryptodome` returns finding
 
 ### 2.5 Certificate Scanner
-- [ ] Create `app/services/scanner/certificate_scanner.py`
-- [ ] Implement `scan_certificate_url()` — SSL connect, extract x509
-- [ ] Implement `scan_cert_file()` — parse `.pem`/`.crt` files
-- [ ] Extract: subject, issuer, signature algorithm, key type, key size, expiry, SAN domains
-- [ ] Implement `is_quantum_vulnerable_cert()` — checks algorithm type
-- [ ] Test: scan `https://example.com` → returns certificate with RSA key size
+- [x] Create `app/services/scanner/certificate_scanner.py`
+- [x] Implement `scan_certificate_url()` — SSL connect, extract x509
+- [x] Implement `scan_cert_file()` — parse `.pem`/`.crt` files
+- [x] Extract: subject, issuer, signature algorithm, key type, key size, expiry, SAN domains
+- [x] Implement `is_quantum_vulnerable_cert()` — checks algorithm type
+- [x] Test: scan `https://example.com` → returns certificate with RSA key size
 
 ### 2.6 Git Repository Cloner
-- [ ] Install `gitpython`
-- [ ] Create `app/services/scanner/git_cloner.py`
-- [ ] Implement `clone_and_scan()` — shallow clone to temp dir
-- [ ] Implement URL validation (https:// only for MVP)
-- [ ] Implement `cleanup_scan_workspace()` — always deletes temp dir
-- [ ] Test: clone real public repo → temp dir contains expected files
+- [x] Install `gitpython`
+- [x] Create `app/services/scanner/git_cloner.py`
+- [x] Implement `clone_and_scan()` — shallow clone to temp dir
+- [x] Implement URL validation (https:// only for MVP)
+- [x] Implement `cleanup_scan_workspace()` — always deletes temp dir
+- [x] Test: clone real public repo → temp dir contains expected files
 
 ### 2.7 Scanner Orchestrator
-- [ ] Create `app/services/scanner/orchestrator.py`
-- [ ] Implement `run_discovery_job` Celery task
-- [ ] Integrate: clone → scan files → run semgrep → scan deps → scan certs
-- [ ] Implement batch evidence persistence
-- [ ] Implement error handling: per-file errors don't abort whole job
-- [ ] Implement final status update on completion or failure
-- [ ] Test: full scan of demo repo → evidence in database
+- [x] Create `app/services/scanner/orchestrator.py`
+- [x] Implement `run_discovery_job` Celery task
+- [x] Integrate: clone → scan files → run semgrep → scan deps → scan certs
+- [x] Implement batch evidence persistence
+- [x] Implement error handling: per-file errors don't abort whole job
+- [x] Implement final status update on completion or failure
+- [x] Test: full scan of demo repo → evidence in database
 
 **PHASE 2 DONE WHEN:** Real scan of a GitHub repo produces real evidence in the `evidence` table
 
 ---
 
 ## PHASE 3 — NORMALIZATION ENGINE + CBOM
-**Status:** `NOT STARTED` · **Target:** Day 8–12  
+**Status:** `[x] COMPLETED` · **Target:** Day 8–12  
 **Depends on:** Phase 2 (evidence in database)
 
 ### 3.1 Algorithm Alias Registry
-- [ ] Create `app/services/normalizer/alias_registry.py`
-- [ ] Populate `ALGORITHM_ALIASES` with all known variants (see IMPLEMENTATION_PLAN.md §3.1)
-- [ ] Include OID-to-name mappings for major algorithms
-- [ ] Implement `normalize_algorithm(raw: str) -> str`
-- [ ] Test: all alias variants in §3.1 resolve to correct canonical form
-- [ ] Test: unknown strings pass through as-is (no crash)
+- `[x]` Create `app/services/normalizer/alias_registry.py`
+- `[x]` Populate `ALGORITHM_ALIASES` with all known variants (see IMPLEMENTATION_PLAN.md §3.1)
+- `[x]` Include OID-to-name mappings for major algorithms
+- `[x]` Implement `normalize_algorithm(raw: str) -> str`
+- `[x]` Test: all alias variants in §3.1 resolve to correct canonical form
+- `[x]` Test: unknown strings pass through as-is (no crash)
 
 ### 3.2 Quantum Vulnerability Lookup
-- [ ] Create `app/services/normalizer/vulnerability_registry.py`
-- [ ] Populate `QUANTUM_VULNERABLE` set
-- [ ] Populate `CLASSICALLY_VULNERABLE` dict with CVE/attack notes
-- [ ] Populate `GROVER_WEAKENED` dict
-- [ ] Implement `is_quantum_vulnerable(canonical, key_size) -> bool`
-- [ ] Implement `is_classically_vulnerable(canonical, key_size) -> bool`
-- [ ] Test: RSA, ECDSA, ECDH → quantum vulnerable = True
-- [ ] Test: SHA-1, MD5 → classical vulnerable = True
-- [ ] Test: AES-256 → both = False
-- [ ] Test: ML-KEM-768 → both = False
+- `[x]` Create `app/services/normalizer/vulnerability_registry.py`
+- `[x]` Populate `QUANTUM_VULNERABLE` set
+- `[x]` Populate `CLASSICALLY_VULNERABLE` dict with CVE/attack notes
+- `[x]` Populate `GROVER_WEAKENED` dict
+- `[x]` Implement `is_quantum_vulnerable(canonical, key_size) -> bool`
+- `[x]` Implement `is_classically_vulnerable(canonical, key_size) -> bool`
+- `[x]` Test: RSA, ECDSA, ECDH → quantum vulnerable = True
+- `[x]` Test: SHA-1, MD5 → classical vulnerable = True
+- `[x]` Test: AES-256 → both = False
+- `[x]` Test: ML-KEM-768 → both = False
 
 ### 3.3 Asset Resolver
-- [ ] Create `app/services/normalizer/asset_resolver.py`
-- [ ] Implement `extract_algorithm_from_evidence(evidence) -> str`
-- [ ] Implement `extract_key_size(evidence) -> Optional[int]`
-- [ ] Implement `resolve_evidence_to_asset(evidence, workspace_id) -> CryptoAsset`
-- [ ] Implement upsert logic (find or create canonical asset)
-- [ ] Implement evidence → asset linking
-- [ ] Test: two pieces of evidence for the same RSA-2048 → one canonical asset
-- [ ] Test: SHA256 + SHA-256 + sha256 → one canonical asset `SHA-256`
+- `[x]` Create `app/services/normalizer/asset_resolver.py`
+- `[x]` Implement `extract_algorithm_from_evidence(evidence) -> str`
+- `[x]` Implement `extract_key_size(evidence) -> Optional[int]`
+- `[x]` Implement `resolve_evidence_to_asset(evidence, workspace_id) -> CryptoAsset`
+- `[x]` Implement upsert logic (find or create canonical asset)
+- `[x]` Implement evidence → asset linking
+- `[x]` Test: two pieces of evidence for the same RSA-2048 → one canonical asset
+- `[x]` Test: SHA256 + SHA-256 + sha256 → one canonical asset `SHA-256`
 
 ### 3.4 CycloneDX CBOM Generator
-- [ ] Create `app/services/cbom_generator.py`
-- [ ] Implement `generate_cyclonedx_cbom(assets, workspace, job) -> dict`
-- [ ] Include all required CycloneDX v1.6 fields (see IMPLEMENTATION_PLAN.md §3.4)
-- [ ] Include evidence occurrences (file + line) per component
-- [ ] Include ECDAT-specific properties (`ecdat:quantumVulnerable`, etc.)
-- [ ] Implement `POST /api/workspaces/{id}/cbom/generate` → trigger CBOM generation
-- [ ] Implement `GET /api/workspaces/{id}/cbom` → return latest CBOM JSON
-- [ ] Validate output against CycloneDX schema v1.6 (use `cyclonedx-python-lib` or manual validation)
-- [ ] Test: generated CBOM is valid CycloneDX JSON
+- `[x]` Create `app/services/cbom_generator.py`
+- `[x]` Implement `generate_cyclonedx_cbom(assets, workspace, job) -> dict`
+- `[x]` Include all required CycloneDX v1.6 fields (see IMPLEMENTATION_PLAN.md §3.4)
+- `[x]` Include evidence occurrences (file + line) per component
+- `[x]` Include ECDAT-specific properties (`ecdat:quantumVulnerable`, etc.)
+- `[x]` Implement `POST /api/workspaces/{id}/cbom/generate` → trigger CBOM generation
+- `[x]` Implement `GET /api/workspaces/{id}/cbom` → return latest CBOM JSON
+- `[x]` Validate output against CycloneDX schema v1.6 (use `cyclonedx-python-lib` or manual validation)
+- `[x]` Test: generated CBOM is valid CycloneDX JSON
 
 ### 3.5 Normalization Pipeline Integration
-- [ ] Add normalization step to scanner orchestrator (after evidence persistence)
-- [ ] Run `resolve_evidence_to_asset()` on all evidence after each scan
-- [ ] Trigger CBOM generation after normalization completes
-- [ ] Test: end-to-end: scan → evidence → normalize → assets → CBOM
+- `[x]` Add normalization step to scanner orchestrator (after evidence persistence)
+- `[x]` Run `resolve_evidence_to_asset()` on all evidence after each scan
+- `[x]` Trigger CBOM generation after normalization completes
+- `[x]` Test: end-to-end: scan → evidence → normalize → assets → CBOM
 
 **PHASE 3 DONE WHEN:** Scan produces canonical assets with correct normalization, CBOM passes schema validation
 

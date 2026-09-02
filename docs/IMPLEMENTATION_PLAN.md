@@ -25,6 +25,34 @@
 
 ---
 
+# Enterprise Product Shell
+
+## Global Shell
+- Top Bar, Sidebar, Breadcrumbs, Page Header
+- Global Search, Command Palette, Notifications, User Menu
+
+## Organization Model
+Organization -> Workspace -> Sources -> Scan Jobs
+
+> **Note on Dynamic Management (Phase 6.4):**
+> Currently, the UI uses static placeholders for the Organization name and the other available workspaces (e.g., "Staging", "Security Research") in the Topbar dropdown. In the upcoming phases, the Organization and Workspace switcher must be made fully dynamic. This involves:
+> 1. Activating Clerk's native Organization feature and mapping it to the backend, OR creating a native `organizations` table in PostgreSQL.
+> 2. Building a backend endpoint (e.g., `GET /api/workspaces`) to fetch all workspaces the user has access to, and populating the Topbar dropdown with this real data instead of static placeholders.
+
+## Organization Features
+- members, teams, roles, permissions, workspaces, integrations, policies, audit
+
+## Global Search
+- assets, repositories, sources, scan jobs, algorithms, findings, migration tasks
+
+## Global Operations
+- Add Source, Run Discovery, Create Migration Plan, Export CBOM
+
+## Enterprise Requirements
+- tenant/workspace isolation, RBAC, secure auth, server-side auth, auditability, performance, accessibility
+
+---
+
 ## PHASE 0 — FOUNDATION & ENVIRONMENT
 **Duration:** Day 1–3  
 **Goal:** Project scaffolding, database schema, environment configuration  

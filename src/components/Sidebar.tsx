@@ -40,6 +40,13 @@ const navSections = [
     ]
   },
   {
+    title: "Analyst",
+    items: [
+      { name: "AI Analyst", path: "/prototype/analyst" },
+      { name: "Forecast & Labs", path: "/prototype/labs" },
+    ]
+  },
+  {
     title: "System",
     items: [
       { name: "Activity", path: "/prototype/activity" },
