@@ -449,14 +449,14 @@
 
 | Phase | Name | Status | Blocker |
 |-------|------|--------|---------|
-| 0 | Foundation & Environment | `[ ] NOT STARTED` | — |
-| 1 | Clerk Authentication | `[ ] NOT STARTED` | Phase 0.3 |
-| 2 | Discovery Backend | `[ ] NOT STARTED` | Phase 0.1, 0.2 |
-| 3 | Normalization + CBOM | `[ ] NOT STARTED` | Phase 2 |
+| 0 | Foundation & Environment | `[x] COMPLETED` | — |
+| 1 | Clerk Authentication | `[x] COMPLETED` | — |
+| 2 | Discovery Backend | `[x] COMPLETED` | — |
+| 3 | Normalization + CBOM | `[x] COMPLETED` | — |
 | 4 | Quantum Risk Engine | `[x] COMPLETED` | — |
 | 5 | PQC Recommendation | `[x] COMPLETED` | — |
-| 6 | Frontend Wiring | `[ ] NOT STARTED` | Phase 1, 2-5 |
-| 7 | Testing + Demo | `[ ] NOT STARTED` | Phase 2-6 |
+| 6 | Frontend Wiring & Dashboard | `[/] IN PROGRESS` | — |
+| 7 | Testing + Demo | `[ ] NOT STARTED` | Phase 6 |
 | 8 | AI Analyst | `[~] DEFERRED` | Phase 6 |
 | 9 | Knowledge Graph | `[~] DEFERRED` | Phase 6 |
 | 10 | Enterprise | `[~] DEFERRED` | Phase 6 |

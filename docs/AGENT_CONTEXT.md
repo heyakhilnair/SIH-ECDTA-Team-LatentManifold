@@ -77,8 +77,8 @@ SIH-ECDTA-Team-LatentManifold/
 ├── ECDTA.md                      ← Master PRD (EXISTS)
 ├── AGENTS.md                     ← MANDATORY Next.js version rules (EXISTS)
 ├── package.json                  ← Next.js deps (EXISTS)
-├── ecdat-backend/                ← TO CREATE (Phase 0)
-└── docker-compose.yml            ← TO CREATE (Phase 0)
+├── ecdat-backend/                ← FastAPI Backend (EXISTS)
+└── docker-compose.yml            ← Docker Compose (EXISTS)
 ```
 
 ---

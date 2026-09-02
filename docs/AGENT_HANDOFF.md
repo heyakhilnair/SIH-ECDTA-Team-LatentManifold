@@ -74,7 +74,7 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 
 ## THE COMPLETE 10-PHASE BUILD PLAN
 
-### Phase 0 — Foundation & Environment (START HERE)
+### Phase 0 — Foundation & Environment [✅ COMPLETED]
 **Goal:** Backend scaffold + DB schema + Docker local dev  
 **Tasks (check `docs/TRACKER.md` for details):**
 - Create `ecdat-backend/` FastAPI project with full directory structure
@@ -83,27 +83,27 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - Create `.env.local` for Next.js and `.env` for backend
 - `GET /health` endpoint returning `{"status": "ok"}`
 
-### Phase 1 — Clerk Authentication
+### Phase 1 — Clerk Authentication [✅ COMPLETED]
 **Goal:** Auth protecting all `/prototype/*` routes  
 **Tasks:** Install @clerk/nextjs, create middleware.ts, custom split-panel sign-in page (ivory left, white right, copper primary color #B95532), workspace creation on first login
 
-### Phase 2 — Discovery Backend: Core Scanners
+### Phase 2 — Discovery Backend: Core Scanners [✅ COMPLETED]
 **Goal:** Real evidence from real source code  
 **Tasks:** Job lifecycle API (POST/GET/DELETE), Tree-sitter scanner (Python/Go/JS), Semgrep rules (6+ crypto rules), Dependency scanner (package.json, requirements.txt, go.mod), Certificate scanner (x509), Git cloner, Celery orchestrator
 
-### Phase 3 — Normalization Engine + CBOM
+### Phase 3 — Normalization Engine + CBOM [✅ COMPLETED]
 **Goal:** Raw evidence → canonical assets → CycloneDX CBOM  
 **Tasks:** Algorithm alias registry (100+ variants → canonical form), Quantum vulnerability registry, Asset resolver (upsert deduplication), CycloneDX v1.6 CBOM generator
 
-### Phase 4 — Quantum Risk Engine
+### Phase 4 — Quantum Risk Engine [✅ COMPLETED]
 **Goal:** Every asset gets a multi-dimensional risk score  
 **Tasks:** Mosca calculator (X + Y > Z), composite risk from: quantum exposure + classical risk + business criticality + data lifetime + migration complexity, `/risk/summary` endpoint
 
-### Phase 5 — PQC Recommendation Engine
+### Phase 5 — PQC Recommendation Engine [✅ COMPLETED]
 **Goal:** Every vulnerable asset gets a ranked PQC recommendation  
 **Tasks:** Recommendation rule table (RSA→ML-KEM-768, SHA-1→SHA-256, etc.), constraint-aware ranking, NIST standards citations (FIPS 203/204/205), safe-asset detection (no recommendation for AES-256)
 
-### Phase 6 — Frontend Wiring & UI/UX Upgrade
+### Phase 6 — Frontend Wiring & UI/UX Upgrade [IN PROGRESS]
 **Goal:** Replace hardcoded state with API data & build Enterprise Command Center  
 **Tasks:** API client layer, authenticated sidebar layout, Command Center with SWR hooks, Evidence Viewer, CBOM export, Asset Detail, job polling, Enterprise UI/UX upgrade (3D topology, technical pipeline visualization, storytelling flow)
 
