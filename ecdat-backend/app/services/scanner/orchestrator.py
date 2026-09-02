@@ -146,10 +146,18 @@ async def run_discovery_job(job_id: str, workspace_id: str, source_urls: list):
             evidence_rows = evidence_result.scalars().all()
             
             # 2. Normalize and resolve each to CryptoAssets
+            assets_to_risk = set()
             for evidence in evidence_rows:
-                await resolve_evidence_to_asset(session, evidence)
+                asset = await resolve_evidence_to_asset(session, evidence)
+                assets_to_risk.add(asset)
                 
-            # 3. Generate CBOM for the entire workspace
+            # 3. Compute Risk for all discovered assets
+            print(f"[Orchestrator] Computing risk for {len(assets_to_risk)} assets...")
+            from app.services.risk_engine import compute_asset_risk
+            for asset in assets_to_risk:
+                await compute_asset_risk(session, asset)
+                
+            # 4. Generate CBOM for the entire workspace
             print(f"[Orchestrator] Generating CBOM for workspace...")
             assets_query = select(CryptoAsset).where(CryptoAsset.workspace_id == workspace_id)
             assets_result = await session.execute(assets_query)

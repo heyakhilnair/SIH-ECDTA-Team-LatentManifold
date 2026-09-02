@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-02 (Currently on Phase 2.2)
+**Updated:** 2026-09-02 (Phase 4 complete — next: Phase 5)
 
 ---
 
@@ -83,7 +83,7 @@ SIH-ECDTA-Team-LatentManifold/
 
 ---
 
-## CURRENT STATE (AS OF 2026-09-01)
+## CURRENT STATE (AS OF 2026-09-02)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
@@ -91,13 +91,18 @@ SIH-ECDTA-Team-LatentManifold/
 | Evidence room (`/evidence`) | ✅ COMPLETE | Static page, expand content later |
 | Presentation mode (`/presentation`) | ✅ COMPLETE | Static SIH slides |
 | Prototype dashboard (`/prototype`) | ⚠️ SYNTHETIC | All data hardcoded — Phase 6 rewires this |
-| Clerk authentication | ❌ NOT DONE | Phase 1 |
-| FastAPI backend | ❌ NOT DONE | Phase 0 |
-| PostgreSQL schema | ❌ NOT DONE | Phase 0 |
-| Source code scanner | ❌ NOT DONE | Phase 2 |
-| Normalization engine | ❌ NOT DONE | Phase 3 |
-| Risk engine | ❌ NOT DONE | Phase 4 |
-| PQC recommendations | ❌ NOT DONE | Phase 5 |
+| Clerk authentication | ✅ COMPLETE | Phase 1 done |
+| FastAPI backend | ✅ COMPLETE | Phase 0 done |
+| PostgreSQL schema | ✅ COMPLETE | Phase 0 done |
+| Job lifecycle API + Celery | ✅ COMPLETE | Phase 2.1 done |
+| Source code scanner (Tree-sitter + Semgrep) | ✅ COMPLETE | Phase 2.2–2.3 done |
+| Dependency + Certificate scanners | ✅ COMPLETE | Phase 2.4–2.5 done |
+| Scanner orchestrator + Git cloner | ✅ COMPLETE | Phase 2.6–2.7 done |
+| Normalization engine + CBOM | ✅ COMPLETE | Phase 3 done |
+| Quantum Risk Engine | ✅ COMPLETE | Phase 4 done — Mosca + 4 risk endpoints |
+| PQC recommendations | ❌ NOT DONE | Phase 5 — NEXT |
+| Enterprise sidebar + UI shell | ✅ COMPLETE | Phase 6.1–6.2 done |
+| Dashboard wiring (real API data) | ❌ NOT DONE | Phase 6.3–6.6 |
 | AI Analyst (real) | ❌ NOT DONE | Phase 8 (post-SIH) |
 | Knowledge Graph | ❌ NOT DONE | Phase 9 (post-SIH) |
 

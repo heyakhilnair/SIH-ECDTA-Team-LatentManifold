@@ -267,29 +267,29 @@
 ---
 
 ## PHASE 4 — QUANTUM RISK ENGINE
-**Status:** `NOT STARTED` · **Target:** Day 11–14  
+**Status:** `[x] COMPLETED` · **Target:** Day 11–14  
 **Depends on:** Phase 3 (canonical assets exist)
 
 ### 4.1 Mosca Risk Calculator
-- [ ] Create `app/services/risk_engine.py`
-- [ ] Implement `calculate_mosca_risk(data_lifetime, migration_time, threat_horizon) -> dict`
-- [ ] Implement `DEFAULT_MIGRATION_TIME` lookup per algorithm family
-- [ ] Implement `is_weak_key_size(family, key_size) -> bool`
-- [ ] Implement `compute_asset_risk(asset) -> RiskScore`
-- [ ] Implement multi-dimensional risk: quantum exposure, classical risk, Mosca, composite
-- [ ] Implement `get_quantum_reason(asset) -> str`
-- [ ] Implement `get_classical_reason(asset) -> str`
-- [ ] Persist risk score to `risk_scores` table
+- [x] Create `app/services/risk_engine.py`
+- [x] Implement `calculate_mosca_risk(data_lifetime, migration_time, threat_horizon) -> dict`
+- [x] Implement `DEFAULT_MIGRATION_TIME` lookup per algorithm family
+- [x] Implement `is_weak_key_size(family, key_size) -> bool`
+- [x] Implement `compute_asset_risk(asset) -> RiskScore`
+- [x] Implement multi-dimensional risk: quantum exposure, classical risk, Mosca, composite
+- [x] Implement `get_quantum_reason(asset) -> str`
+- [x] Implement `get_classical_reason(asset) -> str`
+- [x] Persist risk score to `risk_scores` table
 
 ### 4.2 Risk API Endpoints
-- [ ] `GET /api/workspaces/{id}/risk` — all assets with risk, sorted by composite priority
-- [ ] `GET /api/workspaces/{id}/risk/summary` — counts by level {critical, high, medium, low, safe}
-- [ ] `GET /api/assets/{id}/risk` — risk detail for one asset (full explanation JSON)
-- [ ] `POST /api/assets/{id}/risk/recalculate` — recalculate with custom parameters
+- [x] `GET /api/workspaces/{id}/risk` — all assets with risk, sorted by composite priority
+- [x] `GET /api/workspaces/{id}/risk/summary` — counts by level {critical, high, medium, low, safe}
+- [x] `GET /api/assets/{id}/risk` — risk detail for one asset (full explanation JSON)
+- [x] `POST /api/assets/{id}/risk/recalculate` — recalculate with custom parameters
 
 ### 4.3 Risk Trigger
-- [ ] Add risk computation step to pipeline (after normalization)
-- [ ] Compute risk for all assets in workspace after each scan
+- [x] Add risk computation step to pipeline (after normalization)
+- [x] Compute risk for all assets in workspace after each scan
 
 **PHASE 4 DONE WHEN:** Every asset has a risk score, RSA-2048 = HIGH/CRITICAL, SHA-1 = CRITICAL, AES-256 = LOW
 
@@ -453,7 +453,7 @@
 | 1 | Clerk Authentication | `[ ] NOT STARTED` | Phase 0.3 |
 | 2 | Discovery Backend | `[ ] NOT STARTED` | Phase 0.1, 0.2 |
 | 3 | Normalization + CBOM | `[ ] NOT STARTED` | Phase 2 |
-| 4 | Quantum Risk Engine | `[ ] NOT STARTED` | Phase 3 |
+| 4 | Quantum Risk Engine | `[x] COMPLETED` | — |
 | 5 | PQC Recommendation | `[ ] NOT STARTED` | Phase 4 |
 | 6 | Frontend Wiring | `[ ] NOT STARTED` | Phase 1, 2-5 |
 | 7 | Testing + Demo | `[ ] NOT STARTED` | Phase 2-6 |
@@ -463,5 +463,5 @@
 
 ---
 
-*Last updated by: Antigravity (2026-09-02T15:03)*  
-*Next agent: Pick up Phase 2.2.*
+*Last updated by: Antigravity (2026-09-02T23:05)*  
+*Next agent: Pick up Phase 5 — PQC Recommendation Engine.*

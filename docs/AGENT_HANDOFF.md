@@ -10,7 +10,7 @@
 2. Read `docs/PRODUCT_REFERENCE.md` — complete product picture built from all 22 phase PDFs
 3. Read `docs/TRACKER.md` — find your first task
 
-**Then begin Phase 2.2.**
+**Then begin Phase 5.**
 
 ---
 
@@ -44,14 +44,17 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - PostgreSQL schema (Phase 0.2)
 - Clerk Auth (Phase 1)
 - Job Lifecycle API & Celery Scaffold (Phase 2.1)
+- Tree-sitter + Semgrep + Dependency + Certificate Scanners (Phase 2.2–2.5)
+- Scanner Orchestrator + Git Cloner (Phase 2.6–2.7)
+- Normalization Engine + CBOM Generator (Phase 3)
+- Quantum Risk Engine — Mosca calculator, multi-dimensional risk, 4 risk API endpoints (Phase 4)
 - Frontend Enterprise Route Migration & Advanced UI specs (Phase 6)
 - Enterprise Product Shell (Phase 6.3) — includes Topbar, Sidebar, PageHeader, CommandPalette search, and Settings UI
 
 **Not yet built:**
-- Tree-sitter Scanners (Phase 2.2)
-- Normalization engine (Phase 3)
-- Risk engine (Phase 4)
-- Recommendation engine (Phase 5)
+- PQC Recommendation Engine (Phase 5)
+- Frontend wiring with real API data (Phase 6.3–6.6)
+- Testing + Demo preparation (Phase 7)
 
 ---
 
