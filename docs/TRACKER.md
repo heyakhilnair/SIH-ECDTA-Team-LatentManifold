@@ -296,22 +296,22 @@
 ---
 
 ## PHASE 5 — PQC RECOMMENDATION ENGINE
-**Status:** `NOT STARTED` · **Target:** Day 14–17  
+**Status:** `[x] COMPLETED` · **Target:** Day 14–17  
 **Depends on:** Phase 4 (risk scores computed)
 
 ### 5.1 Recommendation Rule Table
-- [ ] Create `app/services/recommendation_engine.py`
-- [ ] Implement `RECOMMENDATION_TABLE` with all algorithm→function mappings (see IMPLEMENTATION_PLAN.md §5.1)
-- [ ] Cover: RSA/KEY_EXCHANGE, RSA/SIGNATURE, ECDSA/SIGNATURE, ECDH/KEY_EXCHANGE
-- [ ] Cover: SHA-1/HASH, MD5/HASH, DES/ENCRYPTION, DES3/ENCRYPTION, AES-128/ENCRYPTION
-- [ ] Implement `generate_recommendation(asset) -> Optional[Recommendation]`
-- [ ] Implement safe-asset detection (return None for safe algorithms)
+- [x] Create `app/services/recommendation_engine.py`
+- [x] Implement `RECOMMENDATION_TABLE` with all algorithm→function mappings (see IMPLEMENTATION_PLAN.md §5.1)
+- [x] Cover: RSA/KEY_EXCHANGE, RSA/SIGNATURE, ECDSA/SIGNATURE, ECDH/KEY_EXCHANGE
+- [x] Cover: SHA-1/HASH, MD5/HASH, DES/ENCRYPTION, DES3/ENCRYPTION, AES-128/ENCRYPTION
+- [x] Implement `generate_recommendation(asset) -> Optional[Recommendation]`
+- [x] Implement safe-asset detection (return None for safe algorithms)
 
 ### 5.2 Recommendation Persistence + API
-- [ ] Persist recommendations to `recommendations` table
-- [ ] `GET /api/workspaces/{id}/recommendations` — all recommendations for workspace
-- [ ] `GET /api/assets/{id}/recommendation` — recommendation for specific asset
-- [ ] Trigger recommendation generation after risk computation
+- [x] Persist recommendations to `recommendations` table
+- [x] `GET /api/workspaces/{id}/recommendations` — all recommendations for workspace
+- [x] `GET /api/assets/{id}/recommendation` — recommendation for specific asset
+- [x] Trigger recommendation generation after risk computation
 
 **PHASE 5 DONE WHEN:** RSA-2048 → ML-KEM-768 recommendation, AES-256 → no recommendation
 
@@ -454,7 +454,7 @@
 | 2 | Discovery Backend | `[ ] NOT STARTED` | Phase 0.1, 0.2 |
 | 3 | Normalization + CBOM | `[ ] NOT STARTED` | Phase 2 |
 | 4 | Quantum Risk Engine | `[x] COMPLETED` | — |
-| 5 | PQC Recommendation | `[ ] NOT STARTED` | Phase 4 |
+| 5 | PQC Recommendation | `[x] COMPLETED` | — |
 | 6 | Frontend Wiring | `[ ] NOT STARTED` | Phase 1, 2-5 |
 | 7 | Testing + Demo | `[ ] NOT STARTED` | Phase 2-6 |
 | 8 | AI Analyst | `[~] DEFERRED` | Phase 6 |
@@ -463,5 +463,5 @@
 
 ---
 
-*Last updated by: Antigravity (2026-09-02T23:05)*  
-*Next agent: Pick up Phase 5 — PQC Recommendation Engine.*
+*Last updated by: Antigravity (2026-09-02T23:17)*  
+*Next agent: Pick up Phase 6 — Frontend Wiring & Multi-Source Dashboard.*

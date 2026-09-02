@@ -10,7 +10,7 @@
 2. Read `docs/PRODUCT_REFERENCE.md` — complete product picture built from all 22 phase PDFs
 3. Read `docs/TRACKER.md` — find your first task
 
-**Then begin Phase 5.**
+**Then begin Phase 6.**
 
 ---
 
@@ -48,11 +48,11 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - Scanner Orchestrator + Git Cloner (Phase 2.6–2.7)
 - Normalization Engine + CBOM Generator (Phase 3)
 - Quantum Risk Engine — Mosca calculator, multi-dimensional risk, 4 risk API endpoints (Phase 4)
+- PQC Recommendation Engine — NIST FIPS 203/204/205 recommendation rule table, safe asset detection, pipeline trigger & endpoints (Phase 5)
 - Frontend Enterprise Route Migration & Advanced UI specs (Phase 6)
 - Enterprise Product Shell (Phase 6.3) — includes Topbar, Sidebar, PageHeader, CommandPalette search, and Settings UI
 
 **Not yet built:**
-- PQC Recommendation Engine (Phase 5)
 - Frontend wiring with real API data (Phase 6.3–6.6)
 - Testing + Demo preparation (Phase 7)
 

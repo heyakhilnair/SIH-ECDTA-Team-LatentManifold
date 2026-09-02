@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-02 (Phase 4 complete — next: Phase 5)
+**Updated:** 2026-09-02 (Phase 5 complete — next: Phase 6)
 
 ---
 
@@ -100,9 +100,9 @@ SIH-ECDTA-Team-LatentManifold/
 | Scanner orchestrator + Git cloner | ✅ COMPLETE | Phase 2.6–2.7 done |
 | Normalization engine + CBOM | ✅ COMPLETE | Phase 3 done |
 | Quantum Risk Engine | ✅ COMPLETE | Phase 4 done — Mosca + 4 risk endpoints |
-| PQC recommendations | ❌ NOT DONE | Phase 5 — NEXT |
+| PQC recommendations | ✅ COMPLETE | Phase 5 done — FIPS 203/204/205 candidates |
 | Enterprise sidebar + UI shell | ✅ COMPLETE | Phase 6.1–6.2 done |
-| Dashboard wiring (real API data) | ❌ NOT DONE | Phase 6.3–6.6 |
+| Dashboard wiring (real API data) | ❌ NOT DONE | Phase 6.3–6.6 — NEXT |
 | AI Analyst (real) | ❌ NOT DONE | Phase 8 (post-SIH) |
 | Knowledge Graph | ❌ NOT DONE | Phase 9 (post-SIH) |
 

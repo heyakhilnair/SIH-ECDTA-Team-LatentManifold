@@ -157,7 +157,13 @@ async def run_discovery_job(job_id: str, workspace_id: str, source_urls: list):
             for asset in assets_to_risk:
                 await compute_asset_risk(session, asset)
                 
-            # 4. Generate CBOM for the entire workspace
+            # 4. Generate PQC recommendations for discovered assets
+            print(f"[Orchestrator] Generating PQC recommendations for {len(assets_to_risk)} assets...")
+            from app.services.recommendation_engine import generate_recommendation
+            for asset in assets_to_risk:
+                await generate_recommendation(session, asset)
+
+            # 5. Generate CBOM for the entire workspace
             print(f"[Orchestrator] Generating CBOM for workspace...")
             assets_query = select(CryptoAsset).where(CryptoAsset.workspace_id == workspace_id)
             assets_result = await session.execute(assets_query)
