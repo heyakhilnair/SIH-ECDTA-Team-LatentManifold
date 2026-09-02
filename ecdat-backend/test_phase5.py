@@ -126,6 +126,21 @@ def test_recommendation_rules():
     assert rule_aes128["primary"] == "AES-256-GCM"
     print("[OK] AES:128 -> AES-256-GCM")
 
+    # 7b. RC4 (insecure stream cipher)
+    rc4 = CryptoAsset(
+        id=uuid.uuid4(),
+        workspace_id=uuid.uuid4(),
+        algorithm_canonical="RC4",
+        algorithm_family="RC4",
+        algorithm_name="RC4",
+        classical_vulnerable=True,
+    )
+    rule_rc4 = find_rule(rc4)
+    assert rule_rc4 is not None
+    assert rule_rc4["primary"] == "ChaCha20-Poly1305"
+    assert rule_rc4["nist_standard"] == "NIST SP 800-175B"
+    print("[OK] RC4 -> ChaCha20-Poly1305 (NIST SP 800-175B)")
+
     # 8. AES-256 (Safe - no recommendation)
     aes256 = CryptoAsset(
         id=uuid.uuid4(),

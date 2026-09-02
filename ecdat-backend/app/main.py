@@ -16,23 +16,30 @@ app.add_middleware(
 app.include_router(workspaces.router)
 app.include_router(jobs.router)
 app.include_router(sources.router)
-app.include_router(cbom.router)
 
-# Phase 4: Risk engine routers
-# Workspace-scoped:  GET /workspaces/{id}/risk  |  GET /workspaces/{id}/risk/summary
-# Asset-scoped:      GET /assets/{id}/risk       |  POST /assets/{id}/risk/recalculate
+# CBOM router (support both /workspaces/... and /api/workspaces/...)
+app.include_router(cbom.router)
+app.include_router(cbom.router, prefix="/api")
+
+# Phase 4: Risk engine routers (support both root and /api prefixes)
+# Workspace-scoped:  GET /api/workspaces/{id}/risk  |  GET /api/workspaces/{id}/risk/summary
+# Asset-scoped:      GET /api/assets/{id}/risk       |  POST /api/assets/{id}/risk/recalculate
 app.include_router(risk_workspace_router)
 app.include_router(risk_asset_router)
+app.include_router(risk_workspace_router, prefix="/api")
+app.include_router(risk_asset_router, prefix="/api")
 
-# Phase 5: Recommendation engine routers
-# Workspace-scoped:  GET /workspaces/{id}/recommendations
-# Asset-scoped:      GET /assets/{id}/recommendation
+# Phase 5: Recommendation engine routers (support both root and /api prefixes)
+# Workspace-scoped:  GET /api/workspaces/{id}/recommendations
+# Asset-scoped:      GET /api/assets/{id}/recommendation
 from app.routers.recommendations import (
     workspace_router as rec_workspace_router,
     asset_router as rec_asset_router,
 )
 app.include_router(rec_workspace_router)
 app.include_router(rec_asset_router)
+app.include_router(rec_workspace_router, prefix="/api")
+app.include_router(rec_asset_router, prefix="/api")
 
 
 @app.get("/health")

@@ -2,7 +2,7 @@ import uuid
 import datetime
 from sqlalchemy import Column, String, Float, ForeignKey, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from app.database import Base
 
 class Recommendation(Base):
@@ -24,5 +24,5 @@ class Recommendation(Base):
     generated_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
 
     # Relationships
-    asset = relationship("CryptoAsset", backref="recommendations")
+    asset = relationship("CryptoAsset", backref=backref("recommendation", uselist=False))
     workspace = relationship("Workspace", backref="recommendations")

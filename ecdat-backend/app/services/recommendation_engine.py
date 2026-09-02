@@ -10,6 +10,8 @@ Key standards:
   - NIST FIPS 205: SLH-DSA (Stateless Hash-Based Digital Signature Algorithm)
   - NIST FIPS 197 / SP 800-38D: AES / AES-GCM
   - NIST FIPS 180-4: Secure Hash Standard (SHA-256, SHA-384, SHA-512)
+  - NIST SP 800-175B: Guideline for Using Cryptographic Standards
+  - NSA Commercial National Security Algorithm Suite 2.0 (CNSA 2.0)
 """
 
 import uuid
@@ -38,6 +40,49 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         ),
         "migration_complexity": "HIGH",
         "protocol_notes": "TLS 1.3 supports ML-KEM in hybrid mode via draft-ietf-tls-hybrid-design.",
+        "hard_constraints": {
+            "hsm_compatibility": "Requires PKCS#11 v3.2 or vendor PQC firmware upgrade; legacy HSMs lack native ML-KEM support.",
+            "regulatory_compliance": "FIPS 203 finalized Aug 2024. Meets CNSA 2.0 requirements for quantum-resistant key establishment.",
+            "client_interoperability": "Pure PQC requires client-side ML-KEM support; hybrid mode required for legacy TLS 1.3 clients."
+        },
+        "soft_constraints": {
+            "key_size_bytes": 1184,       # Public key
+            "ciphertext_size_bytes": 1088, # Ciphertext
+            "bandwidth_overhead": "+2.27 KB per TLS handshake exchange",
+            "performance_budget": "Encapsulation/decapsulation CPU cost is lower than RSA-2048 exponentiation."
+        },
+        "alternatives": [
+            {
+                "algorithm": "ML-KEM-768",
+                "status": "PRIMARY",
+                "security_category": "NIST Security Category 3 (AES-192 equivalent)",
+                "rationale": "Recommended default for general enterprise data and TLS session establishment."
+            },
+            {
+                "algorithm": "ML-KEM-768 + X25519",
+                "status": "ALTERNATIVE",
+                "security_category": "Hybrid Classical + Post-Quantum",
+                "rationale": "Recommended transition mechanism protecting against immediate quantum harvest while preserving classical compliance."
+            },
+            {
+                "algorithm": "ML-KEM-512",
+                "status": "ALTERNATIVE",
+                "security_category": "NIST Security Category 1 (AES-128 equivalent)",
+                "rationale": "Suitable for severely bandwidth-constrained IoT / embedded devices."
+            },
+            {
+                "algorithm": "Classic McEliece",
+                "status": "REJECTED",
+                "security_category": "Code-based KEM",
+                "rationale": "Public key size exceeds 255 KB, causing prohibitive network transmission latency in TLS handshakes."
+            },
+            {
+                "algorithm": "FrodoKEM",
+                "status": "REJECTED",
+                "security_category": "Unstructured Lattice KEM",
+                "rationale": "Conservative fallback but matrix operations and 9.6 KB public keys incur 8x bandwidth overhead over ML-KEM."
+            }
+        ]
     },
     ("RSA", "SIGNATURE"): {
         "primary": "ML-DSA-65",
@@ -50,7 +95,44 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
             "SLH-DSA (SPHINCS+) is available as a hash-based fallback if lattice assumptions are questioned."
         ),
         "migration_complexity": "MEDIUM",
-        "protocol_notes": "Verify signature verification performance in high-throughput services.",
+        "protocol_notes": "Verify signature verification performance in high-throughput services and certificate chains.",
+        "hard_constraints": {
+            "hsm_compatibility": "Requires firmware supporting FIPS 204. Code-signing pipelines may need HSM hardware refresh.",
+            "regulatory_compliance": "FIPS 204 compliant. Standardized for federal systems and CNSA 2.0 digital signatures.",
+            "client_interoperability": "X.509 certificates and PKI tooling require parser updates for ML-DSA OIDs."
+        },
+        "soft_constraints": {
+            "public_key_bytes": 1952,
+            "signature_size_bytes": 3309,
+            "bandwidth_overhead": "Signatures are ~3.3 KB (vs 256 bytes for RSA-2048), increasing certificate chain size.",
+            "performance_budget": "Fast verification speed; signing is faster than RSA-2048 key generation."
+        },
+        "alternatives": [
+            {
+                "algorithm": "ML-DSA-65",
+                "status": "PRIMARY",
+                "security_category": "NIST Security Category 3",
+                "rationale": "Optimal balance of signature length (3.3 KB) and high-speed verification."
+            },
+            {
+                "algorithm": "ML-DSA-65 + ECDSA-P256",
+                "status": "ALTERNATIVE",
+                "security_category": "Hybrid Dual Signature",
+                "rationale": "Validates under both classical PKI and post-quantum verifiers during transition."
+            },
+            {
+                "algorithm": "SLH-DSA-128s",
+                "status": "ALTERNATIVE",
+                "security_category": "Stateless Hash-Based (NIST FIPS 205)",
+                "rationale": "Conservative hash-based backup when zero lattice dependency is required."
+            },
+            {
+                "algorithm": "Falcon-512",
+                "status": "REJECTED",
+                "security_category": "Lattice (NTRU)",
+                "rationale": "Pending separate NIST standard; complex floating-point implementation poses side-channel risks."
+            }
+        ]
     },
     ("ECDSA", "SIGNATURE"): {
         "primary": "ML-DSA-65",
@@ -59,7 +141,35 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "nist_standard": "FIPS 204",
         "reasoning": "ECDSA is broken by Shor's algorithm. Replace with ML-DSA-65 for NIST Level 3 security.",
         "migration_complexity": "MEDIUM",
-        "protocol_notes": "ML-DSA-65 public keys and signatures are larger than ECDSA-P256.",
+        "protocol_notes": "ML-DSA-65 public keys and signatures are larger than ECDSA-P256 (3.3 KB vs 64 bytes).",
+        "hard_constraints": {
+            "hsm_compatibility": "HSM firmware update required for ML-DSA generation.",
+            "regulatory_compliance": "FIPS 204 compliant."
+        },
+        "soft_constraints": {
+            "signature_size_bytes": 3309,
+            "bandwidth_overhead": "Signature expands from 64 B to 3.3 KB."
+        },
+        "alternatives": [
+            {
+                "algorithm": "ML-DSA-65",
+                "status": "PRIMARY",
+                "security_category": "NIST Category 3",
+                "rationale": "Standard NIST signature replacement."
+            },
+            {
+                "algorithm": "ML-DSA-65 + ECDSA-P256",
+                "status": "ALTERNATIVE",
+                "security_category": "Hybrid Dual Signature",
+                "rationale": "Ensures backward compatibility with clients that do not parse ML-DSA."
+            },
+            {
+                "algorithm": "SLH-DSA-128f",
+                "status": "ALTERNATIVE",
+                "security_category": "Stateless Hash-Based (FIPS 205)",
+                "rationale": "Fast signing variant of SPHINCS+; signature size is 17 KB."
+            }
+        ]
     },
     ("ECDH", "KEY_EXCHANGE"): {
         "primary": "ML-KEM-768",
@@ -69,6 +179,27 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "reasoning": "ECDH key agreement is broken by Shor's algorithm. ML-KEM provides equivalent KEM functionality.",
         "migration_complexity": "MEDIUM",
         "protocol_notes": "Use hybrid key exchange in TLS 1.3 to maintain backward compatibility.",
+        "hard_constraints": {
+            "regulatory_compliance": "FIPS 203 compliant; CNSA 2.0 approved."
+        },
+        "soft_constraints": {
+            "ciphertext_size_bytes": 1088,
+            "bandwidth_overhead": "+2.27 KB per key agreement exchange."
+        },
+        "alternatives": [
+            {
+                "algorithm": "ML-KEM-768",
+                "status": "PRIMARY",
+                "security_category": "NIST Category 3",
+                "rationale": "Standard replacement for ECDH key agreement."
+            },
+            {
+                "algorithm": "ML-KEM-768 + X25519",
+                "status": "ALTERNATIVE",
+                "security_category": "Hybrid Classical + Post-Quantum",
+                "rationale": "Standard hybrid key exchange deployed in modern browsers and TLS 1.3."
+            }
+        ]
     },
     ("DH", "KEY_EXCHANGE"): {
         "primary": "ML-KEM-768",
@@ -78,14 +209,42 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "reasoning": "Diffie-Hellman key exchange is vulnerable to Shor's algorithm. Replace with ML-KEM-768.",
         "migration_complexity": "MEDIUM",
         "protocol_notes": "Transition protocols from traditional DH exchange to KEM encapsulation.",
+        "hard_constraints": {
+            "regulatory_compliance": "FIPS 203 compliant."
+        },
+        "soft_constraints": {
+            "ciphertext_size_bytes": 1088
+        },
+        "alternatives": [
+            {
+                "algorithm": "ML-KEM-768",
+                "status": "PRIMARY",
+                "security_category": "NIST Category 3",
+                "rationale": "Direct post-quantum replacement for finite-field DH."
+            }
+        ]
     },
     ("DSA", "SIGNATURE"): {
         "primary": "ML-DSA-65",
-        "hybrid": "ML-DSA-65 + ECDSA-P256",
+        "hybrid": "ML-DSA-65 + Ed25519",
         "fallback": "SLH-DSA-128f",
         "nist_standard": "FIPS 204",
         "reasoning": "DSA is deprecated classically and completely broken by quantum algorithms. Migrate to ML-DSA-65.",
         "migration_complexity": "MEDIUM",
+        "hard_constraints": {
+            "regulatory_compliance": "NIST SP 800-131A deprecated DSA; FIPS 204 is the modern standard."
+        },
+        "soft_constraints": {
+            "signature_size_bytes": 3309
+        },
+        "alternatives": [
+            {
+                "algorithm": "ML-DSA-65",
+                "status": "PRIMARY",
+                "security_category": "NIST Category 3",
+                "rationale": "Primary NIST digital signature algorithm."
+            }
+        ]
     },
     ("SHA-1", "HASH"): {
         "primary": "SHA-256",
@@ -95,6 +254,27 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "reasoning": "SHA-1 is collision-vulnerable (Shattered 2017). SHA-256 is the standard replacement.",
         "migration_complexity": "LOW",
         "protocol_notes": "Direct digest replacement; check database digest column lengths (256 bits / 32 bytes).",
+        "hard_constraints": {
+            "regulatory_compliance": "NIST prohibited SHA-1 for digital signatures in 2011 and deprecates all uses."
+        },
+        "soft_constraints": {
+            "digest_size_bytes": 32,
+            "performance_overhead": "Negligible on hardware with SHA extensions."
+        },
+        "alternatives": [
+            {
+                "algorithm": "SHA-256",
+                "status": "PRIMARY",
+                "security_category": "FIPS 180-4 Standard",
+                "rationale": "Universal industry standard; 128-bit classical and quantum collision resistance."
+            },
+            {
+                "algorithm": "SHA3-256",
+                "status": "ALTERNATIVE",
+                "security_category": "FIPS 202 Keccak Sponge",
+                "rationale": "Independent mathematical construction offering defense in depth against Merkle-Damgard weaknesses."
+            }
+        ]
     },
     ("MD5", "HASH"): {
         "primary": "SHA-256",
@@ -104,6 +284,20 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "reasoning": "MD5 is cryptographically broken with practical collision attacks. Replace with SHA-256 immediately.",
         "migration_complexity": "LOW",
         "protocol_notes": "Audit all usages to determine if used for checksum or security hashing.",
+        "hard_constraints": {
+            "regulatory_compliance": "Prohibited by NIST and RFC 6151 for security use."
+        },
+        "soft_constraints": {
+            "digest_size_bytes": 32
+        },
+        "alternatives": [
+            {
+                "algorithm": "SHA-256",
+                "status": "PRIMARY",
+                "security_category": "FIPS 180-4 Standard",
+                "rationale": "Direct drop-in replacement for secure digest computation."
+            }
+        ]
     },
     ("DES", "ENCRYPTION"): {
         "primary": "AES-256-GCM",
@@ -112,7 +306,28 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "nist_standard": "FIPS 197",
         "reasoning": "DES has a 56-bit key susceptible to practical brute-force. AES-256-GCM provides authenticated encryption.",
         "migration_complexity": "MEDIUM",
-        "protocol_notes": "Ensure nonce/IV uniqueness for GCM mode.",
+        "protocol_notes": "Ensure 96-bit nonce/IV uniqueness for GCM mode.",
+        "hard_constraints": {
+            "regulatory_compliance": "NIST withdrawn; FIPS 197 is required."
+        },
+        "soft_constraints": {
+            "block_size_bytes": 16,
+            "key_size_bits": 256
+        },
+        "alternatives": [
+            {
+                "algorithm": "AES-256-GCM",
+                "status": "PRIMARY",
+                "security_category": "FIPS 197 / SP 800-38D",
+                "rationale": "Standard authenticated symmetric encryption with 128-bit post-Grover security."
+            },
+            {
+                "algorithm": "ChaCha20-Poly1305",
+                "status": "ALTERNATIVE",
+                "security_category": "RFC 8439",
+                "rationale": "High-performance software alternative where AES hardware acceleration is absent."
+            }
+        ]
     },
     ("DES3", "ENCRYPTION"): {
         "primary": "AES-256-GCM",
@@ -121,17 +336,51 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "nist_standard": "FIPS 197",
         "reasoning": "3DES is officially deprecated by NIST SP 800-131A Rev. 2. Migrate to AES-256-GCM.",
         "migration_complexity": "MEDIUM",
-        "protocol_notes": "Ensure nonce/IV uniqueness for GCM mode.",
+        "protocol_notes": "Ensure 96-bit nonce/IV uniqueness for GCM mode.",
+        "hard_constraints": {
+            "regulatory_compliance": "NIST SP 800-131A Rev. 2 disallowed after 2023."
+        },
+        "soft_constraints": {
+            "key_size_bits": 256
+        },
+        "alternatives": [
+            {
+                "algorithm": "AES-256-GCM",
+                "status": "PRIMARY",
+                "security_category": "FIPS 197 / SP 800-38D",
+                "rationale": "Standard authenticated encryption replacing 64-bit block ciphers vulnerable to Sweet32."
+            }
+        ]
     },
     ("RC4", "ENCRYPTION"): {
-        "primary": "AES-256-GCM",
+        "primary": "ChaCha20-Poly1305",
         "hybrid": None,
-        "fallback": "ChaCha20-Poly1305",
-        "nist_standard": "FIPS 197",
-        "reasoning": "RC4 has severe statistical keystream biases and is prohibited in modern protocols (RFC 7465).",
+        "fallback": "AES-256-GCM",
+        "nist_standard": "NIST SP 800-175B",
+        "reasoning": "RC4 is a stream cipher with known statistical keystream biases (RFC 7465). ChaCha20-Poly1305 is the modern stream-like authenticated cipher replacement, or AES-256-GCM.",
         "migration_complexity": "LOW",
+        "hard_constraints": {
+            "regulatory_compliance": "RFC 7465 prohibits RC4 in TLS; NIST SP 800-175B prohibits legacy stream ciphers."
+        },
+        "soft_constraints": {
+            "key_size_bits": 256
+        },
+        "alternatives": [
+            {
+                "algorithm": "ChaCha20-Poly1305",
+                "status": "PRIMARY",
+                "security_category": "RFC 8439 Authenticated Stream Cipher",
+                "rationale": "Optimal replacement for stream cipher workloads with built-in Poly1305 authentication."
+            },
+            {
+                "algorithm": "AES-256-GCM",
+                "status": "ALTERNATIVE",
+                "security_category": "FIPS 197 Block Cipher",
+                "rationale": "Standard enterprise block cipher alternative."
+            }
+        ]
     },
-    ("AES", "ENCRYPTION"): {
+    ("AES", "ENCRYPTION"): {  # AES-128 specifically
         "primary": "AES-256-GCM",
         "hybrid": None,
         "fallback": "ChaCha20-Poly1305",
@@ -140,6 +389,21 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
         "migration_complexity": "LOW",
         "condition": lambda asset: asset.key_size and asset.key_size < 256,
         "protocol_notes": "Key size upgrade from 128-bit to 256-bit; cipher mode should be authenticated (GCM).",
+        "hard_constraints": {
+            "regulatory_compliance": "CNSA 2.0 mandates AES-256 for symmetric encryption."
+        },
+        "soft_constraints": {
+            "key_size_bits": 256,
+            "performance_overhead": "Minimal (<10% performance differential on modern AES-NI CPUs)."
+        },
+        "alternatives": [
+            {
+                "algorithm": "AES-256-GCM",
+                "status": "PRIMARY",
+                "security_category": "FIPS 197 / SP 800-38D",
+                "rationale": "256-bit key provides 128-bit quantum security margin against Grover search."
+            }
+        ]
     },
 }
 
@@ -300,6 +564,9 @@ async def generate_recommendation(
         "explanation": rule["reasoning"],
         "migration_complexity": migration_complexity,
         "protocol_notes": rule.get("protocol_notes", ""),
+        "hard_constraints": rule.get("hard_constraints", {}),
+        "soft_constraints": rule.get("soft_constraints", {}),
+        "alternatives": rule.get("alternatives", []),
     }
 
     # Upsert logic: check if recommendation already exists for this asset
@@ -313,7 +580,7 @@ async def generate_recommendation(
         existing.candidate_algo = hybrid or fallback
         existing.hybrid_path = hybrid
         existing.reasoning = reasoning
-        existing.confidence = 0.90
+        existing.confidence = 0.95
         existing.nist_standard = nist_standard
         existing.migration_complexity = migration_complexity
         existing.generated_at = datetime.datetime.now(datetime.timezone.utc)
@@ -327,7 +594,7 @@ async def generate_recommendation(
             candidate_algo=hybrid or fallback,
             hybrid_path=hybrid,
             reasoning=reasoning,
-            confidence=0.90,
+            confidence=0.95,
             nist_standard=nist_standard,
             migration_complexity=migration_complexity,
             generated_at=datetime.datetime.now(datetime.timezone.utc)
