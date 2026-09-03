@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-03 (Phases 0-7 complete and verified — real ground truth tests (100% precision/recall) + a live scan of a real GitHub repo through the real signed-in UI. See `docs/PHASE7_TESTING_REPORT.md`. Next: Phase 8/9, or demo rehearsal.)
+**Updated:** 2026-09-03 (Phases 0-7 complete and verified. Phase 8 (AI Analyst, Gemini-based MVP) built and tested, blocked only on a real `GEMINI_API_KEY` — see `docs/PHASE8_10_REPORT.md`. Phase 9 explicitly skipped, no Neo4j. Phase 10: real audit logging live; RLS deliberately deferred with reasoning documented.)
 
 ---
 

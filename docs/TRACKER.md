@@ -420,22 +420,31 @@ All 6.3–6.6 pages are wired to real API calls (no hardcoded data). The P0 auth
 
 ---
 
-## PHASE 8 — AI ANALYST (V2, Post-SIH)
-**Status:** `DEFERRED` · **Target:** Post-SIH
+## PHASE 8 — AI ANALYST
+**Status:** `[/] IN PROGRESS — MVP built 2026-09-03, awaiting GEMINI_API_KEY` · **Target:** Post-SIH, pulled forward per user request
 
-- [ ] Install `pgvector` PostgreSQL extension
-- [ ] Create evidence embedding pipeline
-- [ ] Build RAG retrieval system
-- [ ] Implement LLM gateway with evidence-grounded prompts
-- [ ] Implement output schema validation (evidence citations must be real)
-- [ ] Build AI Analyst UI in `/prototype/ai`
-- [ ] Test: AI only cites real evidence IDs
-- [ ] Test: AI refuses to answer questions without evidence
+Scope deliberately cut down from the original checklist below — see
+`docs/PHASE8_10_REPORT.md` for the full reasoning (Phase 14 PDF §38-39 argues
+tool-calling/structured-query grounding beats naive embedding-stuffing for
+tabular evidence data; pgvector/embeddings were dropped in favor of a
+ranked, filtered real-data context builder that gets most of the same
+benefit with far less moving infrastructure). Provider is Gemini
+(`google-genai`), not OpenAI/Anthropic — user's call.
+
+- [~] Install `pgvector` PostgreSQL extension — **deliberately skipped, see above**
+- [~] Create evidence embedding pipeline — **deliberately skipped, see above**
+- [x] Build evidence-grounded retrieval — real DB query (top-15 assets by composite risk, real risk/recommendation/evidence-location data, zero raw source code) instead of a vector index
+- [x] Implement LLM gateway with evidence-grounded prompts — `app/services/ai_analyst.py`, Gemini `gemini-2.0-flash`, structured JSON output via `response_schema`
+- [x] Implement output schema validation (evidence citations must be real) — `verify_citations()`, strips any citation that doesn't resolve to a real row in *that* workspace (catches hallucinations AND cross-tenant leaks identically)
+- [x] Build AI Analyst UI — real chat page at `/prototype/analyst` (not `/prototype/ai` — matches the existing route already in the sidebar), shows an honest "not configured" state rather than a fake response when no key is set
+- [x] Test: AI only cites real evidence IDs — `tests/test_ai_analyst.py`, including a cross-tenant-citation-rejection test
+- [x] Test: AI refuses to answer questions without evidence — empty-workspace case returns an honest "no scan data" answer, not a guess
+- [ ] **Blocked**: add a real `GEMINI_API_KEY` to `ecdat-backend/.env` and restart the backend to actually exercise the generative call live — everything up to that call is real and tested
 
 ---
 
 ## PHASE 9 — KNOWLEDGE GRAPH / NEO4J (V2, Post-SIH)
-**Status:** `DEFERRED` · **Target:** Post-SIH
+**Status:** `DEFERRED — explicitly skipped per user decision 2026-09-03 (no Neo4j instance provisioned)` · **Target:** Post-SIH
 
 - [ ] Set up Neo4j instance (local or cloud)
 - [ ] Define graph schema (see IMPLEMENTATION_PLAN.md §9.1)
@@ -446,15 +455,15 @@ All 6.3–6.6 pages are wired to real API calls (no hardcoded data). The P0 auth
 ---
 
 ## PHASE 10 — ENTERPRISE HARDENING (V3, Future)
-**Status:** `DEFERRED` · **Target:** Future
+**Status:** `[/] IN PROGRESS — audit logging built 2026-09-03` · **Target:** Future
 
-- [ ] Multi-tenancy row-level security
-- [ ] Full RBAC with Clerk Organizations
+- [x] Audit logging — real, append-only `audit_log` table (Phase 19 PDF §75-77 event taxonomy), wired into workspace creation, policy changes, source registration, scan start/cancel, CBOM generation, and AI Analyst queries; real `GET /api/workspaces/{id}/activity` feed replacing the `/prototype/activity` placeholder — see `docs/PHASE8_10_REPORT.md`
+- [~] Multi-tenancy row-level security — **deliberately not done as classic Postgres RLS; see docs/PHASE8_10_REPORT.md for why and what's there instead.** This app authenticates via a single service `DATABASE_URL`, not per-user Postgres roles/JWT claims (the pattern RLS is designed around, e.g. Supabase's `auth.uid()`) — real RLS here would need `SET LOCAL app.workspace_id` plumbed into every request before any query runs, a genuinely invasive change to `get_db()`/routing this late in a hackathon cycle. Isolation is enforced today at the application layer instead: every route requires `verify_workspace_access` (see `docs/BACKEND_AUDIT_PHASE0-6.md`), and this was verified to actually reject cross-tenant access, not just claim to.
+- [ ] Full RBAC with Clerk Organizations — needs the user to enable Clerk Organizations in their Clerk dashboard first (external dependency, not something to build blind)
 - [ ] Migration workspace (task management)
 - [ ] CI/CD verification hooks
 - [ ] Continuous drift detection
 - [ ] Enterprise SSO
-- [ ] Audit logging
 - [ ] Compliance reporting
 
 ---
@@ -470,12 +479,12 @@ All 6.3–6.6 pages are wired to real API calls (no hardcoded data). The P0 auth
 | 4 | Quantum Risk Engine | `[x] COMPLETED` | — |
 | 5 | PQC Recommendation | `[x] COMPLETED` | — |
 | 6 | Frontend Wiring & Dashboard | `[x] COMPLETED` | — |
-| 7 | Testing + Demo | `[x] COMPLETED` | Rehearsal is a team action, not a coding one |
-| 8 | AI Analyst | `[~] DEFERRED` | Phase 6 |
-| 9 | Knowledge Graph | `[~] DEFERRED` | Phase 6 |
-| 10 | Enterprise | `[~] DEFERRED` | Phase 6 |
+| 7 | Testing + Demo | `[x] COMPLETED` | — |
+| 8 | AI Analyst | `[/] MVP built, needs GEMINI_API_KEY` | Waiting on user-provided key |
+| 9 | Knowledge Graph | `[~] SKIPPED (user decision)` | No Neo4j instance |
+| 10 | Enterprise Hardening | `[/] Audit logging done` | RLS deliberately deferred, see PHASE8_10_REPORT.md |
 
 ---
 
 *Last updated by: Claude Sonnet 5 (2026-09-03)*  
-*Next agent: Phases 0-7 are complete and verified (backend fixes, ground truth tests, live E2E scan). Read `docs/PHASE7_TESTING_REPORT.md` for what was tested and what bugs it found. Pick up Phase 8 (AI Analyst) or Phase 9 (Knowledge Graph) — both deliberately deferred post-SIH, or rehearse the demo (`docs/DEMO_SCRIPT.md`) if SIH day is close.*
+*Next agent: Phases 0-7 complete and verified. Phase 8 (AI Analyst) is built and tested but needs a real `GEMINI_API_KEY` in `ecdat-backend/.env` (+ backend restart) before it can actually answer a question — read `docs/PHASE8_10_REPORT.md`. Phase 9 explicitly skipped (no Neo4j). Phase 10: audit logging is real and live; RLS deliberately not done as classic Postgres RLS (see the report for why) — app-layer workspace isolation is what's actually enforcing tenant boundaries today. Once the Gemini key lands, re-run `pytest ecdat-backend/tests/` and ask the AI Analyst a real question live to confirm end-to-end.*

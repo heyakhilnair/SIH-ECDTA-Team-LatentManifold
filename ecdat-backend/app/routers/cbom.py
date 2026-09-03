@@ -6,6 +6,7 @@ from sqlalchemy import select
 
 from app.database import get_db
 from app.services.auth import get_current_user_id, verify_workspace_access
+from app.services.audit import log_event
 from app.models.cbom import CbomSnapshot
 from app.models.asset import CryptoAsset
 from app.services.cbom_generator import generate_cyclonedx_cbom
@@ -54,4 +55,5 @@ async def trigger_cbom_generation(
         raise HTTPException(status_code=404, detail="No cryptographic assets found in this workspace. Run a discovery job first.")
         
     cbom = await generate_cyclonedx_cbom(db, assets, workspace_id, job_id)
+    await log_event(db, workspace_id, user_id, "CBOM_GENERATED", "workspace", workspace_id, details={"component_count": len(assets)})
     return cbom

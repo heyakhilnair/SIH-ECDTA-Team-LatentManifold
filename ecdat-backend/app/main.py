@@ -54,6 +54,19 @@ app.include_router(asset_single_router)
 app.include_router(asset_ws_router, prefix="/api")
 app.include_router(asset_single_router, prefix="/api")
 
+# Phase 8: AI Analyst router (support both root and /api prefixes)
+# GET  /api/workspaces/{id}/analyst/status
+# POST /api/workspaces/{id}/analyst/query
+from app.routers.analyst import router as analyst_router
+app.include_router(analyst_router)
+app.include_router(analyst_router, prefix="/api")
+
+# Phase 10: Audit/Activity router (support both root and /api prefixes)
+# GET /api/workspaces/{id}/activity
+from app.routers.audit import router as audit_router
+app.include_router(audit_router)
+app.include_router(audit_router, prefix="/api")
+
 
 @app.get("/health")
 async def health_check():

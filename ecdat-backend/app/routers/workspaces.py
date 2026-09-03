@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.workspace import Workspace
 from app.schemas.workspace import WorkspaceCreate, WorkspaceResponse, WorkspaceSettingsUpdate
 from app.services.auth import get_current_user_id
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/api/workspaces", tags=["Workspaces"])
 
@@ -46,6 +47,7 @@ async def create_workspace(
         db.add(new_workspace)
         await db.commit()
         await db.refresh(new_workspace)
+        await log_event(db, new_workspace.id, user_id, "WORKSPACE_CREATED", "workspace", new_workspace.id)
         return new_workspace
     except Exception as e:
         import traceback
@@ -75,9 +77,14 @@ async def update_my_workspace_settings(
     if not workspace:
         raise HTTPException(status_code=404, detail="Workspace not found")
 
+    before = workspace.threat_horizon_years
     workspace.threat_horizon_years = settings_in.threat_horizon_years
     await db.commit()
     await db.refresh(workspace)
+    await log_event(
+        db, workspace.id, user_id, "POLICY_UPDATED", "workspace", workspace.id,
+        details={"field": "threat_horizon_years", "before": before, "after": settings_in.threat_horizon_years},
+    )
 
     # Recompute every asset's risk under the new Z so the dashboard reflects it
     # immediately, not just on the next scan — matches the "instantly

@@ -64,7 +64,10 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 
 **Not yet built:**
 - Demo rehearsal itself (script is written — `docs/DEMO_SCRIPT.md` — but running through it live is a team action)
-- Everything explicitly deferred to Phase 8+ (AI Analyst, Knowledge Graph/Blast Radius, Enterprise hardening/Activity/Compliance) — these now have honest "not built yet" placeholder pages instead of 404s, see `docs/PHASE7_TESTING_REPORT.md` §7.5
+- Phase 8 (AI Analyst) is code-complete and tested but needs a real `GEMINI_API_KEY` in `ecdat-backend/.env` + a backend restart before it can actually answer a question — see `docs/PHASE8_10_REPORT.md`
+- Phase 9 (Knowledge Graph) explicitly skipped — no Neo4j instance provisioned
+- Phase 10: audit logging is real and live (`/prototype/activity`); everything else in that phase (full RBAC, RLS, SSO, compliance reporting) is still open, with RLS specifically documented as a deliberate architectural deferral, not an oversight
+- Compliance, Blast Radius, Quantum Posture, Verification, Forecast & Labs pages still show the honest "not built yet" placeholder from Phase 7
 
 ---
 

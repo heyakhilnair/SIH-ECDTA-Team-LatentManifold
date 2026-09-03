@@ -14,6 +14,7 @@ from app.models.asset import EvidenceAsset
 from app.schemas.job import JobCreate, JobStatus
 from app.services.scanner.orchestrator import run_discovery_job
 from app.services.auth import get_current_user_id, verify_workspace_access
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/api", tags=["Jobs"])
 
@@ -95,6 +96,7 @@ async def create_job(
     source_urls = [s.configuration.get("url") for s in sources if s.configuration and s.configuration.get("url")]
 
     background_tasks.add_task(run_discovery_job, str(job.id), str(wid), source_urls)
+    await log_event(db, wid, user_id, "SCAN_STARTED", "discovery_job", job.id, details={"source_count": len(source_urls)})
 
     return JobStatus(
         id=job.id,
@@ -167,6 +169,7 @@ async def cancel_job(
 
     job.status = "cancelled"
     await db.commit()
+    await log_event(db, job.workspace_id, user_id, "SCAN_CANCELLED", "discovery_job", job.id)
     # The orchestrator checks job status between sources and will stop (without
     # overwriting this) rather than force-killing the in-flight scan — see
     # services/scanner/orchestrator.py.

@@ -7,6 +7,7 @@ from uuid import UUID
 from app.database import get_db
 from app.models.source import Source
 from app.services.auth import get_current_user_id, verify_workspace_access
+from app.services.audit import log_event
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, Literal
 from datetime import datetime
@@ -47,6 +48,7 @@ async def create_source(
     db.add(new_source)
     await db.commit()
     await db.refresh(new_source)
+    await log_event(db, wid, user_id, "SOURCE_ADDED", "source", new_source.id, details={"name": new_source.name, "source_type": new_source.source_type})
     return new_source
 
 @router.get("/workspaces/{wid}/sources", response_model=List[SourceStatus])

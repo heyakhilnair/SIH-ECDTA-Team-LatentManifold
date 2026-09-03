@@ -173,4 +173,24 @@ export const api = {
         method: "POST",
       }),
   },
+
+  analyst: {
+    status: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/analyst/status`, getToken),
+    query: (wid: string, question: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/analyst/query`, getToken, {
+        method: "POST",
+        body: JSON.stringify({ question }),
+      }),
+  },
+
+  activity: {
+    list: (wid: string, getToken: () => Promise<string | null>, params?: { limit?: number; offset?: number }) => {
+      const query = new URLSearchParams();
+      if (params?.limit) query.set("limit", String(params.limit));
+      if (params?.offset) query.set("offset", String(params.offset));
+      const qs = query.toString();
+      return fetchWithAuth(`/api/workspaces/${wid}/activity${qs ? `?${qs}` : ""}`, getToken);
+    },
+  },
 };
