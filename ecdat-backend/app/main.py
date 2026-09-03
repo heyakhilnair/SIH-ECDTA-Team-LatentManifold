@@ -41,6 +41,18 @@ app.include_router(rec_asset_router)
 app.include_router(rec_workspace_router, prefix="/api")
 app.include_router(rec_asset_router, prefix="/api")
 
+# Phase 6: Assets router (support both root and /api prefixes)
+# Workspace-scoped:  GET /api/workspaces/{id}/assets
+# Asset-scoped:      GET /api/assets/{id}  |  GET /api/assets/{id}/evidence
+from app.routers.assets import (
+    workspace_router as asset_ws_router,
+    asset_router as asset_single_router,
+)
+app.include_router(asset_ws_router)
+app.include_router(asset_single_router)
+app.include_router(asset_ws_router, prefix="/api")
+app.include_router(asset_single_router, prefix="/api")
+
 
 @app.get("/health")
 async def health_check():
