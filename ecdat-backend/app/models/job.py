@@ -30,5 +30,4 @@ class DiscoveryJob(Base):
     metadata_ = Column("metadata", JSONB, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # relationship
-    # workspace = relationship("Workspace", back_populates="discovery_jobs")
+    workspace = relationship("Workspace", backref="discovery_jobs")

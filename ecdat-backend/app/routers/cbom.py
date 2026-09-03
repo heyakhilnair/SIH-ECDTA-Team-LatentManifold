@@ -1,11 +1,11 @@
 import uuid
 from typing import Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database import get_db
-from app.models.workspace import Workspace
+from app.services.auth import get_current_user_id, verify_workspace_access
 from app.models.cbom import CbomSnapshot
 from app.models.asset import CryptoAsset
 from app.services.cbom_generator import generate_cyclonedx_cbom
@@ -15,27 +15,14 @@ router = APIRouter(
     tags=["cbom"]
 )
 
-async def verify_workspace_access(workspace_id: uuid.UUID, x_clerk_user_id: str, db: AsyncSession):
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-        
-    query = select(Workspace).where(
-        Workspace.id == workspace_id,
-        Workspace.clerk_user_id == x_clerk_user_id
-    )
-    result = await db.execute(query)
-    workspace = result.scalar_one_or_none()
-    if not workspace:
-        raise HTTPException(status_code=404, detail="Workspace not found or access denied")
-    return workspace
 
 @router.get("", response_model=Dict[str, Any])
 async def get_latest_cbom(
     workspace_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
-    await verify_workspace_access(workspace_id, x_clerk_user_id, db)
+    await verify_workspace_access(workspace_id, user_id, db)
     
     query = select(CbomSnapshot).where(
         CbomSnapshot.workspace_id == workspace_id
@@ -53,10 +40,10 @@ async def get_latest_cbom(
 async def trigger_cbom_generation(
     workspace_id: uuid.UUID,
     job_id: uuid.UUID = None,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db)
 ):
-    await verify_workspace_access(workspace_id, x_clerk_user_id, db)
+    await verify_workspace_access(workspace_id, user_id, db)
     
     # Fetch all assets
     query = select(CryptoAsset).where(CryptoAsset.workspace_id == workspace_id)

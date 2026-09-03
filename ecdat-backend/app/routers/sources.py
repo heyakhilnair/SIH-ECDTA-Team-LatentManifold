@@ -6,7 +6,7 @@ from uuid import UUID
 
 from app.database import get_db
 from app.models.source import Source
-from app.models.workspace import Workspace
+from app.services.auth import get_current_user_id, verify_workspace_access
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, Literal
 from datetime import datetime
@@ -29,11 +29,13 @@ class SourceStatus(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 @router.post("/workspaces/{wid}/sources", response_model=SourceStatus)
-async def create_source(wid: UUID, source_in: SourceCreate, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Workspace).where(Workspace.id == wid))
-    workspace = result.scalars().first()
-    if not workspace:
-        raise HTTPException(status_code=404, detail="Workspace not found")
+async def create_source(
+    wid: UUID,
+    source_in: SourceCreate,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    await verify_workspace_access(wid, user_id, db)
 
     new_source = Source(
         workspace_id=wid,
@@ -48,7 +50,13 @@ async def create_source(wid: UUID, source_in: SourceCreate, db: AsyncSession = D
     return new_source
 
 @router.get("/workspaces/{wid}/sources", response_model=List[SourceStatus])
-async def list_sources(wid: UUID, db: AsyncSession = Depends(get_db)):
+async def list_sources(
+    wid: UUID,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    await verify_workspace_access(wid, user_id, db)
+
     result = await db.execute(
         select(Source)
         .where(Source.workspace_id == wid)

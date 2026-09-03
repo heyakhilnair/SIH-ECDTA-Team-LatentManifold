@@ -10,13 +10,13 @@ Endpoints:
 
 import uuid
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.workspace import Workspace
+from app.services.auth import get_current_user_id, verify_workspace_access
 from app.models.asset import CryptoAsset
 from app.models.recommendation import Recommendation
 from app.services.recommendation_engine import (
@@ -38,22 +38,6 @@ asset_router = APIRouter(
 
 # ─── Auth helper ─────────────────────────────────────────────────────────────
 
-async def verify_workspace_access(
-    workspace_id: uuid.UUID,
-    x_clerk_user_id: str,
-    db: AsyncSession,
-) -> Workspace:
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    query = select(Workspace).where(
-        Workspace.id == workspace_id,
-        Workspace.clerk_user_id == x_clerk_user_id,
-    )
-    result = await db.execute(query)
-    workspace = result.scalar_one_or_none()
-    if not workspace:
-        raise HTTPException(status_code=404, detail="Workspace not found or access denied")
-    return workspace
 
 
 def serialize_recommendation(rec: Recommendation) -> Dict[str, Any]:
@@ -80,13 +64,13 @@ def serialize_recommendation(rec: Recommendation) -> Dict[str, Any]:
 @workspace_router.get("", response_model=List[Dict[str, Any]])
 async def get_workspace_recommendations(
     workspace_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Returns all PQC and cryptographic upgrade recommendations for a workspace.
     """
-    await verify_workspace_access(workspace_id, x_clerk_user_id, db)
+    await verify_workspace_access(workspace_id, user_id, db)
 
     query = (
         select(Recommendation)
@@ -102,13 +86,13 @@ async def get_workspace_recommendations(
 @workspace_router.post("/generate", response_model=List[Dict[str, Any]])
 async def trigger_workspace_recommendations(
     workspace_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Explicitly trigger recommendation generation for all assets in the workspace.
     """
-    await verify_workspace_access(workspace_id, x_clerk_user_id, db)
+    await verify_workspace_access(workspace_id, user_id, db)
 
     recs = await generate_workspace_recommendations(db, workspace_id)
     return [serialize_recommendation(r) for r in recs]
@@ -119,15 +103,12 @@ async def trigger_workspace_recommendations(
 @asset_router.get("", response_model=Dict[str, Any])
 async def get_asset_recommendation(
     asset_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Returns the recommendation for a specific asset.
     """
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     # Fetch asset to verify ownership
     asset_query = (
         select(CryptoAsset)
@@ -140,8 +121,8 @@ async def get_asset_recommendation(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    if not asset.workspace or asset.workspace.clerk_user_id != x_clerk_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if not asset.workspace or asset.workspace.clerk_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Asset not found")
 
     query = (
         select(Recommendation)
@@ -163,15 +144,12 @@ async def get_asset_recommendation(
 @asset_router.post("/generate", response_model=Dict[str, Any])
 async def trigger_asset_recommendation(
     asset_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Generate or refresh recommendation for a single asset.
     """
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     asset_query = (
         select(CryptoAsset)
         .options(selectinload(CryptoAsset.workspace))
@@ -183,8 +161,8 @@ async def trigger_asset_recommendation(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    if not asset.workspace or asset.workspace.clerk_user_id != x_clerk_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if not asset.workspace or asset.workspace.clerk_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Asset not found")
 
     rec = await generate_recommendation(db, asset)
     if not rec:

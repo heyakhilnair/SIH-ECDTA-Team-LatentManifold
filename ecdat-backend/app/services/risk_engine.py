@@ -21,6 +21,7 @@ from sqlalchemy import select
 
 from app.models.asset import CryptoAsset
 from app.models.risk import RiskScore
+from app.models.workspace import Workspace
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -237,13 +238,28 @@ async def compute_asset_risk(
     data_lifetime_years: float = 7.0,
     business_criticality: str = "HIGH",
     exposure: str = "INTERNAL",
-    threat_horizon_years: float = DEFAULT_THREAT_HORIZON_YEARS,
+    threat_horizon_years: float | None = None,
 ) -> RiskScore:
     """
     Compute and persist a multi-dimensional risk score for a canonical CryptoAsset.
 
+    threat_horizon_years (Z): if not explicitly passed (e.g. a what-if
+    /risk/recalculate call), this is read from the asset's own workspace
+    setting. Only if the workspace has none does it fall back to
+    DEFAULT_THREAT_HORIZON_YEARS. This is what makes Z an actual configurable
+    workspace setting instead of a hardcoded constant — see
+    docs/BACKEND_AUDIT_PHASE0-6.md #10.
+
     Returns the persisted RiskScore ORM object.
     """
+    if threat_horizon_years is None:
+        workspace = await db.get(Workspace, asset.workspace_id)
+        threat_horizon_years = (
+            workspace.threat_horizon_years
+            if workspace and workspace.threat_horizon_years
+            else DEFAULT_THREAT_HORIZON_YEARS
+        )
+
     family = (asset.algorithm_family or "").upper()
 
     # --- Dimension 1: Quantum Exposure ---

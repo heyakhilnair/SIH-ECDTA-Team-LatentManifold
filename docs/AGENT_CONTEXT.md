@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-03 (Phase 6 UI code-complete but blocked by a P0 auth bug — read `docs/BACKEND_AUDIT_PHASE0-6.md` before touching the backend)
+**Updated:** 2026-09-03 (Phase 6 complete — all 14 findings in `docs/BACKEND_AUDIT_PHASE0-6.md` fixed and empirically verified. Next: Phase 7.)
 
 ---
 
@@ -40,7 +40,7 @@ It is a cryptographic intelligence platform that:
 | Auth | Clerk | `@clerk/nextjs` | To be installed |
 | Backend | FastAPI (Python) | 0.115.x | `ecdat-backend/` (to be created) |
 | Database | PostgreSQL | 16 | Docker Compose |
-| Job Queue | Celery + Redis | 5.x + 7.x | Docker Compose |
+| Job Queue | In-process FastAPI `BackgroundTasks` | — | `ecdat-backend/app/services/scanner/orchestrator.py`. Celery+Redis was in the original plan but was never wired (no real infra ever existed); deliberately dropped — see `docs/BACKEND_AUDIT_PHASE0-6.md` #9. |
 | Scanner | Tree-sitter + Semgrep | Latest | Python backend |
 | Fonts | Inter, Outfit, JetBrains Mono | Google Fonts | `layout.tsx` |
 
@@ -102,7 +102,7 @@ SIH-ECDTA-Team-LatentManifold/
 | Quantum Risk Engine | ✅ COMPLETE | Phase 4 done — Mosca + 4 risk endpoints |
 | PQC recommendations | ✅ COMPLETE | Phase 5 done — FIPS 203/204/205 candidates |
 | Enterprise sidebar + UI shell | ✅ COMPLETE | Phase 6.1–6.2 done |
-| Dashboard wiring (real API data) | ⚠️ WIRED BUT 401ing | Phase 6.3–6.6 code-complete; blocked by BACKEND_AUDIT #1 (frontend sends `Authorization: Bearer`, backend expects `X-Clerk-User-Id` — always 401). Fix that first. |
+| Dashboard wiring (real API data) | ✅ COMPLETE | Phase 6.3–6.6 done and verified working end-to-end against the real backend/DB |
 | AI Analyst (real) | ❌ NOT DONE | Phase 8 (post-SIH) |
 | Knowledge Graph | ❌ NOT DONE | Phase 9 (post-SIH) |
 

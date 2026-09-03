@@ -12,7 +12,14 @@ class WorkspaceCreate(WorkspaceBase):
 class WorkspaceResponse(WorkspaceBase):
     id: UUID
     clerk_user_id: str
+    threat_horizon_years: float
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class WorkspaceSettingsUpdate(BaseModel):
+    # Z in Mosca's inequality — years until a cryptographically relevant
+    # quantum computer is expected. Must stay positive and within a sane
+    # planning horizon.
+    threat_horizon_years: float

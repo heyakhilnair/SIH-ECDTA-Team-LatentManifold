@@ -9,17 +9,17 @@ Endpoints:
 
 import uuid
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.workspace import Workspace
 from app.models.asset import CryptoAsset
 from app.models.risk import RiskScore
 from app.models.recommendation import Recommendation
 from app.models.evidence import EvidenceModel
+from app.services.auth import get_current_user_id, verify_workspace_access
 
 # ─── Workspace-scoped router ─────────────────────────────────────────────────
 workspace_router = APIRouter(
@@ -32,25 +32,6 @@ asset_router = APIRouter(
     prefix="/assets/{asset_id}",
     tags=["assets"],
 )
-
-# ─── Auth helper ─────────────────────────────────────────────────────────────
-
-async def verify_workspace_access(
-    workspace_id: uuid.UUID,
-    x_clerk_user_id: str,
-    db: AsyncSession,
-) -> Workspace:
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    query = select(Workspace).where(
-        Workspace.id == workspace_id,
-        Workspace.clerk_user_id == x_clerk_user_id,
-    )
-    result = await db.execute(query)
-    workspace = result.scalar_one_or_none()
-    if not workspace:
-        raise HTTPException(status_code=404, detail="Workspace not found or access denied")
-    return workspace
 
 
 def serialize_asset(asset: CryptoAsset, include_evidence: bool = False) -> Dict[str, Any]:
@@ -129,14 +110,14 @@ async def list_workspace_assets(
     search: Optional[str] = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Returns list of canonical cryptographic assets for a workspace with joined risk and recommendations.
     Supports filtering by family, vulnerability status, and search query.
     """
-    await verify_workspace_access(workspace_id, x_clerk_user_id, db)
+    await verify_workspace_access(workspace_id, user_id, db)
 
     query = (
         select(CryptoAsset)
@@ -175,16 +156,13 @@ async def list_workspace_assets(
 @asset_router.get("", response_model=Dict[str, Any])
 async def get_asset_detail(
     asset_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Returns full details for a single cryptographic asset, including its risk score,
     recommendation, and full list of supporting evidence occurrences.
     """
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     query = (
         select(CryptoAsset)
         .options(
@@ -201,8 +179,8 @@ async def get_asset_detail(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    if not asset.workspace or asset.workspace.clerk_user_id != x_clerk_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if not asset.workspace or asset.workspace.clerk_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Asset not found")
 
     return serialize_asset(asset, include_evidence=True)
 
@@ -210,15 +188,12 @@ async def get_asset_detail(
 @asset_router.get("/evidence", response_model=List[Dict[str, Any]])
 async def get_asset_evidence(
     asset_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Returns all immutable evidence records supporting this cryptographic asset.
     """
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     query = (
         select(CryptoAsset)
         .options(
@@ -233,8 +208,8 @@ async def get_asset_evidence(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    if not asset.workspace or asset.workspace.clerk_user_id != x_clerk_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if not asset.workspace or asset.workspace.clerk_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Asset not found")
 
     return [
         {

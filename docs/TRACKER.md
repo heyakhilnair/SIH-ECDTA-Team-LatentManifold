@@ -137,14 +137,14 @@
 **Depends on:** Phase 0.1 (FastAPI), Phase 0.2 (DB schema)
 
 ### 2.1 Job Lifecycle Endpoints
-**[!] SECURITY: `routers/jobs.py` and `routers/sources.py` have zero authentication — confirmed by empirical request, see BACKEND_AUDIT #2. Any caller who knows a workspace UUID can create/list/cancel jobs and register sources for it.**
+**Fixed 2026-09-03 — `routers/jobs.py` and `routers/sources.py` now require a verified Clerk session and check workspace/job ownership on every endpoint (BACKEND_AUDIT #2).**
 - [x] Implement `POST /api/jobs` — create discovery job (returns job ID immediately)
 - [x] Implement `GET /api/jobs` — list jobs for workspace (with status)
 - [x] Implement `GET /api/jobs/{job_id}` — get job detail
 - [x] Implement `DELETE /api/jobs/{job_id}` — cancel job
-- [!] Implement `GET /api/jobs/{job_id}/evidence` — get evidence for job — **STUB: returns `{"items": [], "total": 0}` unconditionally, see BACKEND_AUDIT #6**
+- [x] Implement `GET /api/jobs/{job_id}/evidence` — get evidence for job — was a stub, now a real workspace-checked, paginated query (BACKEND_AUDIT #6, fixed 2026-09-03)
 - [x] Implement job status state machine: queued → running → completed/failed
-- [!] Set up Celery + Redis for async job execution — **installed/configured but unused; orchestrator runs on in-process FastAPI BackgroundTasks, see BACKEND_AUDIT #9**
+- [~] Set up Celery + Redis for async job execution — **decision: dropped.** Never had real infra (no redis service anywhere) and never a real dependency; in-process `BackgroundTasks` is the deliberate choice going forward (BACKEND_AUDIT #9)
 - [x] Test: create job via API → appears in list with `queued` status
 
 ### 2.2 Tree-sitter Scanner
@@ -255,8 +255,8 @@
 - `[x]` Include ECDAT-specific properties (`ecdat:quantumVulnerable`, etc.)
 - `[x]` Implement `POST /api/workspaces/{id}/cbom/generate` → trigger CBOM generation
 - `[x]` Implement `GET /api/workspaces/{id}/cbom` → return latest CBOM JSON
-- `[!]` Validate output against CycloneDX schema v1.6 (use `cyclonedx-python-lib` or manual validation) — **no validation call exists; `primitive` enum values used ("public-key", "symmetric") aren't valid CycloneDX 1.6 values, see BACKEND_AUDIT #11**
-- `[!]` Test: generated CBOM is valid CycloneDX JSON — no such test exists
+- `[x]` Validate output against CycloneDX schema v1.6 (use `cyclonedx-python-lib` or manual validation) — manual `validate_cbom()` added + real `primitive` enum mapping (BACKEND_AUDIT #11, fixed 2026-09-03)
+- `[x]` Test: generated CBOM is valid CycloneDX JSON — covered in `ecdat-backend/test_phase6_audit.py`
 
 ### 3.5 Normalization Pipeline Integration
 - `[x]` Add normalization step to scanner orchestrator (after evidence persistence)
@@ -271,6 +271,8 @@
 ## PHASE 4 — QUANTUM RISK ENGINE
 **Status:** `[x] COMPLETED` · **Target:** Day 11–14  
 **Depends on:** Phase 3 (canonical assets exist)
+
+**Found 2026-09-03, fixed same day (BACKEND_AUDIT #14):** the logic below was always correct, but `app/models/risk.py` had been rewritten with a different column set at some point with no migration to match — the live `risk_scores` table still had the original Phase 4 columns. Every `compute_asset_risk()` call crashed against the real database (confirmed empirically: 0 rows in `risk_scores` despite real evidence/assets existing), silently, since nothing caught it. Migration `d2e5f9a1b4c7` fixed the schema; the orchestrator now wraps this stage in `try/except` so a future break marks the job `failed` instead of hanging forever.
 
 ### 4.1 Mosca Risk Calculator
 - [x] Create `app/services/risk_engine.py`
@@ -320,10 +322,10 @@
 ---
 
 ## PHASE 6 — ENTERPRISE NAVIGATION & MULTI-SOURCE DISCOVERY
-**Status:** `[!] UI BUILT, BLOCKED BY P0 AUTH BUG` · **Target:** Day 15–20  
+**Status:** `[x] COMPLETED` · **Target:** Day 15–20  
 **Depends on:** Phase 1 (Clerk), Phases 2–5 (backend functional)
 
-**All 6.3–6.6 pages below are wired to real API calls (no hardcoded data, confirmed by grep + `tsc --noEmit` clean) but every page under Risk/Recommendations/CBOM/Assets will 401 on load — see `docs/BACKEND_AUDIT_PHASE0-6.md` #1. Fix that one auth bug before treating this phase as demo-ready.**
+All 6.3–6.6 pages are wired to real API calls (no hardcoded data). The P0 auth bug and the deeper #14 schema-drift bug that were blocking every page from showing real data are both fixed and empirically verified — see `docs/BACKEND_AUDIT_PHASE0-6.md`.
 
 ### 6.1 Backend DB Refactoring (Multi-Source Support)
 - [x] Create `Source` and `JobSource` SQLAlchemy models
@@ -362,7 +364,7 @@
 - [x] Create `prototype/migration/page.tsx`
 - [x] (Bonus, not originally scoped here) `prototype/pqc/page.tsx` PQC Workbench + `prototype/recommendations` route alias
 
-**PHASE 6 DONE WHEN:** The multi-source DB model is live, and the sidebar accurately reflects the ECDAT enterprise lifecycle. **Code-complete; not demo-ready until the P0 auth bug (BACKEND_AUDIT #1) is fixed — right now these pages 401 on every load.**
+**PHASE 6 DONE WHEN:** The multi-source DB model is live, and the sidebar accurately reflects the ECDAT enterprise lifecycle. ✅ Done — demo-ready as of 2026-09-03.
 
 ---
 
@@ -460,8 +462,8 @@
 | 3 | Normalization + CBOM | `[x] COMPLETED` | — |
 | 4 | Quantum Risk Engine | `[x] COMPLETED` | — |
 | 5 | PQC Recommendation | `[x] COMPLETED` | — |
-| 6 | Frontend Wiring & Dashboard | `[!] UI built, blocked by P0 auth bug` | See `docs/BACKEND_AUDIT_PHASE0-6.md` #1 |
-| 7 | Testing + Demo | `[ ] NOT STARTED` | Phase 6 auth bug |
+| 6 | Frontend Wiring & Dashboard | `[x] COMPLETED` | — |
+| 7 | Testing + Demo | `[ ] NOT STARTED` | — |
 | 8 | AI Analyst | `[~] DEFERRED` | Phase 6 |
 | 9 | Knowledge Graph | `[~] DEFERRED` | Phase 6 |
 | 10 | Enterprise | `[~] DEFERRED` | Phase 6 |
@@ -469,4 +471,4 @@
 ---
 
 *Last updated by: Claude Sonnet 5 (2026-09-03)*  
-*Next agent: Fix the P0 auth bug in `docs/BACKEND_AUDIT_PHASE0-6.md` (#1–#3) first — it blocks every Phase 6 page from loading data. Then work the audit's P1/P2 list before starting Phase 7.*
+*Next agent: All 14 findings in `docs/BACKEND_AUDIT_PHASE0-6.md` are fixed and verified against the real DB/Clerk API (run `ecdat-backend/test_phase6_audit.py` to confirm). Phase 6 is complete. Pick up Phase 7 — Testing + Demo Preparation.*

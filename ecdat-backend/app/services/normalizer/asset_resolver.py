@@ -1,5 +1,6 @@
 import uuid
 import re
+import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.evidence import EvidenceModel
@@ -78,9 +79,10 @@ async def resolve_evidence_to_asset(db: AsyncSession, evidence: EvidenceModel):
         await db.commit()
         await db.refresh(asset)
     else:
-        # Update last seen
-        pass
-        
+        asset.last_seen = datetime.datetime.utcnow()
+        await db.commit()
+
+
     # 4. Link Evidence to Asset
     # Check if link already exists
     link_query = select(EvidenceAsset).where(

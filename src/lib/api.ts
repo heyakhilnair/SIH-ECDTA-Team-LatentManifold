@@ -77,6 +77,11 @@ export const api = {
   workspace: {
     getMe: (getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/workspaces/me`, getToken),
+    updateSettings: (threatHorizonYears: number, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/me/settings`, getToken, {
+        method: "PATCH",
+        body: JSON.stringify({ threat_horizon_years: threatHorizonYears }),
+      }),
   },
 
   sources: {

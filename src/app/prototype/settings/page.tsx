@@ -1,7 +1,10 @@
 "use client";
 
 import PageHeader from "@/components/PageHeader";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { api } from "@/lib/api";
+import { useWorkspace } from "@/components/WorkspaceWrapper";
 import styles from "./settings.module.css";
 
 const SETTINGS_SECTIONS = [
@@ -45,6 +48,36 @@ const SETTINGS_SECTIONS = [
 
 export default function SettingsPage() {
   const [activeItem, setActiveItem] = useState("General");
+  const { getToken, isLoaded, userId } = useAuth();
+  const workspace = useWorkspace();
+
+  const [threatHorizon, setThreatHorizon] = useState<number | null>(null);
+  const [savingHorizon, setSavingHorizon] = useState(false);
+  const [horizonSaved, setHorizonSaved] = useState(false);
+  const [horizonError, setHorizonError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded || !userId) return;
+    api.workspace.getMe(getToken)
+      .then((res) => setThreatHorizon(res.threat_horizon_years ?? 12))
+      .catch(() => {});
+  }, [isLoaded, userId, getToken]);
+
+  const saveThreatHorizon = async () => {
+    if (threatHorizon == null) return;
+    setSavingHorizon(true);
+    setHorizonError(null);
+    setHorizonSaved(false);
+    try {
+      await api.workspace.updateSettings(threatHorizon, getToken);
+      setHorizonSaved(true);
+      setTimeout(() => setHorizonSaved(false), 2500);
+    } catch (err: any) {
+      setHorizonError(err.message || "Failed to save");
+    } finally {
+      setSavingHorizon(false);
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -84,7 +117,35 @@ export default function SettingsPage() {
           </div>
           
           <div className={styles.settingsCard}>
-            {activeItem === "Authentication" ? (
+            {activeItem === "Risk Policies" ? (
+              <div className={styles.mockForm}>
+                <div className={styles.formGroup}>
+                  <label>Threat Horizon — Z (years)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    step={0.5}
+                    value={threatHorizon ?? ""}
+                    onChange={(e) => setThreatHorizon(parseFloat(e.target.value))}
+                    className={styles.input}
+                    disabled={threatHorizon == null}
+                  />
+                  <span className={styles.helpText}>
+                    Mosca's inequality: X (data lifetime) + Y (migration time) &gt; Z (this value) marks an
+                    asset CRITICAL. Changing Z recomputes risk for every asset in this workspace immediately.
+                  </span>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <button className={styles.btnSecondary} onClick={saveThreatHorizon} disabled={savingHorizon || threatHorizon == null}>
+                    {savingHorizon ? "Saving & recalculating risk..." : "Save"}
+                  </button>
+                  {horizonSaved && <span style={{ marginLeft: "0.75rem", color: "var(--color-sage, #687563)" }}>Saved — risk scores updated.</span>}
+                  {horizonError && <span style={{ marginLeft: "0.75rem", color: "#B91C1C" }}>{horizonError}</span>}
+                </div>
+              </div>
+            ) : activeItem === "Authentication" ? (
               <div className={styles.mockForm}>
                 <div className={styles.formGroup}>
                   <label>MFA Enforced</label>

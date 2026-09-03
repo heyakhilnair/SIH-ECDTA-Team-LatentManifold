@@ -10,17 +10,17 @@ Endpoints:
 
 import uuid
 from typing import Dict, Any, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.workspace import Workspace
 from app.models.asset import CryptoAsset
 from app.models.risk import RiskScore
 from app.services.risk_engine import compute_asset_risk
+from app.services.auth import get_current_user_id, verify_workspace_access
 
 # ─── Priority sort order ─────────────────────────────────────────────────────
 PRIORITY_ORDER = {"CRITICAL": 1, "HIGH": 2, "MEDIUM": 3, "LOW": 4, "SAFE": 5}
@@ -36,26 +36,6 @@ asset_router = APIRouter(
     prefix="/assets/{asset_id}/risk",
     tags=["risk"],
 )
-
-
-# ─── Auth helper ─────────────────────────────────────────────────────────────
-
-async def verify_workspace_access(
-    workspace_id: uuid.UUID,
-    x_clerk_user_id: str,
-    db: AsyncSession,
-) -> Workspace:
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    query = select(Workspace).where(
-        Workspace.id == workspace_id,
-        Workspace.clerk_user_id == x_clerk_user_id,
-    )
-    result = await db.execute(query)
-    workspace = result.scalar_one_or_none()
-    if not workspace:
-        raise HTTPException(status_code=404, detail="Workspace not found or access denied")
-    return workspace
 
 
 def serialize_risk(r: RiskScore) -> Dict[str, Any]:
@@ -89,14 +69,14 @@ def serialize_risk(r: RiskScore) -> Dict[str, Any]:
 @workspace_router.get("", response_model=List[Dict[str, Any]])
 async def get_workspace_risks(
     workspace_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Return all assets with their risk scores for a workspace, sorted by composite priority.
     Critical findings first.
     """
-    await verify_workspace_access(workspace_id, x_clerk_user_id, db)
+    await verify_workspace_access(workspace_id, user_id, db)
 
     query = (
         select(RiskScore)
@@ -114,14 +94,14 @@ async def get_workspace_risks(
 @workspace_router.get("/summary", response_model=Dict[str, Any])
 async def get_risk_summary(
     workspace_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Return counts of assets per risk level for a workspace.
     Also returns total and the percentage breakdown.
     """
-    await verify_workspace_access(workspace_id, x_clerk_user_id, db)
+    await verify_workspace_access(workspace_id, user_id, db)
 
     query = (
         select(RiskScore.composite_risk_level, func.count(RiskScore.id))
@@ -161,22 +141,21 @@ class RecalculateRequest(BaseModel):
     data_lifetime_years: float = 7.0
     business_criticality: str = "HIGH"
     exposure: str = "INTERNAL"
-    threat_horizon_years: float = 12.0
+    # None = use the workspace's configured threat horizon (Settings > Risk
+    # Policies); only set this to override it for a one-off what-if.
+    threat_horizon_years: Optional[float] = None
 
 
 @asset_router.get("", response_model=Dict[str, Any])
 async def get_asset_risk(
     asset_id: uuid.UUID,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Return the full risk detail for a single asset.
     Includes the complete structured risk_explanation JSON.
     """
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     # Fetch asset + verify ownership via workspace
     asset_query = (
         select(CryptoAsset)
@@ -190,8 +169,8 @@ async def get_asset_risk(
         raise HTTPException(status_code=404, detail="Asset not found")
 
     # Validate workspace ownership
-    if not asset.workspace or asset.workspace.clerk_user_id != x_clerk_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if not asset.workspace or asset.workspace.clerk_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Asset not found")
 
     # Fetch risk score
     risk_query = (
@@ -215,16 +194,13 @@ async def get_asset_risk(
 async def recalculate_asset_risk(
     asset_id: uuid.UUID,
     body: RecalculateRequest,
-    x_clerk_user_id: str = Header(None),
+    user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Recalculate the risk score for an asset with custom parameters.
     Useful for 'what-if' scenarios (e.g. change data lifetime or threat horizon).
     """
-    if not x_clerk_user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     # Fetch asset + verify ownership
     asset_query = (
         select(CryptoAsset)
@@ -237,8 +213,8 @@ async def recalculate_asset_risk(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    if not asset.workspace or asset.workspace.clerk_user_id != x_clerk_user_id:
-        raise HTTPException(status_code=403, detail="Access denied")
+    if not asset.workspace or asset.workspace.clerk_user_id != user_id:
+        raise HTTPException(status_code=404, detail="Asset not found")
 
     # Validate criticality
     valid_criticality = {"CRITICAL", "HIGH", "MEDIUM", "LOW"}

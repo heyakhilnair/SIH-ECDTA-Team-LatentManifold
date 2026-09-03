@@ -10,7 +10,7 @@
 2. Read `docs/PRODUCT_REFERENCE.md` — complete product picture built from all 22 phase PDFs
 3. Read `docs/TRACKER.md` — find your first task
 
-**Then read `docs/BACKEND_AUDIT_PHASE0-6.md`.** Phase 6's UI is code-complete (Mission Control, Sources, Scan Jobs, Assets, CBOM, Risk, Graph, Migration, PQC Workbench all wired to real endpoints) but a backend auth bug 401s every one of them — that audit is the actual next task, not new Phase 6 pages. It also lists P1 functional bugs (fake job logs, evidence_count always 0) and P2 spec deviations (Celery/Redis installed but unused, Z threat horizon not actually configurable, CBOM schema non-conformant) found by reading every backend source file against all 22 phase PDFs.
+**Then skim `docs/BACKEND_AUDIT_PHASE0-6.md`.** Phase 6 is now complete: all 14 findings (auth bypass on jobs/sources, unverified JWT, header mismatch that 401'd every dashboard page, fake job logs/counts, a `risk_scores` table schema drift that silently broke the entire risk engine against the real database, CBOM schema non-conformance, CORS, and more) were found and fixed the same day, each verified against the real DB and real Clerk API — run `ecdat-backend/test_phase6_audit.py` to re-confirm. Read it for what NOT to break, not what to fix. **Next up is Phase 7 — Testing + Demo Preparation.**
 
 ---
 
@@ -51,9 +51,10 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - PQC Recommendation Engine — NIST FIPS 203/204/205 recommendation rule table, safe asset detection, pipeline trigger & endpoints (Phase 5)
 - Frontend Enterprise Route Migration & Advanced UI specs (Phase 6)
 - Enterprise Product Shell (Phase 6.3) — includes Topbar, Sidebar, PageHeader, CommandPalette search, and Settings UI
+- Mission Control, Sources, Scan Jobs, Assets, CBOM, Risk, Graph, Migration, PQC Workbench — all wired to real API data (Phase 6.3–6.6)
+- Full backend audit + fix pass against all 22 phase PDFs (`docs/BACKEND_AUDIT_PHASE0-6.md`): real Clerk JWT verification, auth on every route, real job logs/counts, a `risk_scores` schema-drift fix that had silently broken the entire risk engine, configurable Z (threat horizon), CycloneDX-conformant CBOM, tightened CORS
 
-**Not yet built / broken:**
-- Backend auth: `jobs.py`/`sources.py` have no auth at all; `assets.py`/`risk.py`/`recommendations.py`/`cbom.py` expect a header the frontend never sends (always 401); the Clerk JWT is never signature-verified anywhere. See `docs/BACKEND_AUDIT_PHASE0-6.md` #1–#3. **This is what's actually blocking Phase 6, not missing pages.**
+**Not yet built:**
 - Testing + Demo preparation (Phase 7)
 
 ---
@@ -132,7 +133,7 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 | Backend | Python + FastAPI 0.115.x + Pydantic v2 |
 | ORM | SQLAlchemy 2.0 async + Alembic |
 | Primary DB | PostgreSQL 16 |
-| Job queue | Celery 5 + Redis 7 |
+| Job queue | In-process FastAPI `BackgroundTasks` (Celery+Redis was planned, never wired, deliberately dropped — see BACKEND_AUDIT_PHASE0-6.md #9) |
 | AST scanner | tree-sitter (Python, Go, JS, Java, C) |
 | Rules engine | Semgrep (subprocess call) |
 | Graph DB | Neo4j (V2/post-SIH) |
