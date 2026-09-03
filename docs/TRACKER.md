@@ -1,10 +1,11 @@
 # ECDAT — MASTER IMPLEMENTATION TRACKER
 **Project:** SIH26164 · LatentManifold · SIH2026-143  
-**Last Updated:** 2026-09-01  
+**Last Updated:** 2026-09-03  
 **Updating Agent Rule:** When you complete a task, change `[ ]` to `[x]`. When starting, change to `[/]`. If blocked, add `[!]` and note the blocker inline.
 
 > For full task specs (code, DoD, schemas), read `docs/IMPLEMENTATION_PLAN.md`  
-> For quick context pickup, read `docs/AGENT_CONTEXT.md`
+> For quick context pickup, read `docs/AGENT_CONTEXT.md`  
+> **For known bugs and architecture gaps in Phases 0–6, read `docs/BACKEND_AUDIT_PHASE0-6.md` before trusting any `[x]` below at face value.** Several boxes here were marked done by prior agents when the code was actually a stub or non-functional — the audit corrects those; this file's checkmarks alone are no longer sufficient.
 
 ---
 
@@ -136,13 +137,14 @@
 **Depends on:** Phase 0.1 (FastAPI), Phase 0.2 (DB schema)
 
 ### 2.1 Job Lifecycle Endpoints
+**[!] SECURITY: `routers/jobs.py` and `routers/sources.py` have zero authentication — confirmed by empirical request, see BACKEND_AUDIT #2. Any caller who knows a workspace UUID can create/list/cancel jobs and register sources for it.**
 - [x] Implement `POST /api/jobs` — create discovery job (returns job ID immediately)
 - [x] Implement `GET /api/jobs` — list jobs for workspace (with status)
 - [x] Implement `GET /api/jobs/{job_id}` — get job detail
 - [x] Implement `DELETE /api/jobs/{job_id}` — cancel job
-- [x] Implement `GET /api/jobs/{job_id}/evidence` — get evidence for job
+- [!] Implement `GET /api/jobs/{job_id}/evidence` — get evidence for job — **STUB: returns `{"items": [], "total": 0}` unconditionally, see BACKEND_AUDIT #6**
 - [x] Implement job status state machine: queued → running → completed/failed
-- [x] Set up Celery + Redis for async job execution
+- [!] Set up Celery + Redis for async job execution — **installed/configured but unused; orchestrator runs on in-process FastAPI BackgroundTasks, see BACKEND_AUDIT #9**
 - [x] Test: create job via API → appears in list with `queued` status
 
 ### 2.2 Tree-sitter Scanner
@@ -253,8 +255,8 @@
 - `[x]` Include ECDAT-specific properties (`ecdat:quantumVulnerable`, etc.)
 - `[x]` Implement `POST /api/workspaces/{id}/cbom/generate` → trigger CBOM generation
 - `[x]` Implement `GET /api/workspaces/{id}/cbom` → return latest CBOM JSON
-- `[x]` Validate output against CycloneDX schema v1.6 (use `cyclonedx-python-lib` or manual validation)
-- `[x]` Test: generated CBOM is valid CycloneDX JSON
+- `[!]` Validate output against CycloneDX schema v1.6 (use `cyclonedx-python-lib` or manual validation) — **no validation call exists; `primitive` enum values used ("public-key", "symmetric") aren't valid CycloneDX 1.6 values, see BACKEND_AUDIT #11**
+- `[!]` Test: generated CBOM is valid CycloneDX JSON — no such test exists
 
 ### 3.5 Normalization Pipeline Integration
 - `[x]` Add normalization step to scanner orchestrator (after evidence persistence)
@@ -318,8 +320,10 @@
 ---
 
 ## PHASE 6 — ENTERPRISE NAVIGATION & MULTI-SOURCE DISCOVERY
-**Status:** `[/] IN PROGRESS` · **Target:** Day 15–20  
+**Status:** `[!] UI BUILT, BLOCKED BY P0 AUTH BUG` · **Target:** Day 15–20  
 **Depends on:** Phase 1 (Clerk), Phases 2–5 (backend functional)
+
+**All 6.3–6.6 pages below are wired to real API calls (no hardcoded data, confirmed by grep + `tsc --noEmit` clean) but every page under Risk/Recommendations/CBOM/Assets will 401 on load — see `docs/BACKEND_AUDIT_PHASE0-6.md` #1. Fix that one auth bug before treating this phase as demo-ready.**
 
 ### 6.1 Backend DB Refactoring (Multi-Source Support)
 - [x] Create `Source` and `JobSource` SQLAlchemy models
@@ -335,29 +339,30 @@
 - [x] Implement collapsible sidebar, active states, and ECDAT styling (no purple gradients)
 
 ### 6.3 Mission Control (Dashboard Home)
-- [ ] Refactor `dashboard/page.tsx` into an executive command center
-- [ ] Summarize active sources, jobs, critical findings, and migration posture
-- [ ] Integrate "Force Run Discovery" to queue a multi-source Scan Job
+- [x] Refactor `prototype/page.tsx` into an executive command center
+- [x] Summarize active sources, jobs, critical findings, and migration posture
+- [x] Integrate "Force Run Discovery" to queue a multi-source Scan Job
 
 ### 6.4 Sources Inventory Page
-- [ ] Create `dashboard/sources/page.tsx`
-- [ ] Implement "Add Source" form targeting `POST /api/workspaces/{wid}/sources`
-- [ ] Display enterprise source inventory table
-- [ ] Implement multi-select checkboxes for launching mass discovery
+- [x] Create `prototype/sources/page.tsx`
+- [x] Implement "Add Source" form targeting `POST /api/workspaces/{wid}/sources`
+- [x] Display enterprise source inventory table
+- [x] Implement multi-select checkboxes for launching mass discovery
 
 ### 6.5 Scan Jobs Pipeline UI
-- [ ] Create `dashboard/scans/page.tsx`
-- [ ] Show scan progress states (Queued → Discovering → Analyzing → Normalizing → CBOM → Completed)
-- [ ] Display partial completion numbers (e.g. 12/18 completed)
+- [x] Create `prototype/scans/page.tsx`
+- [x] Show scan progress states (queued/running/completed/failed badges, 3s poll)
+- [!] Display partial completion numbers (e.g. 12/18 completed) — "Crypto Assets Found" column always shows `—`, backend hardcodes `evidence_count=0`, see BACKEND_AUDIT #4
 
-### 6.6 Analytics & Intelligence Pages (Placeholders)
-- [ ] Create `dashboard/assets/page.tsx`
-- [ ] Create `dashboard/cbom/page.tsx`
-- [ ] Create `dashboard/graph/page.tsx`
-- [ ] Create `dashboard/risk/page.tsx`
-- [ ] Create `dashboard/migration/page.tsx`
+### 6.6 Analytics & Intelligence Pages
+- [x] Create `prototype/assets/page.tsx`
+- [x] Create `prototype/cbom/page.tsx`
+- [x] Create `prototype/graph/page.tsx` (client-side derived from assets list — no dedicated graph backend/Neo4j yet, that's Phase 9)
+- [x] Create `prototype/risk/page.tsx`
+- [x] Create `prototype/migration/page.tsx`
+- [x] (Bonus, not originally scoped here) `prototype/pqc/page.tsx` PQC Workbench + `prototype/recommendations` route alias
 
-**PHASE 6 DONE WHEN:** The multi-source DB model is live, and the sidebar accurately reflects the ECDAT enterprise lifecycle.
+**PHASE 6 DONE WHEN:** The multi-source DB model is live, and the sidebar accurately reflects the ECDAT enterprise lifecycle. **Code-complete; not demo-ready until the P0 auth bug (BACKEND_AUDIT #1) is fixed — right now these pages 401 on every load.**
 
 ---
 
@@ -455,13 +460,13 @@
 | 3 | Normalization + CBOM | `[x] COMPLETED` | — |
 | 4 | Quantum Risk Engine | `[x] COMPLETED` | — |
 | 5 | PQC Recommendation | `[x] COMPLETED` | — |
-| 6 | Frontend Wiring & Dashboard | `[/] IN PROGRESS` | — |
-| 7 | Testing + Demo | `[ ] NOT STARTED` | Phase 6 |
+| 6 | Frontend Wiring & Dashboard | `[!] UI built, blocked by P0 auth bug` | See `docs/BACKEND_AUDIT_PHASE0-6.md` #1 |
+| 7 | Testing + Demo | `[ ] NOT STARTED` | Phase 6 auth bug |
 | 8 | AI Analyst | `[~] DEFERRED` | Phase 6 |
 | 9 | Knowledge Graph | `[~] DEFERRED` | Phase 6 |
 | 10 | Enterprise | `[~] DEFERRED` | Phase 6 |
 
 ---
 
-*Last updated by: Antigravity (2026-09-02T23:17)*  
-*Next agent: Pick up Phase 6 — Frontend Wiring & Multi-Source Dashboard.*
+*Last updated by: Claude Sonnet 5 (2026-09-03)*  
+*Next agent: Fix the P0 auth bug in `docs/BACKEND_AUDIT_PHASE0-6.md` (#1–#3) first — it blocks every Phase 6 page from loading data. Then work the audit's P1/P2 list before starting Phase 7.*

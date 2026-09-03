@@ -10,7 +10,7 @@
 2. Read `docs/PRODUCT_REFERENCE.md` — complete product picture built from all 22 phase PDFs
 3. Read `docs/TRACKER.md` — find your first task
 
-**Then begin Phase 6.**
+**Then read `docs/BACKEND_AUDIT_PHASE0-6.md`.** Phase 6's UI is code-complete (Mission Control, Sources, Scan Jobs, Assets, CBOM, Risk, Graph, Migration, PQC Workbench all wired to real endpoints) but a backend auth bug 401s every one of them — that audit is the actual next task, not new Phase 6 pages. It also lists P1 functional bugs (fake job logs, evidence_count always 0) and P2 spec deviations (Celery/Redis installed but unused, Z threat horizon not actually configurable, CBOM schema non-conformant) found by reading every backend source file against all 22 phase PDFs.
 
 ---
 
@@ -52,8 +52,8 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - Frontend Enterprise Route Migration & Advanced UI specs (Phase 6)
 - Enterprise Product Shell (Phase 6.3) — includes Topbar, Sidebar, PageHeader, CommandPalette search, and Settings UI
 
-**Not yet built:**
-- Frontend wiring with real API data (Phase 6.3–6.6)
+**Not yet built / broken:**
+- Backend auth: `jobs.py`/`sources.py` have no auth at all; `assets.py`/`risk.py`/`recommendations.py`/`cbom.py` expect a header the frontend never sends (always 401); the Clerk JWT is never signature-verified anywhere. See `docs/BACKEND_AUDIT_PHASE0-6.md` #1–#3. **This is what's actually blocking Phase 6, not missing pages.**
 - Testing + Demo preparation (Phase 7)
 
 ---

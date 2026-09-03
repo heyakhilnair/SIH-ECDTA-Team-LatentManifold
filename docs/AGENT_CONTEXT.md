@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-02 (Phase 5 complete — next: Phase 6)
+**Updated:** 2026-09-03 (Phase 6 UI code-complete but blocked by a P0 auth bug — read `docs/BACKEND_AUDIT_PHASE0-6.md` before touching the backend)
 
 ---
 
@@ -102,7 +102,7 @@ SIH-ECDTA-Team-LatentManifold/
 | Quantum Risk Engine | ✅ COMPLETE | Phase 4 done — Mosca + 4 risk endpoints |
 | PQC recommendations | ✅ COMPLETE | Phase 5 done — FIPS 203/204/205 candidates |
 | Enterprise sidebar + UI shell | ✅ COMPLETE | Phase 6.1–6.2 done |
-| Dashboard wiring (real API data) | ❌ NOT DONE | Phase 6.3–6.6 — NEXT |
+| Dashboard wiring (real API data) | ⚠️ WIRED BUT 401ing | Phase 6.3–6.6 code-complete; blocked by BACKEND_AUDIT #1 (frontend sends `Authorization: Bearer`, backend expects `X-Clerk-User-Id` — always 401). Fix that first. |
 | AI Analyst (real) | ❌ NOT DONE | Phase 8 (post-SIH) |
 | Knowledge Graph | ❌ NOT DONE | Phase 9 (post-SIH) |
 
@@ -191,6 +191,7 @@ Phase 1 + Phase 5 → Phase 6 → Phase 7
 1. **Read this file** (you're doing it now ✓)
 2. **Read `docs/PRODUCT_REFERENCE.md`** — understand the full product picture from 22 PDFs
 3. **Read `docs/TRACKER.md`** — find the next `[ ]` task in the current phase
+3.5. **Read `docs/BACKEND_AUDIT_PHASE0-6.md`** if touching anything in `ecdat-backend/` — TRACKER's `[x]` marks are not all trustworthy for Phases 0–6; the audit lists which ones are actually stubs or broken, with file:line.
 4. **Read the relevant section** of `docs/IMPLEMENTATION_PLAN.md` for full code spec and DoD
 5. **Do the work**
 6. **Update `docs/TRACKER.md`**: `[ ]` → `[x]` when done, `[/]` while in progress
