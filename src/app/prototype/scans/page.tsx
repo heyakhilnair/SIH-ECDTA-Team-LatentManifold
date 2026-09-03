@@ -31,7 +31,8 @@ export default function ScansPage() {
     loadData();
     interval = setInterval(loadData, 3000); // Poll every 3 seconds for active jobs
     return () => clearInterval(interval);
-  }, [isLoaded, userId, getToken, workspace]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace]);
 
   const activeJobs = jobs.filter(j => j.status === 'running' || j.status === 'queued');
 

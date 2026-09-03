@@ -2,7 +2,7 @@ import uuid
 import datetime
 from sqlalchemy import Column, String, Integer, Float, ForeignKey, DateTime, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from app.database import Base
 
 class RiskScore(Base):
@@ -35,5 +35,18 @@ class RiskScore(Base):
     updated_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     
     # Relationships
-    asset = relationship("CryptoAsset", backref="risk_score", uselist=False)
+    #
+    # `backref="risk_score", uselist=False` here only makes THIS side
+    # (RiskScore.asset) scalar - the reverse side SQLAlchemy creates on
+    # CryptoAsset (CryptoAsset.risk_score) still defaulted to a list, despite
+    # asset_id being unique=True. Found live: `app/routers/assets.py` does
+    # `asset.risk_score.composite_risk_level`, which 500'd with
+    # `AttributeError: 'InstrumentedList' object has no attribute
+    # 'composite_risk_level'` on every real request once an asset actually
+    # had a risk score - a real GitHub scan through the real UI, not a unit
+    # test, is what surfaced this. models/recommendation.py already has the
+    # correct pattern (`backref=backref("recommendation", uselist=False)`,
+    # using the backref() helper so uselist applies to both sides) - matching
+    # it here.
+    asset = relationship("CryptoAsset", backref=backref("risk_score", uselist=False))
     workspace = relationship("Workspace", backref="risk_scores")

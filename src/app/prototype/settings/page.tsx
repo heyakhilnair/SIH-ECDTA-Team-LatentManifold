@@ -61,7 +61,8 @@ export default function SettingsPage() {
     api.workspace.getMe(getToken)
       .then((res) => setThreatHorizon(res.threat_horizon_years ?? 12))
       .catch(() => {});
-  }, [isLoaded, userId, getToken]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId]);
 
   const saveThreatHorizon = async () => {
     if (threatHorizon == null) return;

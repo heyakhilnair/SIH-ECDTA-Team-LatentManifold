@@ -67,7 +67,8 @@ export default function MissionControl() {
     loadData();
     interval = setInterval(loadData, 5000);
     return () => clearInterval(interval);
-  }, [isLoaded, userId, getToken, workspace]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace]);
 
   const containerVariants = {
     hidden: { opacity: 0 },

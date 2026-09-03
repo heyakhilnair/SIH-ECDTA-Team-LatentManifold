@@ -33,7 +33,8 @@ export default function PqcPage() {
 
   useEffect(() => {
     loadRecommendations();
-  }, [isLoaded, userId, getToken, workspace]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace]);
 
   const handleGenerate = async () => {
     if (!workspace?.id) return;

@@ -15,10 +15,15 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from jose import jwt as jose_jwt
 
+import app.main  # noqa: F401 - triggers the same model import graph as the real app (see test below)
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload, configure_mappers
+
 from app.database import AsyncSessionLocal
 from app.models.workspace import Workspace
 from app.models.job import DiscoveryJob
 from app.models.asset import CryptoAsset
+from app.models.risk import RiskScore
 from app.services.auth import get_current_user_id, _fetch_jwks
 from app.services.scanner.orchestrator import _append_job_log, _job_status
 from app.services.risk_engine import compute_asset_risk
@@ -117,6 +122,55 @@ async def test_threat_horizon_is_workspace_configurable():
         await session.commit()
 
 
+async def test_crypto_asset_risk_score_backref_is_scalar():
+    """
+    Regression test for a real production 500: models/risk.py declared
+    `relationship("CryptoAsset", backref="risk_score", uselist=False)` — the
+    plain-string `backref=` form only applies `uselist=False` to THIS side
+    (RiskScore.asset); the reverse attribute SQLAlchemy creates on
+    CryptoAsset (CryptoAsset.risk_score) stayed a list. Every real GET
+    /api/workspaces/{id}/assets request 500'd once an asset actually had a
+    risk score, surfaced by the browser as a misleading CORS error (the
+    crashed response has no CORS headers). Only found via a live scan
+    through the real UI — no unit test exercised this exact selectinload +
+    attribute-access shape until now.
+    """
+    print("\n[6] CryptoAsset.risk_score backref is scalar (not a list)...")
+    configure_mappers()  # backrefs aren't attached to the class until mappers configure
+
+    async with AsyncSessionLocal() as session:
+        ws = Workspace(clerk_user_id="test_audit_user_3", name="Audit Backref Test")
+        session.add(ws)
+        await session.flush()
+        asset = CryptoAsset(
+            workspace_id=ws.id, algorithm_canonical="SHA-1", algorithm_family="SHA-1",
+            algorithm_name="SHA-1", classical_vulnerable=True,
+        )
+        session.add(asset)
+        await session.commit()
+        await compute_asset_risk(session, asset)  # persists a real RiskScore row
+
+        # Exactly the query shape app/routers/assets.py's list_workspace_assets uses.
+        result = await session.execute(
+            select(CryptoAsset)
+            .options(selectinload(CryptoAsset.risk_score))
+            .where(CryptoAsset.id == asset.id)
+        )
+        fetched = result.scalar_one()
+        assert isinstance(fetched.risk_score, RiskScore), (
+            f"CryptoAsset.risk_score should be a single RiskScore, got "
+            f"{type(fetched.risk_score).__name__} — the backref cardinality bug is back"
+        )
+        composite = fetched.risk_score.composite_risk_level  # this line is what actually crashed in prod
+        print(f"    OK — risk_score is scalar, composite_risk_level={composite!r}")
+
+        from sqlalchemy import text
+        await session.execute(text("DELETE FROM risk_scores WHERE workspace_id = :wid"), {"wid": ws.id})
+        await session.execute(text("DELETE FROM crypto_assets WHERE workspace_id = :wid"), {"wid": ws.id})
+        await session.execute(text("DELETE FROM workspaces WHERE id = :wid"), {"wid": ws.id})
+        await session.commit()
+
+
 def test_cbom_primitive_mapping():
     print("\n[5] CBOM primitive values are real CycloneDX 1.6 enum members...")
     cases = [
@@ -148,6 +202,7 @@ async def main():
     await test_real_jwks_fetch_works()
     await test_job_logs_are_real_and_roundtrip()
     await test_threat_horizon_is_workspace_configurable()
+    await test_crypto_asset_risk_score_backref_is_scalar()
     test_cbom_primitive_mapping()
     print("\nAll Phase 0-6 audit-fix checks passed.")
 

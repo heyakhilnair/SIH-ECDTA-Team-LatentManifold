@@ -54,7 +54,8 @@ export default function RiskPage() {
 
   useEffect(() => {
     loadRiskData();
-  }, [isLoaded, userId, getToken, workspace]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace]);
 
   const openRecalculator = (riskItem: any) => {
     setSelectedRisk(riskItem);

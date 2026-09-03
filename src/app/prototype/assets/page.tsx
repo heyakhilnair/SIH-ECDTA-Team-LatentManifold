@@ -45,7 +45,8 @@ export default function AssetsPage() {
 
   useEffect(() => {
     loadAssets();
-  }, [isLoaded, userId, getToken, workspace, activeFilter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace, activeFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

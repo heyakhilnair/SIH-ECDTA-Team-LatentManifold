@@ -372,7 +372,7 @@ All 6.3–6.6 pages are wired to real API calls (no hardcoded data). The P0 auth
 **Status:** `[x] COMPLETED` · **Target:** Day 18–21  
 **Depends on:** Phases 2–6
 
-**Full report: `docs/PHASE7_TESTING_REPORT.md`.** Ground truth precision/recall: 100%/100% (real pipeline, real fixtures) — but only after fixing 3 real scanner/normalizer bugs found while building the fixtures (word-boundary false positives, a semgrep rule that never matched real Go code + a `raw_match="requires login"` bug, a go.mod single-line `require` parsing bug). Demo flow verified live: real GitHub scan → real risk scores → real PQC recommendation → real CycloneDX CBOM, with the user's actual signed-in Clerk session, not a mock.
+**Full report: `docs/PHASE7_TESTING_REPORT.md`.** Ground truth precision/recall: 100%/100% (real pipeline, real fixtures) — but only after fixing 3 real scanner/normalizer bugs found while building the fixtures. Demo flow verified live: real GitHub scan → real risk scores → real PQC recommendation → real CycloneDX CBOM, with the user's actual signed-in Clerk session. **That live walkthrough then found the single most severe bug of this whole phase**: Crypto Assets 500'd on every real request (a bad SQLAlchemy backref in `models/risk.py`, `CryptoAsset.risk_score` was a list, not a scalar — invisible until real risk-scored data + a real page load collided) plus a Clerk `getToken` instability causing a refetch storm across ~10 pages. Both fixed and re-verified live.
 
 ### 7.1 Ground Truth Test Fixtures
 - [x] Create `ecdat-test-fixtures/python/vulnerable.py` (RSA-2048, SHA-1, MD5, DES)

@@ -120,6 +120,38 @@ citation and hard/soft constraints; CBOM Inventory showed a real CycloneDX v1.6 
 components. This is the proof that docs/BACKEND_AUDIT_PHASE0-6.md's fixes actually work,
 end-to-end, not just against pytest.
 
+**Also found and fixed live — the most severe bug in this whole phase**: after the successful
+scan above, `Crypto Assets` (`/prototype/assets`) and any asset detail page 500'd on *every*
+real request, once an asset actually had a risk score attached. The browser reported it as a
+CORS error (`No 'Access-Control-Allow-Origin' header`) — a crashed response has no CORS headers,
+so that's genuinely how a 500 shows up client-side, not a real CORS regression. Root cause:
+`app/models/risk.py` declared `relationship("CryptoAsset", backref="risk_score", uselist=False)`
+— the plain-string `backref=` form only makes `RiskScore.asset` scalar; the reverse attribute
+SQLAlchemy generates on `CryptoAsset` (`CryptoAsset.risk_score`) silently stayed a list despite
+`asset_id` being `unique=True`. Every access to `asset.risk_score.composite_risk_level` in
+`app/routers/assets.py` crashed with `AttributeError: 'InstrumentedList' object has no attribute
+'composite_risk_level'`. `models/recommendation.py` already had the correct fix for the same
+pattern (`backref=backref("recommendation", uselist=False)`, using the `backref()` helper so
+`uselist` applies to both sides) — `risk.py` just never got it. This bug predates this session
+entirely (it's original Phase 4 code) and was invisible until this exact moment: it needed both
+a real risk-scored asset *and* someone actually loading the dedicated Assets page, which hadn't
+happened together until this live walkthrough. Fixed, confirmed via a direct ORM query (scalar
+`RiskScore`, not a list) and re-confirmed live: `GET /api/assets/{id}` and
+`GET /api/workspaces/{id}/assets` both now return 200 with real risk/recommendation data through
+the real signed-in session. Added a permanent regression test
+(`test_crypto_asset_risk_score_backref_is_scalar` in `test_phase6_audit.py`) that exercises the
+exact `selectinload` + attribute-access shape that broke, so this can't silently regress again.
+
+**Also found and fixed live — a second, compounding issue**: ~10 pages had
+`useEffect(..., [isLoaded, userId, getToken, workspace, ...])`, listing Clerk's `getToken`
+function as a dependency. `getToken` isn't a stable reference across renders — the codebase's
+own `WorkspaceWrapper.tsx` already discovered this (comment: *"Omitting getToken to prevent
+infinite loops from Clerk's re-renders"*) but that fix was never propagated to the pages built
+after it. Left in, this causes a refetch storm on every render, which was visibly saturating the
+dev server's connection handling on the heavier `/assets` endpoint. Removed `getToken` from
+every affected `useEffect` dependency array (assets, cbom, graph, migration, page/Mission
+Control, pqc, scans, sources, settings, risk).
+
 Also found and fixed in passing: a job stuck at `status='queued'` since 2026-09-02 — created
 right before the dev server restarted, and FastAPI `BackgroundTasks` (the deliberate,
 documented choice over Celery, see audit #9) doesn't survive a process restart. Marked it

@@ -40,7 +40,8 @@ export default function GraphPage() {
     };
 
     loadData();
-  }, [isLoaded, userId, getToken, workspace]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace]);
 
   const quantumCount = assets.filter((a) => a.quantum_vulnerable).length;
 

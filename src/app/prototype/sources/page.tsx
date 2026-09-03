@@ -37,7 +37,8 @@ export default function SourcesPage() {
 
   useEffect(() => {
     loadData();
-  }, [isLoaded, userId, getToken, workspace]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace]);
 
   const handleAddSource = async (e: React.FormEvent) => {
     e.preventDefault();

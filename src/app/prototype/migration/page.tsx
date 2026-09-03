@@ -54,7 +54,8 @@ export default function MigrationPage() {
     };
 
     loadData();
-  }, [isLoaded, userId, getToken, workspace]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, userId, workspace]);
 
   const moveAsset = (assetId: string, nextState: string) => {
     setAssetStates((prev) => ({
