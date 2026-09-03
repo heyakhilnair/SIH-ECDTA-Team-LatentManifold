@@ -109,7 +109,7 @@ def sync_scan_repo(url: str, workspace_dir: str):
     # 2. Semgrep Scanning
     try:
         semgrep_out = run_semgrep(workspace_dir)
-        semgrep_findings = convert_semgrep_to_evidence(semgrep_out)
+        semgrep_findings = convert_semgrep_to_evidence(semgrep_out, target_dir=workspace_dir)
         repo_findings.extend(semgrep_findings)
     except Exception as e:
         print(f"[Orchestrator] Semgrep failed: {e}")
@@ -197,7 +197,8 @@ async def run_discovery_job(job_id: str, workspace_id: str, source_urls: list):
                 assets_to_risk = set()
                 for evidence in evidence_rows:
                     asset = await resolve_evidence_to_asset(session, evidence)
-                    assets_to_risk.add(asset)
+                    if asset is not None:  # None = couldn't identify a specific algorithm, no asset created
+                        assets_to_risk.add(asset)
 
                 # 3. Compute Risk for all discovered assets
                 await _append_job_log(job_id, f"Computing Mosca risk scores for {len(assets_to_risk)} assets")

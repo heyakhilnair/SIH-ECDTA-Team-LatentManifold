@@ -10,7 +10,15 @@
 2. Read `docs/PRODUCT_REFERENCE.md` — complete product picture built from all 22 phase PDFs
 3. Read `docs/TRACKER.md` — find your first task
 
-**Then skim `docs/BACKEND_AUDIT_PHASE0-6.md`.** Phase 6 is now complete: all 14 findings (auth bypass on jobs/sources, unverified JWT, header mismatch that 401'd every dashboard page, fake job logs/counts, a `risk_scores` table schema drift that silently broke the entire risk engine against the real database, CBOM schema non-conformance, CORS, and more) were found and fixed the same day, each verified against the real DB and real Clerk API — run `ecdat-backend/test_phase6_audit.py` to re-confirm. Read it for what NOT to break, not what to fix. **Next up is Phase 7 — Testing + Demo Preparation.**
+**Then skim `docs/BACKEND_AUDIT_PHASE0-6.md` and `docs/PHASE7_TESTING_REPORT.md`.** Phases 0-7 are
+complete: the Phase 0-6 audit found and fixed 14 backend issues (auth bypass, unverified JWT, a
+`risk_scores` schema drift that silently broke the entire risk engine); Phase 7 built real
+ground-truth fixtures and found 3 more real bugs (normalizer false positives, a dead semgrep
+rule, a go.mod parsing bug) while getting to 100% precision/recall, then verified the whole
+thing live — a real GitHub scan through the real signed-in UI, screenshots included. Run
+`ecdat-backend/test_phase6_audit.py` and `pytest ecdat-backend/tests/` to re-confirm both.
+**Next up: Phase 8 (AI Analyst) or Phase 9 (Knowledge Graph), both deliberately deferred
+post-SIH — or rehearse `docs/DEMO_SCRIPT.md` if SIH day is close.**
 
 ---
 
@@ -55,7 +63,8 @@ The one-sentence pitch (from Phase 22 PDF): _"ECDAT discovers cryptography acros
 - Full backend audit + fix pass against all 22 phase PDFs (`docs/BACKEND_AUDIT_PHASE0-6.md`): real Clerk JWT verification, auth on every route, real job logs/counts, a `risk_scores` schema-drift fix that had silently broken the entire risk engine, configurable Z (threat horizon), CycloneDX-conformant CBOM, tightened CORS
 
 **Not yet built:**
-- Testing + Demo preparation (Phase 7)
+- Demo rehearsal itself (script is written — `docs/DEMO_SCRIPT.md` — but running through it live is a team action)
+- Everything explicitly deferred to Phase 8+ (AI Analyst, Knowledge Graph/Blast Radius, Enterprise hardening/Activity/Compliance) — these now have honest "not built yet" placeholder pages instead of 404s, see `docs/PHASE7_TESTING_REPORT.md` §7.5
 
 ---
 

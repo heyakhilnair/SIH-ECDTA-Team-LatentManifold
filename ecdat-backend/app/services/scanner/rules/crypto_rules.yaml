@@ -25,7 +25,11 @@ rules:
   # Go Rules
   - id: ecdat-sha1-usage
     patterns:
-      - pattern: crypto.sha1.New()
+      # `crypto/sha1` is imported and referenced as package "sha1" in real Go
+      # code — there is no such thing as "crypto.sha1.New()". The old pattern
+      # never matched anything real; found via Phase 7 ground truth testing
+      # (semgrep fired on rsa/md5 fixtures but silently not on sha1.New()).
+      - pattern: sha1.New()
     message: "Use of weak cryptographic algorithm SHA-1 detected. Classically vulnerable."
     languages: [go]
     severity: WARNING
@@ -109,4 +113,14 @@ rules:
     severity: WARNING
     metadata:
       ecdat_algorithm: "RSA"
+      ecdat_type: "key_generation"
+
+  - id: ecdat-js-ec-generate
+    patterns:
+      - pattern: crypto.generateKeyPairSync('ec', ...)
+    message: "Elliptic curve key pair generation detected. ECC is quantum vulnerable (Shor's algorithm)."
+    languages: [javascript, typescript]
+    severity: WARNING
+    metadata:
+      ecdat_algorithm: "ECDSA"
       ecdat_type: "key_generation"

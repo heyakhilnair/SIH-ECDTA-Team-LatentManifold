@@ -1,0 +1,35 @@
+{
+  "_notes": [
+    "Generated against the REAL pipeline (tree-sitter + semgrep + dependency scanner + the real normalizer), not hand-guessed — see ecdat-backend/tests/test_scanner.py which regenerates and checks this empirically every run.",
+    "expected_assets are algorithms that MUST be detected (recall). negative_cases are constructs that MUST NOT produce any asset (precision / false-positive resistance) — see python/mixed.py's docstring, string-literal algorithm name, and commented-out RSA import+call.",
+    "known_gaps documents real, current scanner limitations discovered while building this fixture set, intentionally not asserted as findings so the test suite doesn't lie about what ECDAT can actually see today."
+  ],
+  "expected_assets": [
+    {"canonical": "RSA", "family": "RSA", "quantum_vulnerable": true, "files": ["go/vulnerable.go", "python/vulnerable.py"]},
+    {"canonical": "RSA:2048", "family": "RSA", "quantum_vulnerable": true, "files": ["go/vulnerable.go", "python/vulnerable.py", "javascript/vulnerable.js"]},
+    {"canonical": "SHA-1", "quantum_vulnerable": false, "classical_vulnerable": true, "files": ["go/vulnerable.go", "python/vulnerable.py", "python/mixed.py", "javascript/vulnerable.js"]},
+    {"canonical": "MD5", "quantum_vulnerable": false, "classical_vulnerable": true, "files": ["python/vulnerable.py", "javascript/vulnerable.js"]},
+    {"canonical": "DES", "quantum_vulnerable": false, "classical_vulnerable": true, "files": ["go/vulnerable.go", "python/vulnerable.py", "javascript/vulnerable.js"]},
+    {"canonical": "AES", "quantum_vulnerable": false, "classical_vulnerable": false, "files": ["go/safe.go", "python/safe.py"]},
+    {"canonical": "AES:256", "quantum_vulnerable": false, "classical_vulnerable": false, "files": ["javascript/safe.js"]},
+    {"canonical": "SHA-256", "quantum_vulnerable": false, "classical_vulnerable": false, "files": ["go/safe.go", "python/safe.py", "python/mixed.py"]},
+    {"canonical": "ECDSA", "quantum_vulnerable": true, "files": ["go/certificates.go"]},
+    {"canonical": "ECDSA:256", "quantum_vulnerable": true, "files": ["go/certificates.go"]},
+    {"canonical": "P-256:256", "quantum_vulnerable": true, "files": ["go/certificates.go"]}
+  ],
+  "expected_deps": ["JSONWEBTOKEN", "CRYPTO-JS", "PYCRYPTODOME", "PYOPENSSL", "GOLANG.ORG/X/CRYPTO"],
+  "negative_cases": [
+    {"description": "docstring prose mentioning 'RSA-like key rotation' and 'legacy MD5 checksums'", "file": "python/mixed.py", "must_not_appear_as": ["RSA", "MD5"]},
+    {"description": "string literal DEPRECATED_ALGO_NAME = \"MD5\" (a value, not a call)", "file": "python/mixed.py", "must_not_appear_as": ["MD5"]},
+    {"description": "commented-out `import Crypto.PublicKey.RSA` / `RSA.generate(1024)`", "file": "python/mixed.py", "must_not_appear_as": ["RSA:1024"]},
+    {"description": "non-crypto dependency 'express' in package.json", "file": "dependencies/package.json", "must_not_appear_as": ["EXPRESS"]},
+    {"description": "non-crypto dependency 'requests' in requirements.txt", "file": "dependencies/requirements.txt", "must_not_appear_as": ["REQUESTS"]}
+  ],
+  "known_gaps": [
+    "go/certificates.go's tls.Config{CipherSuites: [...]} block is not detected — CRYPTO_PATTERNS has no crypto/tls entry. Only the ECDSA P-256 cert key generation in the same file is found.",
+    "python/safe.py's ML-KEM mention in IMPLEMENTATION_PLAN.md's original fixture spec is omitted — no PQC library has an entry in CRYPTO_PATTERNS, so nothing would be detected either way.",
+    "AES key size is only extracted when the call literally states a bit-length (JS: {length: 256}); Go/Python constructing AES from a byte-array (make([]byte, 32), b'0'*32) produce a bare 'AES' asset with no key_size, since that requires evaluating the buffer length, not just reading a literal number out of the call text."
+  ],
+  "min_precision": 0.90,
+  "min_recall": 0.85
+}

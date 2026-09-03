@@ -14,6 +14,7 @@ CRYPTO_PACKAGES = {
     "pip": {
         "cryptography": "Cryptographic primitives",
         "pycryptodome": "Cryptographic library",
+        "pyOpenSSL": "OpenSSL bindings (TLS/X.509)",
         "PyJWT": "JSON Web Token implementation",
         "bcrypt": "Password hashing",
         "passlib": "Password hashing"
@@ -71,15 +72,32 @@ def parse_pip_manifest(file_path: str, content: str) -> list[Evidence]:
     return findings
 
 def parse_go_manifest(file_path: str, content: str) -> list[Evidence]:
+    """
+    go.mod dependencies appear in two forms:
+        require golang.org/x/crypto v0.17.0          (single-line)
+        require (
+            golang.org/x/crypto v0.17.0              (block form, no leading "require")
+        )
+    The old `parts[0] != "require"` check only handled the block form — it
+    silently skipped every single-line `require`, which is the common case for
+    a go.mod with one or two dependencies. Found while building Phase 7 ground
+    truth fixtures (a go.mod fixture with a single `require` line produced a
+    false negative). Now strips a leading "require " token instead of
+    rejecting the whole line.
+    """
     findings = []
     lines = content.split('\n')
     for i, line in enumerate(lines):
         line_clean = line.strip()
-        if not line_clean or line_clean.startswith('//') or line_clean.startswith('module ') or line_clean.startswith('go '): 
+        if not line_clean or line_clean.startswith('//') or line_clean.startswith('module ') or line_clean.startswith('go '):
             continue
-            
+        if line_clean in ('require (', ')'):
+            continue
+        if line_clean.startswith('require '):
+            line_clean = line_clean[len('require '):].strip()
+
         parts = line_clean.split()
-        if len(parts) >= 2 and parts[0] != "require":
+        if len(parts) >= 2:
             pkg = parts[0]
             if pkg in CRYPTO_PACKAGES["go"]:
                 findings.append(Evidence(

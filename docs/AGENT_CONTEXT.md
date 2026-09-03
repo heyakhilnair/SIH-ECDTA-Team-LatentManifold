@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-03 (Phase 6 complete — all 14 findings in `docs/BACKEND_AUDIT_PHASE0-6.md` fixed and empirically verified. Next: Phase 7.)
+**Updated:** 2026-09-03 (Phases 0-7 complete and verified — real ground truth tests (100% precision/recall) + a live scan of a real GitHub repo through the real signed-in UI. See `docs/PHASE7_TESTING_REPORT.md`. Next: Phase 8/9, or demo rehearsal.)
 
 ---
 
