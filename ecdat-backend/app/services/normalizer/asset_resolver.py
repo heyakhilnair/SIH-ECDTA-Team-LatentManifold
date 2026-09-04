@@ -117,7 +117,18 @@ async def resolve_evidence_to_asset(db: AsyncSession, evidence: EvidenceModel):
         await db.commit()
         await db.refresh(asset)
     else:
+        # Re-evaluate vulnerability status every time, not just at creation —
+        # otherwise an asset's classification is frozen to whatever
+        # vulnerability_registry.py knew on the day it was first seen. Found
+        # live: Blowfish was added to CLASSICALLY_VULNERABLE, but every
+        # already-scanned Blowfish asset kept showing LOW/no-recommendation
+        # until a fresh scan, because only brand-new assets ever got these
+        # fields computed.
         asset.last_seen = datetime.datetime.utcnow()
+        asset.algorithm_family = family
+        asset.quantum_vulnerable = q_vuln
+        asset.classical_vulnerable = c_vuln
+        asset.vulnerability_notes = vuln_notes
         await db.commit()
 
 

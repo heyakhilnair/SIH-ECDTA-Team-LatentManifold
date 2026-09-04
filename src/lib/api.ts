@@ -89,6 +89,16 @@ export const api = {
       fetchWithAuth(`/api/workspaces/${wid}/sources`, getToken),
     create: (wid: string, name: string, url: string, getToken: () => Promise<string | null>) =>
       createSource(wid, name, url, getToken),
+    update: (
+      wid: string,
+      sourceId: string,
+      changes: { name?: string; ai_excluded?: boolean },
+      getToken: () => Promise<string | null>
+    ) =>
+      fetchWithAuth(`/api/workspaces/${wid}/sources/${sourceId}`, getToken, {
+        method: "PATCH",
+        body: JSON.stringify(changes),
+      }),
   },
 
   jobs: {
@@ -111,6 +121,7 @@ export const api = {
         quantum_vulnerable?: boolean;
         classical_vulnerable?: boolean;
         search?: string;
+        source_id?: string;
         limit?: number;
         offset?: number;
       }
@@ -120,6 +131,7 @@ export const api = {
       if (params?.quantum_vulnerable !== undefined) query.set("quantum_vulnerable", String(params.quantum_vulnerable));
       if (params?.classical_vulnerable !== undefined) query.set("classical_vulnerable", String(params.classical_vulnerable));
       if (params?.search) query.set("search", params.search);
+      if (params?.source_id) query.set("source_id", params.source_id);
       if (params?.limit) query.set("limit", String(params.limit));
       if (params?.offset) query.set("offset", String(params.offset));
       const qs = query.toString();
@@ -132,10 +144,10 @@ export const api = {
   },
 
   risk: {
-    summary: (wid: string, getToken: () => Promise<string | null>) =>
-      fetchWithAuth(`/api/workspaces/${wid}/risk/summary`, getToken),
-    list: (wid: string, getToken: () => Promise<string | null>) =>
-      fetchWithAuth(`/api/workspaces/${wid}/risk`, getToken),
+    summary: (wid: string, getToken: () => Promise<string | null>, sourceId?: string) =>
+      fetchWithAuth(`/api/workspaces/${wid}/risk/summary${sourceId ? `?source_id=${sourceId}` : ""}`, getToken),
+    list: (wid: string, getToken: () => Promise<string | null>, sourceId?: string) =>
+      fetchWithAuth(`/api/workspaces/${wid}/risk${sourceId ? `?source_id=${sourceId}` : ""}`, getToken),
     get: (assetId: string, getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/assets/${assetId}/risk`, getToken),
     recalculate: (
@@ -155,8 +167,8 @@ export const api = {
   },
 
   recommendations: {
-    list: (wid: string, getToken: () => Promise<string | null>) =>
-      fetchWithAuth(`/api/workspaces/${wid}/recommendations`, getToken),
+    list: (wid: string, getToken: () => Promise<string | null>, sourceId?: string) =>
+      fetchWithAuth(`/api/workspaces/${wid}/recommendations${sourceId ? `?source_id=${sourceId}` : ""}`, getToken),
     get: (assetId: string, getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/assets/${assetId}/recommendation`, getToken),
     generate: (wid: string, getToken: () => Promise<string | null>) =>
@@ -166,8 +178,8 @@ export const api = {
   },
 
   cbom: {
-    getLatest: (wid: string, getToken: () => Promise<string | null>) =>
-      fetchWithAuth(`/api/workspaces/${wid}/cbom`, getToken),
+    getLatest: (wid: string, getToken: () => Promise<string | null>, sourceId?: string) =>
+      fetchWithAuth(`/api/workspaces/${wid}/cbom${sourceId ? `?source_id=${sourceId}` : ""}`, getToken),
     generate: (wid: string, getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/workspaces/${wid}/cbom/generate`, getToken, {
         method: "POST",
@@ -177,10 +189,10 @@ export const api = {
   analyst: {
     status: (wid: string, getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/workspaces/${wid}/analyst/status`, getToken),
-    query: (wid: string, question: string, getToken: () => Promise<string | null>) =>
+    query: (wid: string, question: string, getToken: () => Promise<string | null>, sourceId?: string) =>
       fetchWithAuth(`/api/workspaces/${wid}/analyst/query`, getToken, {
         method: "POST",
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, source_id: sourceId }),
       }),
   },
 

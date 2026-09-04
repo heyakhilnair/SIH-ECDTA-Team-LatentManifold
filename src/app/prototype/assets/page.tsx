@@ -5,15 +5,95 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspace } from "../../../components/WorkspaceWrapper";
+import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
+import ProjectFilter from "@/components/ProjectFilter";
 import Link from "next/link";
 import "../prototype.css";
+
+function AssetsTable({ assets, onSelect }: { assets: any[]; onSelect: (asset: any) => void }) {
+  return (
+    <div className="ecdat-table-wrapper" style={{ border: "none", borderRadius: 0 }}>
+      <table className="ecdat-table">
+        <thead>
+          <tr>
+            <th>Canonical Algorithm</th>
+            <th>Family</th>
+            <th>Function</th>
+            <th>Key Size</th>
+            <th>Quantum Posture</th>
+            <th>Classical Status</th>
+            <th>Composite Risk</th>
+            <th>Occurrences</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {assets.map((asset) => (
+            <tr key={asset.id} onClick={() => onSelect(asset)} style={{ cursor: "pointer" }}>
+              <td style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#181917" }}>
+                {asset.algorithm_canonical}
+              </td>
+              <td style={{ fontSize: "0.85rem", color: "#555" }}>{asset.algorithm_family}</td>
+              <td style={{ fontSize: "0.85rem", color: "#666" }}>{asset.function || "UNSPECIFIED"}</td>
+              <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
+                {asset.key_size ? `${asset.key_size} bit` : "—"}
+              </td>
+              <td>
+                {asset.quantum_vulnerable ? (
+                  <span className="ecdat-badge ecdat-badge-danger" style={{ fontSize: "0.75rem" }}>VULNERABLE (SHOR)</span>
+                ) : (
+                  <span className="ecdat-badge ecdat-badge-success" style={{ fontSize: "0.75rem" }}>QUANTUM SAFE</span>
+                )}
+              </td>
+              <td>
+                {asset.classical_vulnerable ? (
+                  <span className="ecdat-badge ecdat-badge-danger" style={{ fontSize: "0.75rem" }}>DEPRECATED / BROKEN</span>
+                ) : (
+                  <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.75rem" }}>ACCEPTABLE</span>
+                )}
+              </td>
+              <td>
+                <span
+                  className={`ecdat-badge ${
+                    asset.risk?.composite_risk_level === "CRITICAL" ? "ecdat-badge-danger"
+                    : asset.risk?.composite_risk_level === "HIGH" ? "ecdat-badge-active"
+                    : asset.risk?.composite_risk_level === "MEDIUM" ? "ecdat-badge-neutral"
+                    : "ecdat-badge-success"
+                  }`}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  {asset.risk?.composite_risk_level || "ASSESSED"}
+                </span>
+              </td>
+              <td style={{ textAlign: "center", fontWeight: 700 }}>
+                <span style={{ color: "var(--color-primary)" }}>{asset.evidence_count}</span>
+              </td>
+              <td>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onSelect(asset); }}
+                  className="ecdat-btn"
+                  style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}
+                >
+                  Inspect →
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default function AssetsPage() {
   const { getToken, isLoaded, userId } = useAuth();
   const workspace = useWorkspace();
+  const searchParams = useSearchParams();
 
   const [assets, setAssets] = useState<any[]>([]);
+  const [sources, setSources] = useState<any[]>([]);
+  const [sourceId, setSourceId] = useState(() => searchParams?.get("source") || "");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "quantum" | "classical" | "safe">("all");
@@ -29,13 +109,18 @@ export default function AssetsPage() {
       if (activeFilter === "quantum") params.quantum_vulnerable = true;
       if (activeFilter === "classical") params.classical_vulnerable = true;
       if (search.trim()) params.search = search.trim();
+      if (sourceId) params.source_id = sourceId;
 
-      const data = await api.assets.list(workspace.id, getToken, params);
+      const [data, sourcesData] = await Promise.all([
+        api.assets.list(workspace.id, getToken, params),
+        api.sources.list(workspace.id, getToken).catch(() => []),
+      ]);
       let filtered = data || [];
       if (activeFilter === "safe") {
         filtered = filtered.filter((a: any) => !a.quantum_vulnerable && !a.classical_vulnerable);
       }
       setAssets(filtered);
+      setSources(sourcesData || []);
     } catch (err: any) {
       console.error("Failed to load assets", err);
     } finally {
@@ -46,12 +131,30 @@ export default function AssetsPage() {
   useEffect(() => {
     loadAssets();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, userId, workspace, activeFilter]);
+  }, [isLoaded, userId, workspace, activeFilter, sourceId]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loadAssets();
   };
+
+  // Group by project when viewing "All Projects" — an asset shared across
+  // projects (same algorithm in two repos) appears once under each project
+  // it was actually found in, so "where does this sit in MY project" has a
+  // real, direct answer instead of one flat mixed list. A single-project
+  // view (sourceId set) has nothing to group by, so it stays flat.
+  const groupedByProject: [string, any[]][] | null = sourceId
+    ? null
+    : (() => {
+        const groups: Record<string, any[]> = {};
+        for (const asset of assets) {
+          const projects: string[] = asset.projects?.length ? asset.projects : ["Unattributed"];
+          for (const p of projects) {
+            (groups[p] ||= []).push(asset);
+          }
+        }
+        return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+      })();
 
   const handleSelectAsset = async (asset: any) => {
     setSelectedAsset(asset);
@@ -109,7 +212,8 @@ export default function AssetsPage() {
           borderRadius: "8px",
         }}
       >
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+          <ProjectFilter sources={sources} value={sourceId} onChange={setSourceId} />
           <button
             onClick={() => setActiveFilter("all")}
             className={`ecdat-btn ${activeFilter === "all" ? "ecdat-btn-primary" : ""}`}
@@ -192,118 +296,35 @@ export default function AssetsPage() {
         </form>
       </div>
 
-      {/* Assets Table */}
-      <div className="ecdat-card" style={{ padding: 0, overflow: "hidden" }}>
-        <div className="ecdat-table-wrapper" style={{ border: "none", borderRadius: 0 }}>
-          <table className="ecdat-table">
-            <thead>
-              <tr>
-                <th>Canonical Algorithm</th>
-                <th>Family</th>
-                <th>Function</th>
-                <th>Key Size</th>
-                <th>Quantum Posture</th>
-                <th>Classical Status</th>
-                <th>Composite Risk</th>
-                <th>Occurrences</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: "center", padding: "3rem", color: "#888" }}>
-                    Loading cryptographic assets...
-                  </td>
-                </tr>
-              ) : assets.length === 0 ? (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: "center", padding: "3rem", color: "#888" }}>
-                    <p style={{ marginBottom: "1rem" }}>No cryptographic assets matching the selected criteria.</p>
-                    <Link href="/prototype/sources" className="ecdat-btn" style={{ padding: "0.4rem 0.8rem" }}>
-                      Run Discovery Scan
-                    </Link>
-                  </td>
-                </tr>
-              ) : (
-                assets.map((asset) => (
-                  <tr
-                    key={asset.id}
-                    onClick={() => handleSelectAsset(asset)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#181917" }}>
-                      {asset.algorithm_canonical}
-                    </td>
-                    <td style={{ fontSize: "0.85rem", color: "#555" }}>
-                      {asset.algorithm_family}
-                    </td>
-                    <td style={{ fontSize: "0.85rem", color: "#666" }}>
-                      {asset.function || "UNSPECIFIED"}
-                    </td>
-                    <td style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem" }}>
-                      {asset.key_size ? `${asset.key_size} bit` : "—"}
-                    </td>
-                    <td>
-                      {asset.quantum_vulnerable ? (
-                        <span className="ecdat-badge ecdat-badge-danger" style={{ fontSize: "0.75rem" }}>
-                          VULNERABLE (SHOR)
-                        </span>
-                      ) : (
-                        <span className="ecdat-badge ecdat-badge-success" style={{ fontSize: "0.75rem" }}>
-                          QUANTUM SAFE
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {asset.classical_vulnerable ? (
-                        <span className="ecdat-badge ecdat-badge-danger" style={{ fontSize: "0.75rem" }}>
-                          DEPRECATED / BROKEN
-                        </span>
-                      ) : (
-                        <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.75rem" }}>
-                          ACCEPTABLE
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      <span
-                        className={`ecdat-badge ${
-                          asset.risk?.composite_risk_level === "CRITICAL"
-                            ? "ecdat-badge-danger"
-                            : asset.risk?.composite_risk_level === "HIGH"
-                            ? "ecdat-badge-active"
-                            : asset.risk?.composite_risk_level === "MEDIUM"
-                            ? "ecdat-badge-neutral"
-                            : "ecdat-badge-success"
-                        }`}
-                        style={{ fontSize: "0.75rem" }}
-                      >
-                        {asset.risk?.composite_risk_level || "ASSESSED"}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: "center", fontWeight: 700 }}>
-                      <span style={{ color: "var(--color-primary)" }}>{asset.evidence_count}</span>
-                    </td>
-                    <td>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectAsset(asset);
-                        }}
-                        className="ecdat-btn"
-                        style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}
-                      >
-                        Inspect →
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {/* Assets Table(s) — grouped by project when viewing all projects, flat when one is selected */}
+      {loading ? (
+        <div className="ecdat-card" style={{ textAlign: "center", padding: "3rem", color: "#888" }}>
+          Loading cryptographic assets...
         </div>
-      </div>
+      ) : assets.length === 0 ? (
+        <div className="ecdat-card" style={{ textAlign: "center", padding: "3rem", color: "#888" }}>
+          <p style={{ marginBottom: "1rem" }}>No cryptographic assets matching the selected criteria.</p>
+          <Link href="/prototype/sources" className="ecdat-btn" style={{ padding: "0.4rem 0.8rem" }}>
+            Run Discovery Scan
+          </Link>
+        </div>
+      ) : groupedByProject ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+          {groupedByProject.map(([projectName, projectAssets]) => (
+            <div key={projectName} className="ecdat-card" style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{ padding: "0.85rem 1.25rem", borderBottom: "1px solid #eaeaea", backgroundColor: "#faf9f6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <strong style={{ fontSize: "0.95rem", color: "#181917" }}>📁 {projectName}</strong>
+                <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.7rem" }}>{projectAssets.length} asset{projectAssets.length === 1 ? "" : "s"}</span>
+              </div>
+              <AssetsTable assets={projectAssets} onSelect={handleSelectAsset} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="ecdat-card" style={{ padding: 0, overflow: "hidden" }}>
+          <AssetsTable assets={assets} onSelect={handleSelectAsset} />
+        </div>
+      )}
 
       {/* Slide-Over Detail Drawer */}
       <AnimatePresence>
@@ -376,6 +397,13 @@ export default function AssetsPage() {
                     <strong>{selectedAsset.key_size ? `${selectedAsset.key_size}-bit` : "N/A"}</strong> · Function:{" "}
                     <strong>{selectedAsset.function || "UNSPECIFIED"}</strong>
                   </p>
+                  {selectedAsset.projects?.length > 0 && (
+                    <p style={{ fontSize: "0.8rem", color: "#666", margin: "6px 0 0" }}>
+                      Found in: {selectedAsset.projects.map((p: string) => (
+                        <span key={p} className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.7rem", marginRight: "4px" }}>📁 {p}</span>
+                      ))}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => setSelectedAsset(null)}
@@ -614,6 +642,14 @@ export default function AssetsPage() {
                             </div>
                           </div>
                         </div>
+
+                        <Link
+                          href={selectedAsset.projects?.length === 1 ? `/prototype/migration?source=${sources.find((s) => s.name === selectedAsset.projects[0])?.id || ""}` : "/prototype/migration"}
+                          className="ecdat-btn"
+                          style={{ display: "inline-block", marginTop: "1rem", padding: "0.6rem 1rem", fontSize: "0.85rem", textDecoration: "none" }}
+                        >
+                          Manage this migration — exact file locations, step-by-step guide →
+                        </Link>
                       </div>
                     )}
                   </div>

@@ -60,13 +60,14 @@ async def _append_job_log(job_id: str, message: str):
         )
         await session.commit()
 
-async def _persist_evidence(job_id: str, workspace_id: str, findings: list):
+async def _persist_evidence(job_id: str, workspace_id: str, findings: list, source_id: str = None):
     if not findings: return
     async with AsyncSessionLocal() as session:
         for finding in findings:
             ev = EvidenceModel(
                 job_id=job_id,
                 workspace_id=workspace_id,
+                source_id=source_id,
                 source_type=finding.source_type,
                 file_path=finding.file_path,
                 line_number=finding.line_number,
@@ -91,7 +92,7 @@ def sync_scan_repo(url: str, workspace_dir: str):
     
     # 1. Tree-sitter Source Scanning
     for root, _, files in os.walk(workspace_dir):
-        if '.git' in root or 'node_modules' in root or 'venv' in root:
+        if '.git' in root or 'node_modules' in root or 'venv' in root or 'target' in root:
             continue
         for file in files:
             file_path = os.path.join(root, file)
@@ -130,22 +131,28 @@ def sync_scan_repo(url: str, workspace_dir: str):
         
     return repo_findings
 
-async def run_discovery_job(job_id: str, workspace_id: str, source_urls: list):
+async def run_discovery_job(job_id: str, workspace_id: str, scan_targets: list):
     """
     Main Orchestrator — executes natively via FastAPI BackgroundTasks.
+
+    scan_targets: list of {"source_id": str, "url": str} — the source_id is
+    what lets evidence.source_id attribute each finding back to the project
+    it came from (a job can scan several sources in one run; job_id alone
+    can't answer "which project is this finding from").
     """
     from app.services.normalizer.asset_resolver import resolve_evidence_to_asset
     from app.services.cbom_generator import generate_cyclonedx_cbom
     from app.models.evidence import EvidenceModel
     from app.models.asset import CryptoAsset
-    
-    await _append_job_log(job_id, f"Job started for {len(source_urls)} source(s)")
+
+    await _append_job_log(job_id, f"Job started for {len(scan_targets)} source(s)")
     await _update_job_status(job_id, "running")
 
     total_findings = 0
     all_errors = []
 
-    for url in source_urls:
+    for target in scan_targets:
+        url, source_id = target["url"], target["source_id"]
         # ponytail: cooperative cancellation only checked between sources, not
         # mid-clone/mid-scan of a single repo — killing an in-flight git clone
         # or semgrep subprocess needs a process handle + terminate(), add if a
@@ -163,7 +170,7 @@ async def run_discovery_job(job_id: str, workspace_id: str, source_urls: list):
             repo_findings = await asyncio.to_thread(sync_scan_repo, url, workspace_dir)
 
             await _append_job_log(job_id, f"Found {len(repo_findings)} findings in {url}, persisting evidence")
-            await _persist_evidence(job_id, workspace_id, repo_findings)
+            await _persist_evidence(job_id, workspace_id, repo_findings, source_id=source_id)
             total_findings += len(repo_findings)
 
         except Exception as e:

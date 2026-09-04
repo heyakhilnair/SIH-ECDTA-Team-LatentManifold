@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,https://ecdta.vercel.app"
     # AI Analyst (Phase 8) — empty means the feature is honestly reported as
     # "not configured" rather than faking a response. See services/ai_analyst.py.
+    # Gemini is primary; Groq is an automatic fallback if Gemini errors (rate
+    # limit, outage, etc.) — either alone is enough to enable the feature.
     gemini_api_key: str = ""
+    groq_api_key: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

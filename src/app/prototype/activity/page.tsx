@@ -25,6 +25,7 @@ const EVENT_LABELS: Record<string, string> = {
   SCAN_CANCELLED: "Scan cancelled",
   CBOM_GENERATED: "CBOM generated",
   AI_ACTION: "AI Analyst question",
+  SOURCE_AI_ACCESS_CHANGED: "AI access changed for source",
 };
 
 export default function ActivityPage() {
@@ -52,8 +53,8 @@ export default function ActivityPage() {
         transition={{ duration: 0.5 }}
       >
         <div>
-          <h1 style={{ fontSize: "2.25rem", marginBottom: "0.25rem" }}>Activity</h1>
-          <p>An append-only ledger of every state-changing action in this workspace — real events, not a mock.</p>
+          <h1 style={{ fontSize: "2.25rem", marginBottom: "0.25rem" }}>Audit Trail</h1>
+          <p>A chronological, tamper-evident record of every scan, source, policy, and AI Analyst action taken in this workspace.</p>
         </div>
       </motion.header>
 

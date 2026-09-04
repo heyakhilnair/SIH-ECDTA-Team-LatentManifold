@@ -17,7 +17,8 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.services.auth import get_current_user_id, verify_workspace_access
-from app.models.asset import CryptoAsset
+from app.models.asset import CryptoAsset, EvidenceAsset
+from app.models.evidence import EvidenceModel
 from app.models.recommendation import Recommendation
 from app.services.recommendation_engine import (
     generate_recommendation,
@@ -64,11 +65,13 @@ def serialize_recommendation(rec: Recommendation) -> Dict[str, Any]:
 @workspace_router.get("", response_model=List[Dict[str, Any]])
 async def get_workspace_recommendations(
     workspace_id: uuid.UUID,
+    source_id: Optional[uuid.UUID] = None,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Returns all PQC and cryptographic upgrade recommendations for a workspace.
+    Optionally scoped to one project/source.
     """
     await verify_workspace_access(workspace_id, user_id, db)
 
@@ -77,6 +80,13 @@ async def get_workspace_recommendations(
         .options(selectinload(Recommendation.asset))
         .where(Recommendation.workspace_id == workspace_id)
     )
+    if source_id:
+        matching_asset_ids = (
+            select(EvidenceAsset.asset_id)
+            .join(EvidenceModel, EvidenceModel.id == EvidenceAsset.evidence_id)
+            .where(EvidenceModel.source_id == source_id)
+        )
+        query = query.where(Recommendation.asset_id.in_(matching_asset_ids))
     result = await db.execute(query)
     recs = result.scalars().all()
 

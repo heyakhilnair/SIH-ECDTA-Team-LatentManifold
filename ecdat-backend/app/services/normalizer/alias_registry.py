@@ -5,6 +5,7 @@ ALGORITHM_ALIASES = {
     'sha1': 'SHA-1',
     'sha-1': 'SHA-1',
     'md5': 'MD5',
+    'md2': 'MD2',
     'sha256': 'SHA-256',
     'sha-256': 'SHA-256',
     'sha384': 'SHA-384',
@@ -115,7 +116,8 @@ def get_algorithm_family(canonical: str) -> str:
     if 'RSA' in canonical: return 'RSA'
     if 'EC' in canonical or canonical in ['P-256', 'P-384', 'P-521', 'X25519', 'ED25519']: return 'ECC'
     if 'AES' in canonical: return 'AES'
-    if 'SHA' in canonical or 'MD5' in canonical: return 'HASH'
+    if 'SHA' in canonical or 'MD5' in canonical or 'MD2' in canonical: return 'HASH'
     if 'DES' in canonical: return 'DES'
     if canonical in ['ML-KEM', 'ML-DSA', 'SLH-DSA', 'FALCON']: return 'PQC'
+    if canonical == 'BLOWFISH': return 'BLOWFISH'
     return 'OTHER'

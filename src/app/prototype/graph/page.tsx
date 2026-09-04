@@ -5,16 +5,20 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../lib/api";
 import { motion } from "framer-motion";
 import { useWorkspace } from "../../../components/WorkspaceWrapper";
+import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
+import ProjectFilter from "@/components/ProjectFilter";
 import Link from "next/link";
 import "../prototype.css";
 
 export default function GraphPage() {
   const { getToken, isLoaded, userId } = useAuth();
   const workspace = useWorkspace();
+  const searchParams = useSearchParams();
 
   const [assets, setAssets] = useState<any[]>([]);
-  const [sources, setSources] = useState<any[]>([]);
+  const [allSources, setAllSources] = useState<any[]>([]);
+  const [sourceId, setSourceId] = useState(() => searchParams?.get("source") || "");
   const [loading, setLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState<any | null>(null);
 
@@ -24,13 +28,15 @@ export default function GraphPage() {
       setLoading(true);
       try {
         const [assetsRes, sourcesRes] = await Promise.all([
-          api.assets.list(workspace.id, getToken).catch(() => []),
+          api.assets.list(workspace.id, getToken, sourceId ? { source_id: sourceId } : undefined).catch(() => []),
           api.sources.list(workspace.id, getToken).catch(() => []),
         ]);
         setAssets(assetsRes || []);
-        setSources(sourcesRes || []);
+        setAllSources(sourcesRes || []);
         if (assetsRes && assetsRes.length > 0) {
           setSelectedNode(assetsRes[0]);
+        } else {
+          setSelectedNode(null);
         }
       } catch (err) {
         console.error("Failed to load graph data", err);
@@ -41,7 +47,10 @@ export default function GraphPage() {
 
     loadData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, userId, workspace]);
+  }, [isLoaded, userId, workspace, sourceId]);
+
+  // Topology's "Tier 1" row shows only the scoped project when one is selected.
+  const sources = sourceId ? allSources.filter((s) => s.id === sourceId) : allSources;
 
   const quantumCount = assets.filter((a) => a.quantum_vulnerable).length;
 
@@ -53,6 +62,7 @@ export default function GraphPage() {
         description="Topological dependency mapping tracing cryptographic algorithms through libraries, source repositories, and business services."
         actions={
           <div style={{ display: "flex", gap: "10px" }}>
+            <ProjectFilter sources={allSources} value={sourceId} onChange={setSourceId} />
             <Link href="/prototype/assets" className="ecdat-btn" style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}>
               INSPECT ASSETS
             </Link>

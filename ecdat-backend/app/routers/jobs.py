@@ -93,10 +93,15 @@ async def create_job(
         select(Source).where(Source.id.in_(job_in.source_ids), Source.workspace_id == wid)
     )
     sources = sources_result.scalars().all()
-    source_urls = [s.configuration.get("url") for s in sources if s.configuration and s.configuration.get("url")]
+    # (source_id, url) pairs, not just URLs — the orchestrator needs the id to
+    # attribute each finding back to its project (evidence.source_id).
+    scan_targets = [
+        {"source_id": str(s.id), "url": s.configuration.get("url")}
+        for s in sources if s.configuration and s.configuration.get("url")
+    ]
 
-    background_tasks.add_task(run_discovery_job, str(job.id), str(wid), source_urls)
-    await log_event(db, wid, user_id, "SCAN_STARTED", "discovery_job", job.id, details={"source_count": len(source_urls)})
+    background_tasks.add_task(run_discovery_job, str(job.id), str(wid), scan_targets)
+    await log_event(db, wid, user_id, "SCAN_STARTED", "discovery_job", job.id, details={"source_count": len(scan_targets)})
 
     return JobStatus(
         id=job.id,

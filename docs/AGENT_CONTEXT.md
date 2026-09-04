@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-03 (Phases 0-7 complete and verified. Phase 8 (AI Analyst, Gemini-based MVP) built and tested, blocked only on a real `GEMINI_API_KEY` — see `docs/PHASE8_10_REPORT.md`. Phase 9 explicitly skipped, no Neo4j. Phase 10: real audit logging live; RLS deliberately deferred with reasoning documented.)
+**Updated:** 2026-09-03 (Phases 0-8 complete, live, and verified via the real Claude Browser session. Phase 8 AI Analyst has real `GEMINI_API_KEY`/`GROQ_API_KEY` in `ecdat-backend/.env` (Gemini primary, Groq automatic fallback) plus per-source `ai_excluded` data-access control. Project/source scoping (`?source_id=`) added across assets/risk/recommendations/cbom/analyst, with a shared `ProjectFilter` dropdown on the frontend. See `docs/TRACKER.md`'s bottom "Next agent" note for a dev-server gotcha (Bash-backgrounded `uvicorn --reload` can leave a stale duplicate process bound to :8000 — manage it via the PowerShell tool instead). Phase 9 explicitly skipped, no Neo4j. Phase 10: real audit logging live; RLS deliberately deferred with reasoning documented.)
 
 ---
 
@@ -103,7 +103,8 @@ SIH-ECDTA-Team-LatentManifold/
 | PQC recommendations | ✅ COMPLETE | Phase 5 done — FIPS 203/204/205 candidates |
 | Enterprise sidebar + UI shell | ✅ COMPLETE | Phase 6.1–6.2 done |
 | Dashboard wiring (real API data) | ✅ COMPLETE | Phase 6.3–6.6 done and verified working end-to-end against the real backend/DB |
-| AI Analyst (real) | ❌ NOT DONE | Phase 8 (post-SIH) |
+| AI Analyst (real) | ✅ COMPLETE | Phase 8 done — Gemini+Groq fallback, evidence-grounded, `ai_excluded` data-access control |
+| Project/source scoping | ✅ COMPLETE | `evidence.source_id` + `?source_id=` filtering across assets/risk/recommendations/cbom/analyst |
 | Knowledge Graph | ❌ NOT DONE | Phase 9 (post-SIH) |
 
 ---

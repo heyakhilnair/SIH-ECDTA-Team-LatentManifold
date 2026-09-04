@@ -17,7 +17,8 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models.asset import CryptoAsset
+from app.models.asset import CryptoAsset, EvidenceAsset
+from app.models.evidence import EvidenceModel
 from app.models.risk import RiskScore
 from app.services.risk_engine import compute_asset_risk
 from app.services.auth import get_current_user_id, verify_workspace_access
@@ -69,12 +70,13 @@ def serialize_risk(r: RiskScore) -> Dict[str, Any]:
 @workspace_router.get("", response_model=List[Dict[str, Any]])
 async def get_workspace_risks(
     workspace_id: uuid.UUID,
+    source_id: Optional[uuid.UUID] = None,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
     """
     Return all assets with their risk scores for a workspace, sorted by composite priority.
-    Critical findings first.
+    Critical findings first. Optionally scoped to one project/source.
     """
     await verify_workspace_access(workspace_id, user_id, db)
 
@@ -83,6 +85,13 @@ async def get_workspace_risks(
         .options(selectinload(RiskScore.asset))
         .where(RiskScore.workspace_id == workspace_id)
     )
+    if source_id:
+        matching_asset_ids = (
+            select(EvidenceAsset.asset_id)
+            .join(EvidenceModel, EvidenceModel.id == EvidenceAsset.evidence_id)
+            .where(EvidenceModel.source_id == source_id)
+        )
+        query = query.where(RiskScore.asset_id.in_(matching_asset_ids))
     result = await db.execute(query)
     risks = result.scalars().all()
 
@@ -94,6 +103,7 @@ async def get_workspace_risks(
 @workspace_router.get("/summary", response_model=Dict[str, Any])
 async def get_risk_summary(
     workspace_id: uuid.UUID,
+    source_id: Optional[uuid.UUID] = None,
     user_id: str = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_db),
 ):
@@ -108,6 +118,13 @@ async def get_risk_summary(
         .where(RiskScore.workspace_id == workspace_id)
         .group_by(RiskScore.composite_risk_level)
     )
+    if source_id:
+        matching_asset_ids = (
+            select(EvidenceAsset.asset_id)
+            .join(EvidenceModel, EvidenceModel.id == EvidenceAsset.evidence_id)
+            .where(EvidenceModel.source_id == source_id)
+        )
+        query = query.where(RiskScore.asset_id.in_(matching_asset_ids))
     result = await db.execute(query)
     counts = dict(result.all())
 

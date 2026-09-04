@@ -9,6 +9,30 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import "./prototype.css";
 
+// Same precedence as ecdat-backend's compute_asset_risk: classical risk
+// drives the composite level before quantum/Mosca does, so the summary
+// reason shown must follow suit — otherwise a CRITICAL row broken classically
+// (e.g. MD5) shows its quantum-safety text instead, reading as contradictory.
+// Short labels for the Activity panel — same event names as the Activity
+// page's own (longer) labels, just compact enough for a terminal-style line.
+const ACTIVITY_LABELS: Record<string, string> = {
+  WORKSPACE_CREATED: "WORKSPACE",
+  POLICY_UPDATED: "POLICY",
+  SOURCE_ADDED: "SOURCE ADDED",
+  SCAN_STARTED: "SCAN STARTED",
+  SCAN_CANCELLED: "SCAN CANCELLED",
+  CBOM_GENERATED: "CBOM",
+  AI_ACTION: "AI ANALYST",
+  SOURCE_AI_ACCESS_CHANGED: "AI ACCESS",
+};
+
+function primaryFactorReason(r: any): string {
+  if (r.classical_risk_level === "CRITICAL" || r.classical_risk_level === "HIGH") {
+    return r.classical_reason || r.quantum_reason || "Vulnerable to quantum attack";
+  }
+  return r.quantum_reason || r.classical_reason || "Vulnerable to quantum attack";
+}
+
 export default function MissionControl() {
   const { getToken, isLoaded, userId } = useAuth();
   const { user } = useUser();
@@ -27,6 +51,7 @@ export default function MissionControl() {
   const [priorityRisks, setPriorityRisks] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
+  const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,7 +60,7 @@ export default function MissionControl() {
     const loadData = async () => {
       if (!isLoaded || !userId || !workspace?.id) return;
       try {
-        const [jobsRes, sourcesRes, riskSumRes, riskListRes, recsRes, assetsRes] = await Promise.all([
+        const [jobsRes, sourcesRes, riskSumRes, riskListRes, recsRes, assetsRes, activityRes] = await Promise.all([
           api.jobs.list(workspace.id, getToken).catch(() => []),
           api.sources.list(workspace.id, getToken).catch(() => []),
           api.risk.summary(workspace.id, getToken).catch(() => ({
@@ -49,6 +74,7 @@ export default function MissionControl() {
           api.risk.list(workspace.id, getToken).catch(() => []),
           api.recommendations.list(workspace.id, getToken).catch(() => []),
           api.assets.list(workspace.id, getToken, { limit: 50 }).catch(() => []),
+          api.activity.list(workspace.id, getToken, { limit: 8 }).catch(() => ({ items: [] })),
         ]);
 
         setJobs(jobsRes || []);
@@ -56,6 +82,7 @@ export default function MissionControl() {
         setRiskSummary(riskSumRes || {});
         setPriorityRisks((riskListRes || []).slice(0, 5));
         setRecommendations(recsRes || []);
+        setActivity(activityRes?.items || []);
         setAssets(assetsRes || []);
       } catch (err: any) {
         console.error("Error loading mission control data", err);
@@ -91,7 +118,11 @@ export default function MissionControl() {
   const criticalCount = riskSummary.CRITICAL || 0;
   const highCount = riskSummary.HIGH || 0;
   const quantumVulnerableCount = assets.filter((a) => a.quantum_vulnerable).length;
-  const pqcReadyCount = totalAssetsCount > 0 ? Math.round((recommendations.length / totalAssetsCount) * 100) : 0;
+  // "Already safe" = composite risk LOW or SAFE (compute_asset_risk never
+  // actually emits "SAFE" today — LOW is the real safe bucket in practice —
+  // counting both is harmless and future-proof if that changes).
+  const alreadySafeCount = (riskSummary.LOW || 0) + (riskSummary.SAFE || 0);
+  const needsMigrationCount = totalAssetsCount - alreadySafeCount;
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -373,17 +404,26 @@ export default function MissionControl() {
               letterSpacing: "0.05em",
               marginBottom: "1rem",
             }}
+            title="Already-safe assets divided by total — not 'percent migrated'; ECDAT doesn't track migration completion yet, see Migration Planner"
           >
-            PQC Migration Readiness
+            Already Quantum-Safe
           </h3>
           <div style={{ display: "flex", alignItems: "baseline", gap: "12px" }}>
-            <span style={{ fontSize: "2.75rem", fontWeight: 800, lineHeight: 1, color: "#B95532" }}>
-              {pqcReadyCount}%
+            <span style={{ fontSize: "2.75rem", fontWeight: 800, lineHeight: 1, color: alreadySafeCount === totalAssetsCount && totalAssetsCount > 0 ? "#15803D" : "#B95532" }}>
+              {alreadySafeCount}
             </span>
-            <span style={{ color: "#687563", fontSize: "0.9rem" }}>NIST FIPS Mapped</span>
+            <span style={{ color: "#687563", fontSize: "0.9rem" }}>of {totalAssetsCount} assets</span>
           </div>
           <div style={{ marginTop: "12px", fontSize: "0.85rem", color: "#687563" }}>
-            {recommendations.length} replacements prepared
+            {needsMigrationCount > 0 ? (
+              <Link href="/prototype/migration" style={{ color: "var(--color-primary)", fontWeight: 600, textDecoration: "none" }}>
+                {needsMigrationCount} need migration · {recommendations.length} have a plan ready →
+              </Link>
+            ) : totalAssetsCount > 0 ? (
+              "All discovered assets are quantum-safe"
+            ) : (
+              "No assets discovered yet"
+            )}
           </div>
         </motion.div>
       </motion.div>
@@ -473,18 +513,8 @@ export default function MissionControl() {
                           {r.composite_risk_level}
                         </span>
                       </td>
-                      <td
-                        style={{
-                          fontSize: "0.8rem",
-                          color: "#666",
-                          maxWidth: "280px",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                        title={r.quantum_reason || r.classical_reason || ""}
-                      >
-                        {r.quantum_reason || r.classical_reason || "Vulnerable to quantum attack"}
+                      <td style={{ fontSize: "0.8rem", color: "#666", maxWidth: "320px", lineHeight: 1.4 }}>
+                        {primaryFactorReason(r)}
                       </td>
                       <td>
                         <Link
@@ -532,51 +562,40 @@ export default function MissionControl() {
               color: "#eaeaea",
             }}
           >
-            <span>LIVE DISCOVERY LOG // {workspace?.id?.substring(0, 8)}</span>
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                background: "#B95532",
-                boxShadow: "0 0 8px #B95532",
-                animation: "pulse 2s infinite",
-              }}
-            ></span>
+            <span>ACTIVITY // {workspace?.id?.substring(0, 8)}</span>
+            {activeJobsCount > 0 && (
+              <span
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  background: "#B95532",
+                  boxShadow: "0 0 8px #B95532",
+                  animation: "pulse 2s infinite",
+                }}
+                title={`${activeJobsCount} scan(s) running`}
+              ></span>
+            )}
           </div>
 
           <div style={{ padding: "1.25rem", flex: 1, fontSize: "0.8rem", lineHeight: 1.6, overflowY: "auto" }}>
-            <div style={{ color: "#888", marginBottom: "6px" }}>
-              [{new Date().toLocaleTimeString()}] SYS: Enclave initialized. Monitoring perimeter.
-            </div>
-            {sources.length > 0 && (
-              <div style={{ color: "#F3F0E8", marginBottom: "6px" }}>
-                [{new Date().toLocaleTimeString()}] SOURCES: {sources.length} repository targets registered.
+            {/* Real recent events from the append-only audit ledger — not a
+                simulated log. Same event labels as the Activity page. */}
+            {activity.length === 0 ? (
+              <div style={{ color: "#888" }}>
+                No activity yet. Connect a source and launch a discovery scan to see real events here.
               </div>
+            ) : (
+              activity.map((item) => (
+                <div key={item.id} style={{ color: "#F3F0E8", marginBottom: "8px", display: "flex", justifyContent: "space-between", gap: "0.75rem" }}>
+                  <span>
+                    <span style={{ color: "#B95532" }}>[{ACTIVITY_LABELS[item.event] || item.event}]</span>{" "}
+                    {item.resource_type ? `${item.resource_type}${item.resource_id ? " " + item.resource_id.slice(0, 8) : ""}` : ""}
+                  </span>
+                  <span style={{ color: "#687563", whiteSpace: "nowrap" }}>{new Date(item.created_at).toLocaleTimeString()}</span>
+                </div>
+              ))
             )}
-            {activeJobsCount > 0 && (
-              <div style={{ color: "#B95532", marginBottom: "6px" }}>
-                [{new Date().toLocaleTimeString()}] SCANNER: Tree-sitter & Semgrep analyzing {activeJobsCount} jobs...
-              </div>
-            )}
-            {totalAssetsCount > 0 && (
-              <div style={{ color: "#687563", marginBottom: "6px" }}>
-                [{new Date().toLocaleTimeString()}] CBOM: {totalAssetsCount} canonical cryptographic assets resolved.
-              </div>
-            )}
-            {recommendations.length > 0 && (
-              <div style={{ color: "#F3F0E8", marginBottom: "6px" }}>
-                [{new Date().toLocaleTimeString()}] PQC: {recommendations.length} NIST FIPS 203/204/205 candidate paths generated.
-              </div>
-            )}
-            {sources.length === 0 && (
-              <div style={{ color: "#D3A248", marginBottom: "6px" }}>
-                [{new Date().toLocaleTimeString()}] WARN: No repository connected. Awaiting intelligence source.
-              </div>
-            )}
-            <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1 }}>
-              _
-            </motion.div>
           </div>
 
           <div
@@ -589,7 +608,9 @@ export default function MissionControl() {
               fontSize: "0.75rem",
             }}
           >
-            <span style={{ color: "#888" }}>CycloneDX v1.6 Ledger</span>
+            <Link href="/prototype/activity" style={{ color: "#888", textDecoration: "none" }}>
+              View full audit trail →
+            </Link>
             <Link
               href="/prototype/cbom"
               style={{ color: "#B95532", textDecoration: "none", fontWeight: 600 }}

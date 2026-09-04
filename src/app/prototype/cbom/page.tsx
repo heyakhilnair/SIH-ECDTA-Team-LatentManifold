@@ -5,15 +5,20 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../lib/api";
 import { motion } from "framer-motion";
 import { useWorkspace } from "../../../components/WorkspaceWrapper";
+import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
+import ProjectFilter from "@/components/ProjectFilter";
 import Link from "next/link";
 import "../prototype.css";
 
 export default function CbomPage() {
   const { getToken, isLoaded, userId } = useAuth();
   const workspace = useWorkspace();
+  const searchParams = useSearchParams();
 
   const [cbom, setCbom] = useState<any | null>(null);
+  const [sources, setSources] = useState<any[]>([]);
+  const [sourceId, setSourceId] = useState(() => searchParams?.get("source") || "");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [showJsonModal, setShowJsonModal] = useState(false);
@@ -23,8 +28,12 @@ export default function CbomPage() {
     if (!isLoaded || !userId || !workspace?.id) return;
     setLoading(true);
     try {
-      const data = await api.cbom.getLatest(workspace.id, getToken);
+      const [data, sourcesRes] = await Promise.all([
+        api.cbom.getLatest(workspace.id, getToken, sourceId),
+        api.sources.list(workspace.id, getToken).catch(() => []),
+      ]);
       setCbom(data);
+      setSources(sourcesRes || []);
     } catch (err: any) {
       console.error("Failed to load CBOM", err);
       setCbom(null);
@@ -36,7 +45,7 @@ export default function CbomPage() {
   useEffect(() => {
     loadCbom();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, userId, workspace]);
+  }, [isLoaded, userId, workspace, sourceId]);
 
   const handleGenerate = async () => {
     if (!workspace?.id) return;
@@ -79,9 +88,10 @@ export default function CbomPage() {
       <PageHeader
         breadcrumbs={[{ label: "Discovery" }, { label: "CBOM Inventory" }]}
         title="Cryptographic Bill of Materials (CBOM)"
-        description="Standardized CycloneDX v1.6 inventory ledger documenting all cryptographic algorithms, keys, and security properties."
+        description="A CycloneDX v1.6 export — the industry-standard machine-readable inventory format (like an SBOM, but for cryptography) listing every algorithm, key size, and quantum/classical posture found, for compliance and tooling handoff."
         actions={
           <div style={{ display: "flex", gap: "10px" }}>
+            <ProjectFilter sources={sources} value={sourceId} onChange={setSourceId} />
             <button
               onClick={handleGenerate}
               disabled={generating}

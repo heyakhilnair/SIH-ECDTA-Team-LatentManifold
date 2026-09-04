@@ -18,6 +18,7 @@ from app.models.workspace import Workspace
 from app.models.job import DiscoveryJob
 from app.models.asset import CryptoAsset
 from app.models.evidence import EvidenceModel
+from app.models.source import Source
 from app.services.risk_engine import compute_asset_risk
 from app.services.ai_analyst import (
     AnalystResponse,
@@ -25,6 +26,8 @@ from app.services.ai_analyst import (
     verify_citations,
     is_configured,
     ask_analyst,
+    resolve_citation_details,
+    resolve_scope_label,
 )
 
 
@@ -171,9 +174,146 @@ async def test_verify_citations_rejects_cross_tenant_id(workspace_with_findings)
         await session.commit()
 
 
+@pytest.mark.asyncio
+async def test_build_context_names_the_project_per_evidence_and_scope(workspace_with_findings):
+    """The user explicitly asked: the AI Analyst should be concrete about
+    *which project* a finding came from, not just 'somewhere in the
+    workspace'. build_context() must attach a real project name to each
+    evidence item and a top-level scope label."""
+    ws_id, asset_id, ev_id = workspace_with_findings
+
+    async with AsyncSessionLocal() as session:
+        src = Source(workspace_id=ws_id, name="Payments Service", source_type="git")
+        session.add(src)
+        await session.flush()
+        await session.execute(
+            EvidenceModel.__table__.update().where(EvidenceModel.id == ev_id).values(source_id=src.id)
+        )
+        await session.commit()
+        src_id = src.id
+
+    async with AsyncSessionLocal() as session:
+        unscoped = await build_context(session, ws_id)
+    assert unscoped["scope"] == "all projects"
+    assert unscoped["assets"][0]["evidence"][0]["project"] == "Payments Service"
+
+    async with AsyncSessionLocal() as session:
+        scoped = await build_context(session, ws_id, source_id=src_id)
+    assert scoped["scope"] == "Payments Service"
+
+    async with AsyncSessionLocal() as session:
+        details = await resolve_citation_details(session, ws_id, [str(ev_id)])
+        scope_label = await resolve_scope_label(session, ws_id, src_id)
+    assert details == [{
+        "evidence_id": str(ev_id), "file_path": "auth/token.go", "line_number": 42, "project_name": "Payments Service",
+    }]
+    assert scope_label == "Payments Service"
+
+    async with AsyncSessionLocal() as session:
+        no_scope_label = await resolve_scope_label(session, ws_id, None)
+    assert no_scope_label == "All projects"
+
+    async with AsyncSessionLocal() as session:
+        from sqlalchemy import text
+        await session.execute(text("DELETE FROM sources WHERE id = :sid"), {"sid": src_id})
+        await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_build_context_scoped_evidence_never_leaks_another_project(workspace_with_findings):
+    """A CryptoAsset is shared/deduplicated across projects — the same
+    algorithm found in two repos is ONE asset with evidence from both. A
+    question scoped to project A must only ever sample project A's evidence
+    for that asset, never cite a file from project B just because they
+    happen to share the asset. Caught live: a 'Test'-scoped answer cited a
+    file from the unrelated 'Crypto test 2' project."""
+    ws_id, asset_id, ev_id = workspace_with_findings
+    from sqlalchemy import select
+    from app.models.asset import EvidenceAsset
+
+    async with AsyncSessionLocal() as session:
+        src_a = Source(workspace_id=ws_id, name="Project A", source_type="git")
+        src_b = Source(workspace_id=ws_id, name="Project B", source_type="git")
+        session.add_all([src_a, src_b])
+        await session.flush()
+        # ev_id (the fixture's only evidence row) belongs to Project A.
+        await session.execute(
+            EvidenceModel.__table__.update().where(EvidenceModel.id == ev_id).values(source_id=src_a.id)
+        )
+        # A second evidence row on the SAME asset, from Project B.
+        job_result = await session.execute(select(EvidenceModel.job_id).where(EvidenceModel.id == ev_id))
+        job_id = job_result.scalar_one()
+        ev_b = EvidenceModel(
+            job_id=job_id, workspace_id=ws_id, source_id=src_b.id, source_type="source_code",
+            file_path="other/repo.go", line_number=7, raw_match="irrelevant", context_lines="irrelevant",
+            detector="treesitter_call", confidence=0.9, raw_metadata={},
+        )
+        session.add(ev_b)
+        await session.flush()
+        session.add(EvidenceAsset(evidence_id=ev_b.id, asset_id=asset_id))
+        await session.commit()
+        a_id, b_id = src_a.id, src_b.id
+
+    async with AsyncSessionLocal() as session:
+        scoped_a = await build_context(session, ws_id, source_id=a_id)
+    ev_files = {e["file_path"] for e in scoped_a["assets"][0]["evidence"]}
+    assert ev_files == {"auth/token.go"}, "Project A scope must never include Project B's evidence"
+
+    async with AsyncSessionLocal() as session:
+        scoped_b = await build_context(session, ws_id, source_id=b_id)
+    ev_files = {e["file_path"] for e in scoped_b["assets"][0]["evidence"]}
+    assert ev_files == {"other/repo.go"}, "Project B scope must never include Project A's evidence"
+
+    async with AsyncSessionLocal() as session:
+        unscoped = await build_context(session, ws_id)
+    ev_files = {e["file_path"] for e in unscoped["assets"][0]["evidence"]}
+    assert ev_files == {"auth/token.go", "other/repo.go"}, "unscoped should see both"
+
+    async with AsyncSessionLocal() as session:
+        from sqlalchemy import text
+        await session.execute(text("DELETE FROM evidence_assets WHERE evidence_id = :eid"), {"eid": ev_b.id})
+        await session.execute(text("DELETE FROM evidence WHERE id = :eid"), {"eid": ev_b.id})
+        await session.execute(text("DELETE FROM sources WHERE id IN (:a, :b)"), {"a": a_id, "b": b_id})
+        await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_build_context_excludes_ai_excluded_sources(workspace_with_findings):
+    """Phase 8 PDF sec 56-59 data-access control: an asset whose only evidence
+    comes from a Source flagged ai_excluded must never reach the AI's context,
+    even though it's still a perfectly real asset for every other page."""
+    ws_id, asset_id, ev_id = workspace_with_findings
+
+    async with AsyncSessionLocal() as session:
+        src = Source(workspace_id=ws_id, name="Sensitive Repo", source_type="git", ai_excluded=True)
+        session.add(src)
+        await session.flush()
+        await session.execute(
+            EvidenceModel.__table__.update().where(EvidenceModel.id == ev_id).values(source_id=src.id)
+        )
+        await session.commit()
+        src_id = src.id
+
+    async with AsyncSessionLocal() as session:
+        context = await build_context(session, ws_id)
+    assert context["total_assets"] == 0, "asset from an ai_excluded source leaked into AI context"
+    assert "private" in (context["note"] or "").lower()
+
+    # Sanity: a source_id-scoped query for that same excluded project also
+    # comes back empty rather than bypassing the exclusion.
+    async with AsyncSessionLocal() as session:
+        scoped = await build_context(session, ws_id, source_id=src_id)
+    assert scoped["total_assets"] == 0
+
+    async with AsyncSessionLocal() as session:
+        from sqlalchemy import text
+        await session.execute(text("DELETE FROM sources WHERE id = :sid"), {"sid": src_id})
+        await session.commit()
+
+
 def test_is_configured_reflects_env():
     from app.config import settings
-    assert is_configured() == bool(settings.gemini_api_key)
+    assert is_configured() == bool(settings.gemini_api_key or settings.groq_api_key)
 
 
 @pytest.mark.asyncio
@@ -182,6 +322,7 @@ async def test_ask_analyst_is_honest_when_unconfigured(monkeypatch, workspace_wi
     message instead, per the project's own no-fake-data rule."""
     from app.config import settings
     monkeypatch.setattr(settings, "gemini_api_key", "")
+    monkeypatch.setattr(settings, "groq_api_key", "")
 
     ws_id, _asset_id, _ev_id = workspace_with_findings
     async with AsyncSessionLocal() as session:

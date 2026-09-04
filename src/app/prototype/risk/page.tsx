@@ -5,14 +5,31 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkspace } from "../../../components/WorkspaceWrapper";
+import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
+import ProjectFilter from "@/components/ProjectFilter";
 import Link from "next/link";
 import "../prototype.css";
+
+// The composite risk level is driven by classical risk first, then Mosca/quantum
+// (see ecdat-backend/app/services/risk_engine.py's compute_asset_risk) — the
+// "Primary Factor" summary must follow the same precedence, or a CRITICAL row
+// driven by a classical break (e.g. MD5) shows its *quantum*-safety text as
+// the "reason", which reads as contradictory ("CRITICAL ... quantum-safe for now").
+function primaryFactorReason(r: any): string {
+  if (r.classical_risk_level === "CRITICAL" || r.classical_risk_level === "HIGH") {
+    return r.classical_reason || r.quantum_reason || "—";
+  }
+  return r.quantum_reason || r.classical_reason || "—";
+}
 
 export default function RiskPage() {
   const { getToken, isLoaded, userId } = useAuth();
   const workspace = useWorkspace();
+  const searchParams = useSearchParams();
 
+  const [sources, setSources] = useState<any[]>([]);
+  const [sourceId, setSourceId] = useState(() => searchParams?.get("source") || "");
   const [riskSummary, setRiskSummary] = useState<any>({
     CRITICAL: 0,
     HIGH: 0,
@@ -35,16 +52,21 @@ export default function RiskPage() {
   const [recalculating, setRecalculating] = useState(false);
   const [recalcResult, setRecalcResult] = useState<any | null>(null);
 
+  // Detail drawer (full, untruncated explanation for one asset's risk)
+  const [detailRisk, setDetailRisk] = useState<any | null>(null);
+
   const loadRiskData = async () => {
     if (!isLoaded || !userId || !workspace?.id) return;
     setLoading(true);
     try {
-      const [summaryRes, listRes] = await Promise.all([
-        api.risk.summary(workspace.id, getToken).catch(() => ({})),
-        api.risk.list(workspace.id, getToken).catch(() => []),
+      const [summaryRes, listRes, sourcesRes] = await Promise.all([
+        api.risk.summary(workspace.id, getToken, sourceId).catch(() => ({})),
+        api.risk.list(workspace.id, getToken, sourceId).catch(() => []),
+        api.sources.list(workspace.id, getToken).catch(() => []),
       ]);
       setRiskSummary(summaryRes || {});
       setRisks(listRes || []);
+      setSources(sourcesRes || []);
     } catch (err) {
       console.error("Failed to load risk data", err);
     } finally {
@@ -55,7 +77,7 @@ export default function RiskPage() {
   useEffect(() => {
     loadRiskData();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, userId, workspace]);
+  }, [isLoaded, userId, workspace, sourceId]);
 
   const openRecalculator = (riskItem: any) => {
     setSelectedRisk(riskItem);
@@ -94,6 +116,19 @@ export default function RiskPage() {
   const low = riskSummary.LOW || 0;
   const safe = riskSummary.SAFE || 0;
 
+  // risks[] is already priority-sorted by the backend — the first row is the
+  // single most urgent real finding, used to drive the Mosca visualization
+  // instead of a fixed/decorative bar.
+  const topRisk = risks[0] || null;
+  const moscaX = topRisk?.data_lifetime_years ?? 0;
+  const moscaY = topRisk?.migration_time_years ?? 0;
+  const moscaTotal = moscaX + moscaY || 1; // avoid divide-by-zero
+  const moscaMargin = threatHorizon - moscaX - moscaY;
+  const moscaBarDenominator = moscaMargin > 0 ? threatHorizon : moscaTotal;
+  const moscaYPct = Math.min(100, (moscaY / moscaBarDenominator) * 100);
+  const moscaXPct = Math.min(100 - moscaYPct, (moscaX / moscaBarDenominator) * 100);
+  const moscaMarginPct = Math.max(0, 100 - moscaYPct - moscaXPct);
+
   return (
     <div className="ecdat-container">
       <PageHeader
@@ -102,6 +137,7 @@ export default function RiskPage() {
         description="Multi-dimensional risk assessment evaluating Shor vulnerability, classical deprecation, and Mosca's Inequality (X + Y > Z)."
         actions={
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <ProjectFilter sources={sources} value={sourceId} onChange={setSourceId} />
             <span style={{ fontSize: "0.85rem", color: "#666" }}>Threat Horizon (Z):</span>
             <select
               value={threatHorizon}
@@ -122,7 +158,8 @@ export default function RiskPage() {
         }
       />
 
-      {/* Mosca Visualizer Banner */}
+      {/* Mosca Visualizer Banner — driven by the single most urgent real asset,
+          not a fixed/decorative bar. Empty state when there's nothing to show. */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -138,47 +175,63 @@ export default function RiskPage() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1rem" }}>
           <div>
             <h2 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0, color: "#181917" }}>
-              Mosca's Inequality Status: $X + Y &gt; Z$
+              Mosca's Inequality: X + Y &gt; Z
             </h2>
-            <p style={{ fontSize: "0.85rem", color: "#666", margin: "4px 0 0" }}>
-              If Data Lifetime ($X$) plus Migration Time ($Y$) exceeds CRQC Arrival Horizon ($Z$), the Harvest-Now-Decrypt-Later window is active.
+            <p style={{ fontSize: "0.85rem", color: "#666", margin: "4px 0 0", maxWidth: "640px" }}>
+              <strong>X</strong> = how long the data protected by an algorithm must stay secret. <strong>Y</strong> = how
+              long migrating away from it takes. <strong>Z</strong> = your chosen threat horizon (when a quantum
+              computer capable of breaking it might exist). If X + Y exceeds Z, an attacker harvesting encrypted
+              traffic today could decrypt it once that computer arrives — the window is open <em>now</em>, not in the future.
             </p>
           </div>
           <span
             className={`ecdat-badge ${critical > 0 ? "ecdat-badge-danger" : "ecdat-badge-success"}`}
-            style={{ fontSize: "0.85rem" }}
+            style={{ fontSize: "0.85rem", whiteSpace: "nowrap" }}
           >
             {critical > 0 ? "HNDL WINDOW OPEN" : "MIGRATION ON TRACK"}
           </span>
         </div>
 
-        {/* Timeline Visualization Bar */}
-        <div style={{ margin: "1.5rem 0" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#888", marginBottom: "6px" }}>
-            <span>Today (2026)</span>
-            <span>Est. Migration Horizon: ~2029</span>
-            <span>Threat Horizon Z ({threatHorizon}y): ~{2026 + threatHorizon}</span>
+        {topRisk ? (
+          <div style={{ margin: "1.5rem 0" }}>
+            <div style={{ fontSize: "0.78rem", color: "#888", marginBottom: "8px" }}>
+              Showing your most urgent real finding — <strong style={{ color: "#181917" }}>{topRisk.algorithm_canonical}</strong>{" "}
+              (X = {moscaX}y, Y = {moscaY}y, Z = {threatHorizon}y)
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "#888", marginBottom: "6px" }}>
+              <span>Migration (Y): {moscaY}y</span>
+              <span>Data Lifetime (X): {moscaX}y</span>
+              <span>{moscaMargin >= 0 ? `Margin: ${moscaMargin.toFixed(1)}y` : `Over threshold by ${Math.abs(moscaMargin).toFixed(1)}y`}</span>
+            </div>
+            <div style={{ height: "14px", backgroundColor: "#f0f0f0", borderRadius: "7px", overflow: "hidden", display: "flex" }}>
+              <div style={{ width: `${moscaYPct}%`, backgroundColor: "#B95532" }} title={`Migration Time Y — ${moscaY}y`}></div>
+              <div style={{ width: `${moscaXPct}%`, backgroundColor: "#EAB308" }} title={`Data Lifetime X — ${moscaX}y`}></div>
+              {moscaMargin > 0 && (
+                <div style={{ width: `${moscaMarginPct}%`, backgroundColor: "#15803D" }} title={`Safety margin — ${moscaMargin.toFixed(1)}y`}></div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: "2rem", marginTop: "8px", fontSize: "0.75rem" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "10px", height: "10px", backgroundColor: "#B95532", borderRadius: "2px" }}></span>
+                Migration Time Y
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ width: "10px", height: "10px", backgroundColor: "#EAB308", borderRadius: "2px" }}></span>
+                Data Lifetime X
+              </span>
+              {moscaMargin > 0 && (
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ width: "10px", height: "10px", backgroundColor: "#15803D", borderRadius: "2px" }}></span>
+                  Safety Margin
+                </span>
+              )}
+            </div>
           </div>
-          <div style={{ height: "14px", backgroundColor: "#f0f0f0", borderRadius: "7px", overflow: "hidden", display: "flex" }}>
-            <div style={{ width: "25%", backgroundColor: "#B95532" }} title="Migration Period Y (~3 yrs)"></div>
-            <div style={{ width: "50%", backgroundColor: "#EAB308" }} title="Protected Data Lifetime X (~7 yrs)"></div>
-            <div style={{ width: "25%", backgroundColor: "#15803D" }} title="Residual Safety Margin"></div>
-          </div>
-          <div style={{ display: "flex", gap: "2rem", marginTop: "8px", fontSize: "0.75rem" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ width: "10px", height: "10px", backgroundColor: "#B95532", borderRadius: "2px" }}></span>
-              Migration Time Y (avg 2-3y)
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ width: "10px", height: "10px", backgroundColor: "#EAB308", borderRadius: "2px" }}></span>
-              Data Lifetime X (avg 5-10y)
-            </span>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ width: "10px", height: "10px", backgroundColor: "#15803D", borderRadius: "2px" }}></span>
-              Safety Margin
-            </span>
-          </div>
-        </div>
+        ) : (
+          <p style={{ fontSize: "0.85rem", color: "#888", fontStyle: "italic", margin: "1rem 0 0" }}>
+            No risk-scored assets yet — run a discovery scan to see a real Mosca timeline here.
+          </p>
+        )}
       </motion.div>
 
       {/* 5 Risk Level Breakdown Cards */}
@@ -196,7 +249,7 @@ export default function RiskPage() {
           </div>
           <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "#181917", margin: "4px 0" }}>{critical}</div>
           <div style={{ fontSize: "0.8rem", color: "#666" }}>
-            {total > 0 ? `${Math.round((critical / total) * 100)}% of perimeter` : "0%"}
+            {total > 0 ? `${Math.round((critical / total) * 100)}% of perimeter` : "0%"} · actively broken or HNDL window open
           </div>
         </div>
 
@@ -206,7 +259,7 @@ export default function RiskPage() {
           </div>
           <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "#181917", margin: "4px 0" }}>{high}</div>
           <div style={{ fontSize: "0.8rem", color: "#666" }}>
-            {total > 0 ? `${Math.round((high / total) * 100)}% of perimeter` : "0%"}
+            {total > 0 ? `${Math.round((high / total) * 100)}% of perimeter` : "0%"} · little Mosca margin left
           </div>
         </div>
 
@@ -215,7 +268,7 @@ export default function RiskPage() {
             MEDIUM
           </div>
           <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "#181917", margin: "4px 0" }}>{medium}</div>
-          <div style={{ fontSize: "0.8rem", color: "#666" }}>Plan migration</div>
+          <div style={{ fontSize: "0.8rem", color: "#666" }}>Plan migration this cycle</div>
         </div>
 
         <div className="ecdat-card" style={{ padding: "1.25rem", borderLeft: "4px solid #4B5563" }}>
@@ -223,7 +276,7 @@ export default function RiskPage() {
             LOW
           </div>
           <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "#181917", margin: "4px 0" }}>{low}</div>
-          <div style={{ fontSize: "0.8rem", color: "#666" }}>Monitor timeline</div>
+          <div style={{ fontSize: "0.8rem", color: "#666" }}>Comfortable margin, monitor annually</div>
         </div>
 
         <div className="ecdat-card" style={{ padding: "1.25rem", borderLeft: "4px solid #15803D" }}>
@@ -231,7 +284,7 @@ export default function RiskPage() {
             SAFE / PQC
           </div>
           <div style={{ fontSize: "2.25rem", fontWeight: 800, color: "#181917", margin: "4px 0" }}>{safe}</div>
-          <div style={{ fontSize: "0.8rem", color: "#666" }}>Quantum Resistant</div>
+          <div style={{ fontSize: "0.8rem", color: "#666" }}>Not quantum- or classically-vulnerable</div>
         </div>
       </div>
 
@@ -240,7 +293,7 @@ export default function RiskPage() {
         <div style={{ padding: "1.25rem 1.75rem", borderBottom: "1px solid #eaeaea", backgroundColor: "#faf9f6" }}>
           <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>Prioritized Cryptographic Risk Ledger</h3>
           <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#666" }}>
-            Ordered top-to-bottom by composite urgency. Click "Recalculate" to simulate what-if scenarios.
+            Ordered top-to-bottom by composite urgency. Click a row for the full explanation, or "What-If" to simulate a scenario.
           </p>
         </div>
 
@@ -276,7 +329,7 @@ export default function RiskPage() {
                 </tr>
               ) : (
                 risks.map((r) => (
-                  <tr key={r.id}>
+                  <tr key={r.id} onClick={() => setDetailRisk(r)} style={{ cursor: "pointer" }}>
                     <td style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "#181917" }}>
                       {r.algorithm_canonical}
                     </td>
@@ -309,18 +362,18 @@ export default function RiskPage() {
                       style={{
                         fontSize: "0.8rem",
                         color: "#666",
-                        maxWidth: "240px",
+                        maxWidth: "280px",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
                       }}
-                      title={r.quantum_reason || r.classical_reason || ""}
+                      title="Click the row to read this in full"
                     >
-                      {r.quantum_reason || r.classical_reason || "—"}
+                      {primaryFactorReason(r)}
                     </td>
                     <td>
                       <button
-                        onClick={() => openRecalculator(r)}
+                        onClick={(e) => { e.stopPropagation(); openRecalculator(r); }}
                         className="ecdat-btn"
                         style={{ padding: "0.3rem 0.65rem", fontSize: "0.75rem" }}
                       >
@@ -334,6 +387,113 @@ export default function RiskPage() {
           </table>
         </div>
       </div>
+
+      {/* Risk Detail Drawer — full, untruncated explanation for one asset */}
+      <AnimatePresence>
+        {detailRisk && (
+          <div
+            style={{
+              position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.4)", zIndex: 1000,
+              display: "flex", justifyContent: "flex-end",
+            }}
+            onClick={() => setDetailRisk(null)}
+          >
+            <motion.div
+              initial={{ x: 500, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 500, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              style={{
+                width: "100%", maxWidth: "620px", height: "100%",
+                backgroundColor: "#fff", display: "flex", flexDirection: "column",
+                boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ padding: "1.5rem 2rem", borderBottom: "1px solid #eaeaea", backgroundColor: "#faf9f6", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "1.3rem", fontWeight: 800, color: "#181917" }}>
+                      {detailRisk.algorithm_canonical}
+                    </span>
+                    <span
+                      className={`ecdat-badge ${
+                        detailRisk.composite_risk_level === "CRITICAL" ? "ecdat-badge-danger"
+                        : detailRisk.composite_risk_level === "HIGH" ? "ecdat-badge-active"
+                        : detailRisk.composite_risk_level === "MEDIUM" ? "ecdat-badge-neutral"
+                        : "ecdat-badge-success"
+                      }`}
+                    >
+                      {detailRisk.composite_risk_level}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: "0.85rem", color: "#666", margin: 0 }}>{detailRisk.algorithm_family} · full risk explanation</p>
+                </div>
+                <button onClick={() => setDetailRisk(null)} style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer", color: "#888" }}>✕</button>
+              </div>
+
+              <div style={{ flex: 1, overflowY: "auto", padding: "1.75rem 2rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+                <div style={{ padding: "1rem", backgroundColor: "#fff", border: "1px solid #eaeaea", borderRadius: "6px" }}>
+                  <div style={{ fontSize: "0.75rem", color: "#888", textTransform: "uppercase", fontWeight: 700, marginBottom: "6px" }}>
+                    Quantum Exposure — {detailRisk.quantum_risk_level || "UNKNOWN"}
+                  </div>
+                  <p style={{ fontSize: "0.85rem", color: "#333", margin: 0, lineHeight: 1.6 }}>
+                    {detailRisk.quantum_reason || "No quantum exposure analysis recorded for this asset."}
+                  </p>
+                </div>
+
+                <div style={{ padding: "1rem", backgroundColor: "#fff", border: "1px solid #eaeaea", borderRadius: "6px" }}>
+                  <div style={{ fontSize: "0.75rem", color: "#888", textTransform: "uppercase", fontWeight: 700, marginBottom: "6px" }}>
+                    Classical Risk — {detailRisk.classical_risk_level || "LOW"}
+                  </div>
+                  <p style={{ fontSize: "0.85rem", color: "#333", margin: 0, lineHeight: 1.6 }}>
+                    {detailRisk.classical_reason || "No classical vulnerabilities recorded for this asset."}
+                  </p>
+                </div>
+
+                <div style={{ padding: "1rem", backgroundColor: "#faf9f6", border: "1px solid #eaeaea", borderRadius: "6px" }}>
+                  <div style={{ fontSize: "0.75rem", color: "#888", textTransform: "uppercase", fontWeight: 700, marginBottom: "10px" }}>
+                    Mosca Calculation
+                  </div>
+                  <div style={{ display: "flex", gap: "1.5rem", marginBottom: "10px" }}>
+                    <div>
+                      <span style={{ fontSize: "0.72rem", color: "#666" }}>X — Data Lifetime</span>
+                      <div style={{ fontWeight: 700, color: "#181917" }}>{detailRisk.data_lifetime_years ?? "—"} years</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: "0.72rem", color: "#666" }}>Y — Migration Time</span>
+                      <div style={{ fontWeight: 700, color: "#181917" }}>{detailRisk.migration_time_years ?? "—"} years</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: "0.72rem", color: "#666" }}>Z — Threat Horizon</span>
+                      <div style={{ fontWeight: 700, color: "#181917" }}>{threatHorizon} years</div>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: "0.8rem", color: "#555", margin: 0, lineHeight: 1.6 }}>
+                    {detailRisk.mosca_threshold_exceeded
+                      ? `X + Y (${(detailRisk.data_lifetime_years ?? 0) + (detailRisk.migration_time_years ?? 0)}y) exceeds Z (${threatHorizon}y) — the Harvest-Now-Decrypt-Later window is already open for this asset.`
+                      : `X + Y (${(detailRisk.data_lifetime_years ?? 0) + (detailRisk.migration_time_years ?? 0)}y) stays within Z (${threatHorizon}y) — ${(threatHorizon - (detailRisk.data_lifetime_years ?? 0) - (detailRisk.migration_time_years ?? 0)).toFixed(1)}y of safety margin remains.`}
+                  </p>
+                  <p style={{ fontSize: "0.75rem", color: "#888", margin: "10px 0 0", fontStyle: "italic" }}>
+                    X defaults to {detailRisk.data_lifetime_years ?? 7} years workspace-wide — ECDAT can't infer how
+                    long your data must stay secret from a code scan alone. Use "What-If" to override it for this
+                    specific asset if you know better (e.g. session tokens are short-lived; archived records aren't).
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => { openRecalculator(detailRisk); setDetailRisk(null); }}
+                  className="ecdat-btn"
+                  style={{ padding: "0.6rem 1rem", fontSize: "0.85rem", alignSelf: "flex-start" }}
+                >
+                  Run a What-If scenario for this asset →
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* What-If Recalculator Modal */}
       <AnimatePresence>
@@ -463,7 +623,7 @@ export default function RiskPage() {
                     </span>
                   </div>
                   <p style={{ fontSize: "0.8rem", color: "#555", margin: "8px 0 0" }}>
-                    {recalcResult.quantum_reason || recalcResult.classical_reason}
+                    {primaryFactorReason(recalcResult)}
                   </p>
                 </div>
               )}

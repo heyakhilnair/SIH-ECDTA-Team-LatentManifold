@@ -47,6 +47,7 @@ DEFAULT_MIGRATION_TIME: dict[str, float] = {
     "RC4":    0.5,
     "AES":    1.0,
     "HASH":   0.5,
+    "BLOWFISH": 1.0,
 }
 
 # Weak key size thresholds per family (classical security concern)
@@ -298,13 +299,22 @@ async def compute_asset_risk(
         composite = "CRITICAL"
     elif classical_risk == "HIGH":
         composite = "CRITICAL" if business_criticality in ("CRITICAL",) else "HIGH"
-    # Mosca: CRQC is a future threat modulated by criticality
-    elif mosca["level"] == "CRITICAL":
-        composite = "CRITICAL"
-    elif mosca["level"] == "HIGH":
-        composite = "HIGH" if business_criticality in ("CRITICAL", "HIGH") else "MEDIUM"
-    elif mosca["level"] == "MEDIUM" or quantum_exposure == "HIGH":
-        composite = "HIGH" if business_criticality in ("CRITICAL", "HIGH") else "MEDIUM"
+    # Mosca (harvest-now-decrypt-later) only applies to an asset a quantum
+    # computer can actually break — gating it behind quantum_exposure fixes a
+    # real bug: previously the Mosca X+Y-vs-Z timeline was computed and
+    # applied to every asset unconditionally, so something neither classically
+    # nor quantum vulnerable (e.g. a bare AES call with no confirmed weak key
+    # size) still got bumped to HIGH/MEDIUM composite risk purely from the
+    # workspace's default timeline — a false signal unrelated to that asset.
+    elif quantum_exposure == "HIGH":
+        if mosca["level"] == "CRITICAL":
+            composite = "CRITICAL"
+        elif mosca["level"] == "HIGH":
+            composite = "HIGH" if business_criticality in ("CRITICAL", "HIGH") else "MEDIUM"
+        elif mosca["level"] == "MEDIUM":
+            composite = "HIGH" if business_criticality in ("CRITICAL", "HIGH") else "MEDIUM"
+        else:
+            composite = "LOW"
     else:
         composite = "LOW"
 

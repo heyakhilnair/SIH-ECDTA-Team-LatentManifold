@@ -5,15 +5,20 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../lib/api";
 import { motion } from "framer-motion";
 import { useWorkspace } from "../../../components/WorkspaceWrapper";
+import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
+import ProjectFilter from "@/components/ProjectFilter";
 import Link from "next/link";
 import "../prototype.css";
 
 export default function PqcPage() {
   const { getToken, isLoaded, userId } = useAuth();
   const workspace = useWorkspace();
+  const searchParams = useSearchParams();
 
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [sources, setSources] = useState<any[]>([]);
+  const [sourceId, setSourceId] = useState(() => searchParams?.get("source") || "");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState<string>("ALL");
@@ -22,8 +27,12 @@ export default function PqcPage() {
     if (!isLoaded || !userId || !workspace?.id) return;
     setLoading(true);
     try {
-      const data = await api.recommendations.list(workspace.id, getToken);
+      const [data, sourcesRes] = await Promise.all([
+        api.recommendations.list(workspace.id, getToken, sourceId),
+        api.sources.list(workspace.id, getToken).catch(() => []),
+      ]);
       setRecommendations(data || []);
+      setSources(sourcesRes || []);
     } catch (err) {
       console.error("Failed to load recommendations", err);
     } finally {
@@ -34,7 +43,7 @@ export default function PqcPage() {
   useEffect(() => {
     loadRecommendations();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, userId, workspace]);
+  }, [isLoaded, userId, workspace, sourceId]);
 
   const handleGenerate = async () => {
     if (!workspace?.id) return;
@@ -69,6 +78,7 @@ export default function PqcPage() {
         description="NIST FIPS 203, 204, and 205 cryptographic migration recommendations with constraint-aware trade-off analysis."
         actions={
           <div style={{ display: "flex", gap: "10px" }}>
+            <ProjectFilter sources={sources} value={sourceId} onChange={setSourceId} />
             <button
               onClick={handleGenerate}
               disabled={generating}

@@ -380,6 +380,58 @@ RECOMMENDATION_TABLE: Dict[tuple, Dict[str, Any]] = {
             }
         ]
     },
+    ("MD2", "HASH"): {
+        "primary": "SHA-256",
+        "hybrid": None,
+        "fallback": "SHA3-256",
+        "nist_standard": "FIPS 180-4",
+        "reasoning": "MD2 is cryptographically broken — practical collision and preimage attacks exist. Replace with SHA-256.",
+        "migration_complexity": "LOW",
+        "hard_constraints": {
+            "regulatory_compliance": "Deprecated since 2011 (RFC 6149); prohibited for any security-relevant use."
+        },
+        "soft_constraints": {
+            "digest_size_bytes": 32
+        },
+        "alternatives": [
+            {
+                "algorithm": "SHA-256",
+                "status": "PRIMARY",
+                "security_category": "FIPS 180-4 Standard",
+                "rationale": "Direct drop-in replacement for secure digest computation."
+            }
+        ]
+    },
+    ("BLOWFISH", "ENCRYPTION"): {
+        "primary": "AES-256-GCM",
+        "hybrid": None,
+        "fallback": "ChaCha20-Poly1305",
+        "nist_standard": "FIPS 197",
+        "reasoning": "Blowfish's 64-bit block size is vulnerable to Sweet32-style birthday-bound attacks after ~4GB encrypted under one key. AES-256-GCM provides authenticated encryption with a 128-bit block size.",
+        "migration_complexity": "MEDIUM",
+        "protocol_notes": "Ensure 96-bit nonce/IV uniqueness for GCM mode.",
+        "hard_constraints": {
+            "regulatory_compliance": "Not FIPS-approved; FIPS 197 is required for federal/CNSA 2.0 compliance."
+        },
+        "soft_constraints": {
+            "block_size_bytes": 16,
+            "key_size_bits": 256
+        },
+        "alternatives": [
+            {
+                "algorithm": "AES-256-GCM",
+                "status": "PRIMARY",
+                "security_category": "FIPS 197 / SP 800-38D",
+                "rationale": "Standard authenticated symmetric encryption; 128-bit block size avoids Blowfish's birthday-bound weakness."
+            },
+            {
+                "algorithm": "ChaCha20-Poly1305",
+                "status": "ALTERNATIVE",
+                "security_category": "RFC 8439",
+                "rationale": "High-performance software alternative where AES hardware acceleration is absent."
+            }
+        ]
+    },
     ("AES", "ENCRYPTION"): {  # AES-128 specifically
         "primary": "AES-256-GCM",
         "hybrid": None,
@@ -463,9 +515,9 @@ def infer_function(asset: CryptoAsset) -> str:
     family = (asset.algorithm_family or "").upper()
     canonical = (asset.algorithm_canonical or "").upper()
 
-    if family in ("SHA-1", "SHA1", "MD5", "HASH") or "HASH" in canonical or "SHA" in canonical:
+    if family in ("SHA-1", "SHA1", "MD5", "MD2", "HASH") or "HASH" in canonical or "SHA" in canonical:
         return "HASH"
-    if family in ("AES", "DES", "DES3", "3DES", "RC4") or "CIPHER" in canonical or "ENCRYPT" in canonical:
+    if family in ("AES", "DES", "DES3", "3DES", "RC4", "BLOWFISH") or "CIPHER" in canonical or "ENCRYPT" in canonical:
         return "ENCRYPTION"
     if family in ("ECDSA", "DSA") or "SIGN" in canonical or "DSA" in canonical:
         return "SIGNATURE"
@@ -509,12 +561,16 @@ def find_rule(asset: CryptoAsset) -> Optional[Dict[str, Any]]:
             rule = RECOMMENDATION_TABLE.get(("SHA-1", "HASH"))
         elif "MD5" in canonical:
             rule = RECOMMENDATION_TABLE.get(("MD5", "HASH"))
+        elif "MD2" in canonical:
+            rule = RECOMMENDATION_TABLE.get(("MD2", "HASH"))
         elif "3DES" in canonical or "DES3" in canonical:
             rule = RECOMMENDATION_TABLE.get(("DES3", "ENCRYPTION"))
         elif "DES" in canonical:
             rule = RECOMMENDATION_TABLE.get(("DES", "ENCRYPTION"))
         elif "RC4" in canonical:
             rule = RECOMMENDATION_TABLE.get(("RC4", "ENCRYPTION"))
+        elif "BLOWFISH" in canonical:
+            rule = RECOMMENDATION_TABLE.get(("BLOWFISH", "ENCRYPTION"))
         elif "AES" in canonical:
             rule = RECOMMENDATION_TABLE.get(("AES", "ENCRYPTION"))
         elif "ECDSA" in canonical:

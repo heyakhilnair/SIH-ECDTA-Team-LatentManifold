@@ -171,6 +171,52 @@ async def test_crypto_asset_risk_score_backref_is_scalar():
         await session.commit()
 
 
+async def test_mosca_only_applies_to_quantum_vulnerable_assets():
+    """
+    Regression test for a real scoring bug found investigating why every
+    algorithm in a project (including ones that were neither classically nor
+    quantum vulnerable) showed inflated HIGH composite risk: the Mosca
+    (X+Y-vs-Z harvest-now-decrypt-later) branch of compute_asset_risk's
+    composite calculation ran unconditionally for every asset, regardless of
+    whether that asset is actually broken by a quantum computer. A bare AES
+    call with no confirmed weak key size — quantum_vulnerable=False,
+    classical_vulnerable=False — still got bumped to composite=HIGH purely
+    from the workspace's default 7y/1y/12y timeline math, a signal that
+    doesn't even apply to it. Fixed by gating the Mosca branch behind
+    quantum_exposure == "HIGH".
+    """
+    print("\n[7] Mosca composite escalation only applies to quantum-vulnerable assets...")
+    async with AsyncSessionLocal() as session:
+        ws = Workspace(clerk_user_id="test_audit_user_4", name="Audit Mosca Gating Test")
+        session.add(ws)
+        await session.flush()
+        # Neither classically nor quantum vulnerable — X(7)+Y(1)=8 still < Z(12)
+        # here, but even bumping Y up wouldn't matter post-fix since Mosca is
+        # gated off entirely for a non-quantum-vulnerable asset.
+        safe_asset = CryptoAsset(
+            workspace_id=ws.id, algorithm_canonical="AES", algorithm_family="AES",
+            algorithm_name="AES", quantum_vulnerable=False, classical_vulnerable=False,
+        )
+        session.add(safe_asset)
+        await session.commit()
+        ws_id, asset_id = ws.id, safe_asset.id
+
+        risk = await compute_asset_risk(session, safe_asset)
+        assert risk.composite_risk_level == "LOW", (
+            f"expected LOW for a non-quantum-vulnerable, non-classically-vulnerable asset, "
+            f"got {risk.composite_risk_level} — Mosca is being applied where it shouldn't be"
+        )
+        assert risk.quantum_risk_level == "SAFE", risk.quantum_risk_level
+        print(f"    OK — quantum-irrelevant AES call computed composite={risk.composite_risk_level} (not Mosca-inflated)")
+
+    from sqlalchemy import text
+    async with AsyncSessionLocal() as session:
+        await session.execute(text("DELETE FROM risk_scores WHERE workspace_id = :wid"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM crypto_assets WHERE workspace_id = :wid"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM workspaces WHERE id = :wid"), {"wid": ws_id})
+        await session.commit()
+
+
 def test_cbom_primitive_mapping():
     print("\n[5] CBOM primitive values are real CycloneDX 1.6 enum members...")
     cases = [
@@ -203,6 +249,7 @@ async def main():
     await test_job_logs_are_real_and_roundtrip()
     await test_threat_horizon_is_workspace_configurable()
     await test_crypto_asset_risk_score_backref_is_scalar()
+    await test_mosca_only_applies_to_quantum_vulnerable_assets()
     test_cbom_primitive_mapping()
     print("\nAll Phase 0-6 audit-fix checks passed.")
 

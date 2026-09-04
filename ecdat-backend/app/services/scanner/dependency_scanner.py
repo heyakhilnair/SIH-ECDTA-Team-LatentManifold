@@ -24,7 +24,16 @@ CRYPTO_PACKAGES = {
         "github.com/golang-jwt/jwt": "JWT implementation",
         "crypto/rsa": "RSA cryptography",
         "crypto/ecdsa": "ECDSA cryptography"
-    }
+    },
+    "clojure": {
+        "buddy/buddy-core": "Cryptographic primitives",
+        "buddy/buddy-sign": "JWT/message signing",
+        "buddy/buddy-hashers": "Password hashing",
+        "caesium/caesium": "libsodium bindings",
+        "weavejester/crypto-random": "Cryptographically secure random generation",
+        "weavejester/crypto-password": "Password hashing",
+        "weavejester/crypto-equality": "Constant-time comparison",
+    },
 }
 
 def parse_npm_manifest(file_path: str, content: str) -> list[Evidence]:
@@ -112,6 +121,50 @@ def parse_go_manifest(file_path: str, content: str) -> list[Evidence]:
                 ))
     return findings
 
+def parse_clj_manifest(file_path: str, content: str) -> list[Evidence]:
+    """
+    Leiningen `project.clj` dependency vectors: `[group/artifact "version"]`,
+    normally inside a `:dependencies [...]` form. Regex over the whole file
+    rather than line-by-line since a dependency vector is sometimes written
+    across a line boundary; the `[sym "ver"]` shape itself is specific
+    enough not to false-positive elsewhere in a typical project.clj.
+    """
+    findings = []
+    for m in re.finditer(r'\[([a-zA-Z0-9_.\-]+(?:/[a-zA-Z0-9_.\-]+)?)\s+"([^"]+)"\]', content):
+        pkg, version = m.group(1), m.group(2)
+        if pkg in CRYPTO_PACKAGES["clojure"]:
+            line_number = content.count('\n', 0, m.start()) + 1
+            findings.append(Evidence(
+                source_type='dependency',
+                file_path=file_path,
+                line_number=line_number,
+                raw_match=m.group(0),
+                context_lines=f"Dependency in project.clj: {pkg} {version}",
+                detector='clj_manifest',
+                confidence=1.0,
+                raw_metadata={'package': pkg, 'version': version, 'purpose': CRYPTO_PACKAGES["clojure"][pkg]}
+            ))
+    return findings
+
+def parse_deps_edn(file_path: str, content: str) -> list[Evidence]:
+    """deps.edn (Clojure CLI/tools.deps): `group/artifact {:mvn/version "1.0.0"}`."""
+    findings = []
+    for m in re.finditer(r'([a-zA-Z0-9_.\-]+/[a-zA-Z0-9_.\-]+)\s*\{\s*:mvn/version\s*"([^"]+)"', content):
+        pkg, version = m.group(1), m.group(2)
+        if pkg in CRYPTO_PACKAGES["clojure"]:
+            line_number = content.count('\n', 0, m.start()) + 1
+            findings.append(Evidence(
+                source_type='dependency',
+                file_path=file_path,
+                line_number=line_number,
+                raw_match=m.group(0),
+                context_lines=f"Dependency in deps.edn: {pkg} {version}",
+                detector='deps_edn',
+                confidence=1.0,
+                raw_metadata={'package': pkg, 'version': version, 'purpose': CRYPTO_PACKAGES["clojure"][pkg]}
+            ))
+    return findings
+
 def find_and_scan_manifests(repo_dir: str) -> list[Evidence]:
     findings = []
     for root, dirs, files in os.walk(repo_dir):
@@ -120,21 +173,25 @@ def find_and_scan_manifests(repo_dir: str) -> list[Evidence]:
         if '.git' in dirs: dirs.remove('.git')
         
         for file in files:
-            if file not in ['package.json', 'requirements.txt', 'go.mod']:
+            if file not in ['package.json', 'requirements.txt', 'go.mod', 'project.clj', 'deps.edn']:
                 continue
-                
+
             path = os.path.join(root, file)
             rel_path = os.path.relpath(path, repo_dir)
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     content = f.read()
-                    
+
                 if file == 'package.json':
                     findings.extend(parse_npm_manifest(rel_path, content))
                 elif file == 'requirements.txt':
                     findings.extend(parse_pip_manifest(rel_path, content))
                 elif file == 'go.mod':
                     findings.extend(parse_go_manifest(rel_path, content))
+                elif file == 'project.clj':
+                    findings.extend(parse_clj_manifest(rel_path, content))
+                elif file == 'deps.edn':
+                    findings.extend(parse_deps_edn(rel_path, content))
             except Exception as e:
                 print(f"[DependencyScanner] Could not read {path}: {e}")
     return findings

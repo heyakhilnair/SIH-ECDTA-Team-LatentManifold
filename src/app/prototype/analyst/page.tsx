@@ -5,7 +5,15 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import { useWorkspace } from "@/components/WorkspaceWrapper";
 import { motion } from "framer-motion";
+import ProjectFilter from "@/components/ProjectFilter";
 import "../prototype.css";
+
+interface CitationDetail {
+  evidence_id: string;
+  file_path: string | null;
+  line_number: number | null;
+  project_name: string;
+}
 
 interface Message {
   role: "user" | "assistant";
@@ -13,7 +21,9 @@ interface Message {
   confidence?: number;
   evidenceCitations?: string[];
   assetCitations?: string[];
+  citationDetails?: CitationDetail[];
   unknowns?: string[];
+  scope?: string;
   isError?: boolean;
 }
 
@@ -32,13 +42,25 @@ export default function AiAnalystPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [asking, setAsking] = useState(false);
+  const [sources, setSources] = useState<any[]>([]);
+  const [sourceId, setSourceId] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Switching projects changes what the AI can even see — old answers were
+  // scoped to whatever project was selected when asked, so leaving them on
+  // screen after a switch would be stale/misleading (e.g. "no findings"
+  // from an empty project shown next to a different project's real ones).
+  const changeProject = (id: string) => {
+    setSourceId(id);
+    setMessages([]);
+  };
 
   useEffect(() => {
     if (!isLoaded || !userId || !workspace) return;
     api.analyst.status(workspace.id, getToken)
       .then((res) => setConfigured(!!res.configured))
       .catch(() => setConfigured(false));
+    api.sources.list(workspace.id, getToken).then(setSources).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, userId, workspace]);
 
@@ -52,14 +74,16 @@ export default function AiAnalystPage() {
     setInput("");
     setAsking(true);
     try {
-      const res = await api.analyst.query(workspace.id, question, getToken);
+      const res = await api.analyst.query(workspace.id, question, getToken, sourceId || undefined);
       setMessages((prev) => [...prev, {
         role: "assistant",
         text: res.answer,
         confidence: res.confidence,
         evidenceCitations: res.evidence_citations || [],
         assetCitations: res.asset_citations || [],
+        citationDetails: res.citation_details || [],
         unknowns: res.unknowns || [],
+        scope: res.scope,
       }]);
     } catch (err: any) {
       setMessages((prev) => [...prev, {
@@ -80,9 +104,12 @@ export default function AiAnalystPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div>
-          <h1 style={{ fontSize: "2.25rem", marginBottom: "0.25rem" }}>AI Analyst</h1>
-          <p>Ask about your real scan results — every answer is grounded in your workspace's actual evidence, risk, and recommendation data. No source code is ever sent to the model.</p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "1rem", flexWrap: "wrap" }}>
+          <div>
+            <h1 style={{ fontSize: "2.25rem", marginBottom: "0.25rem" }}>AI Analyst</h1>
+            <p>Ask about your real scan results — every answer is grounded in your workspace's actual evidence, risk, and recommendation data. No source code is ever sent to the model, and any project marked private is left out entirely.</p>
+          </div>
+          <ProjectFilter sources={sources} value={sourceId} onChange={changeProject} />
         </div>
       </motion.header>
 
@@ -90,7 +117,7 @@ export default function AiAnalystPage() {
         <div className="ecdat-card" style={{ borderLeft: "3px solid var(--color-danger, #B91C1C)", marginBottom: "1.5rem" }}>
           <strong>AI Analyst isn't configured yet.</strong>
           <p style={{ marginTop: "0.4rem", color: "var(--color-secondary)", fontSize: "0.9rem" }}>
-            No <code>GEMINI_API_KEY</code> is set on the backend. Add one to <code>ecdat-backend/.env</code> and restart the backend to enable this page.
+            No <code>GEMINI_API_KEY</code> or <code>GROQ_API_KEY</code> is set on the backend. Add one to <code>ecdat-backend/.env</code> and restart the backend to enable this page.
           </p>
         </div>
       )}
@@ -134,23 +161,45 @@ export default function AiAnalystPage() {
               >
                 {m.text}
                 {m.role === "assistant" && !m.isError && (
-                  <div style={{ marginTop: "0.6rem", display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
-                    {typeof m.confidence === "number" && (
-                      <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.7rem" }}>
-                        confidence {(m.confidence * 100).toFixed(0)}%
-                      </span>
+                  <>
+                    <div style={{ marginTop: "0.6rem", display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
+                      {m.scope && (
+                        <span className="ecdat-badge ecdat-badge-active" style={{ fontSize: "0.7rem" }} title="Which project(s) this answer drew from">
+                          📁 {m.scope}
+                        </span>
+                      )}
+                      {typeof m.confidence === "number" && (
+                        <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.7rem" }}>
+                          confidence {(m.confidence * 100).toFixed(0)}%
+                        </span>
+                      )}
+                      {(m.unknowns?.length ?? 0) > 0 && (
+                        <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.7rem" }} title={m.unknowns!.join(", ")}>
+                          {m.unknowns!.length} unknown{m.unknowns!.length === 1 ? "" : "s"}
+                        </span>
+                      )}
+                    </div>
+                    {(m.citationDetails?.length ?? 0) > 0 && (
+                      <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                        {m.citationDetails!.map((c) => (
+                          <div
+                            key={c.evidence_id}
+                            style={{
+                              fontSize: "0.72rem",
+                              fontFamily: "var(--font-mono)",
+                              color: "var(--color-secondary)",
+                              backgroundColor: "rgba(0,0,0,0.03)",
+                              padding: "0.25rem 0.5rem",
+                              borderRadius: "4px",
+                            }}
+                          >
+                            📁 {c.project_name} · {c.file_path || "unknown file"}
+                            {c.line_number ? `:${c.line_number}` : ""}
+                          </div>
+                        ))}
+                      </div>
                     )}
-                    {(m.evidenceCitations?.length ?? 0) > 0 && (
-                      <span className="ecdat-badge ecdat-badge-success" style={{ fontSize: "0.7rem" }}>
-                        {m.evidenceCitations!.length} evidence citation{m.evidenceCitations!.length === 1 ? "" : "s"}
-                      </span>
-                    )}
-                    {(m.unknowns?.length ?? 0) > 0 && (
-                      <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.7rem" }} title={m.unknowns!.join(", ")}>
-                        {m.unknowns!.length} unknown{m.unknowns!.length === 1 ? "" : "s"}
-                      </span>
-                    )}
-                  </div>
+                  </>
                 )}
               </div>
             </div>
