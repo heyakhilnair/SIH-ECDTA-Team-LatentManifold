@@ -3,17 +3,35 @@ services:
     name: ecdat-backend
     env: python
     region: ohio
-    buildCommand: "pip install -r requirements.txt"
+    # alembic upgrade head is idempotent (an already-applied migration is a
+    # no-op), so running it on every build keeps the deployed schema in sync
+    # automatically instead of requiring a manual step after every deploy.
+    buildCommand: "pip install -r requirements.txt && alembic upgrade head"
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.11.6
       - key: ENVIRONMENT
         value: production
       - key: DATABASE_URL
         sync: false
       - key: CLERK_SECRET_KEY
         sync: false
+      # AI Analyst (Phase 8/15) — without these, ask_analyst() reports itself
+      # as "not configured" in production even though it works locally.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      # Real, actively used (app/main.py's CORSMiddleware) — without this set
+      # to the real deployed Vercel URL, the deployed frontend cannot reach
+      # this backend at all (falls back to a hardcoded localhost/placeholder
+      # default that won't match your real domain). No wildcard in prod.
+      - key: CORS_ORIGINS
+        sync: false
+      # Declared in app/config.py but never actually read anywhere in the
+      # codebase (confirmed by search) — kept only for parity with the local
+      # .env file; safe to leave blank in Render if you'd rather not set them.
       - key: SUPABASE_PROJECT_URL
         sync: false
       - key: SUPABASE_ACCESS_TOKEN

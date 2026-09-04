@@ -708,6 +708,18 @@ regressions, not missing features. All covered by new tests; 142 pytest +
       dropped from 33,223 to 20,769 chars). Live-verified end-to-end against the real large workspace
       through the actual UI: Gemini hit an unrelated transient 503 that run, Groq's fallback picked up
       correctly and returned a real, evidence-cited answer.
+- [x] **Every brand-new user has been unable to create a workspace since the P0 auth-bypass fix.**
+      Found live via a real deployed-site signup: `POST /api/workspaces` 422'd with
+      `"loc":["body","clerk_user_id"],"msg":"Field required"`. `create_workspace()` (routers/workspaces.py)
+      already correctly ignores any client-supplied identity and derives the real owner from the verified
+      JWT instead ("Force the clerk_user_id to be the authenticated user" — the actual P0 auth-bypass fix,
+      commit `e9e5cdd`) — but the request schema, `WorkspaceCreate`, was never updated to match and kept
+      demanding a `clerk_user_id` field the (correctly secure) frontend never sends. `workspace_in.clerk_user_id`
+      confirmed never read anywhere in the handler. Only pre-existing workspaces kept working (they load via
+      a GET, not this POST), which is exactly why this went unnoticed for so long. Fixed by removing the
+      field from `WorkspaceCreate` entirely rather than just making it optional — it was dead weight, not a
+      real input. Verified: the exact real request body the frontend sends (`{"name": "..."}"`) now validates;
+      full 143-test suite still passes.
 
 ---
 

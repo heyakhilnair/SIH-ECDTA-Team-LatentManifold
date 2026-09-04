@@ -1,4 +1,11 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Real bug found live 2026-09-05: NEXT_PUBLIC_API_URL was set on Vercel with
+// a trailing slash (".../onrender.com/"), and every call below appends a
+// path that already starts with "/" — producing a double slash
+// (".../onrender.com//api/...") that the browser's fetch() can't resolve at
+// all (fails before even reaching CORS, surfacing as a generic "Failed to
+// fetch"). Stripping any trailing slash here means a trailing slash in the
+// env var can never break this again, regardless of how it gets set.
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "");
 
 /**
  * Core helper to fetch data from ECDAT backend with the Clerk JWT automatically injected.
