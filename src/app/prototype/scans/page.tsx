@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { fetchWithAuth } from "../../../lib/api";
 import { motion } from "framer-motion";
 import { useWorkspace } from "../../../components/WorkspaceWrapper";
+import { formatISTDateTime } from "@/lib/formatTime";
 import "../prototype.css";
 
 export default function ScansPage() {
@@ -103,10 +104,10 @@ export default function ScansPage() {
                         </span>
                       </td>
                       <td style={{ fontSize: "0.85rem", color: "var(--color-secondary)" }}>
-                        {job.started_at ? new Date(job.started_at).toLocaleString() : 'PENDING'}
+                        {job.started_at ? formatISTDateTime(job.started_at) : 'PENDING'}
                       </td>
                       <td style={{ fontSize: "0.85rem", color: "var(--color-secondary)" }}>
-                        {job.completed_at ? new Date(job.completed_at).toLocaleString() : '—'}
+                        {job.completed_at ? formatISTDateTime(job.completed_at) : '—'}
                       </td>
                       <td>
                         {job.evidence_count > 0 ? (

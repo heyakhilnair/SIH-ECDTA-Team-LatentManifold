@@ -1,6 +1,5 @@
 import uuid
-import datetime
-from sqlalchemy import Column, String, Float, ForeignKey, DateTime, Text
+from sqlalchemy import Column, String, Float, ForeignKey, DateTime, Text, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
@@ -21,7 +20,9 @@ class Recommendation(Base):
     nist_standard = Column(String(50), nullable=True)
     migration_complexity = Column(String(20), nullable=True)
 
-    generated_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
+    # server_default=func.now() — see models/audit.py's comment for why the old
+    # Python-side default=datetime.datetime.utcnow was a real, reproduced bug.
+    generated_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     asset = relationship("CryptoAsset", backref=backref("recommendation", uselist=False))

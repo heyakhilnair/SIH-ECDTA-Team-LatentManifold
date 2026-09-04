@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 from typing import List
+from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom import minidom
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.asset import CryptoAsset
 from app.models.cbom import CbomSnapshot
@@ -160,3 +162,65 @@ async def generate_cyclonedx_cbom(db: AsyncSession, assets: List[CryptoAsset], w
     await db.refresh(snapshot)
     
     return cbom
+
+
+_CDX_NS = "http://cyclonedx.org/schema/bom/1.6"
+
+
+def to_cyclonedx_xml(cbom: dict) -> str:
+    """
+    Phase 15 — CycloneDX 1.6 XML export. A straight serialization of the same
+    validated dict generate_cyclonedx_cbom() already produces (no second
+    source of truth) — stdlib xml.etree, no new dependency, matching the real
+    CycloneDX XML element/attribute layout (bom-ref/type as attributes on
+    <component>, <property name="..."> for the ecdat: properties) so the
+    output is a real CycloneDX document, not a generic dict-to-XML dump.
+    """
+    bom = Element("bom", xmlns=_CDX_NS, serialNumber=cbom.get("serialNumber", ""), version=str(cbom.get("version", 1)))
+
+    metadata = cbom.get("metadata") or {}
+    if metadata:
+        meta_el = SubElement(bom, "metadata")
+        if metadata.get("timestamp"):
+            SubElement(meta_el, "timestamp").text = metadata["timestamp"]
+        tools = (metadata.get("tools") or {}).get("components") or []
+        if tools:
+            tools_el = SubElement(meta_el, "tools")
+            tools_components_el = SubElement(tools_el, "components")
+            for t in tools:
+                t_el = SubElement(tools_components_el, "component", type=t.get("type", "application"))
+                if t.get("author"):
+                    SubElement(t_el, "author").text = t["author"]
+                if t.get("name"):
+                    SubElement(t_el, "name").text = t["name"]
+                if t.get("version"):
+                    SubElement(t_el, "version").text = str(t["version"])
+
+    components_el = SubElement(bom, "components")
+    for c in cbom.get("components", []):
+        c_el = SubElement(components_el, "component", type=c.get("type", "cryptographic-asset"))
+        if c.get("bom-ref"):
+            c_el.set("bom-ref", c["bom-ref"])
+        SubElement(c_el, "name").text = c.get("name", "")
+
+        crypto_props = c.get("cryptoProperties") or {}
+        if crypto_props:
+            cp_el = SubElement(c_el, "cryptoProperties")
+            if crypto_props.get("assetType"):
+                SubElement(cp_el, "assetType").text = crypto_props["assetType"]
+            algo_props = crypto_props.get("algorithmProperties") or {}
+            if algo_props:
+                ap_el = SubElement(cp_el, "algorithmProperties")
+                for key in ("primitive", "executionEnvironment", "parameterSetIdentifier"):
+                    if algo_props.get(key) is not None:
+                        SubElement(ap_el, key).text = str(algo_props[key])
+
+        props = c.get("properties") or []
+        if props:
+            props_el = SubElement(c_el, "properties")
+            for p in props:
+                prop_el = SubElement(props_el, "property", name=p.get("name", ""))
+                prop_el.text = str(p.get("value", ""))
+
+    raw = tostring(bom, encoding="unicode")
+    return minidom.parseString(raw).toprettyxml(indent="  ")

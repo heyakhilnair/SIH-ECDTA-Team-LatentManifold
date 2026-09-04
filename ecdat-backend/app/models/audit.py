@@ -1,6 +1,5 @@
 import uuid
-import datetime
-from sqlalchemy import Column, String, ForeignKey, DateTime
+from sqlalchemy import Column, String, ForeignKey, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.database import Base
 
@@ -23,4 +22,12 @@ class AuditLog(Base):
     resource_type = Column(String(50), nullable=True)  # 'source', 'discovery_job', 'workspace', 'asset', ...
     resource_id = Column(UUID(as_uuid=True), nullable=True)
     details = Column(JSONB, nullable=True)  # e.g. {"before": ..., "after": ...} for policy changes
-    created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow, index=True)
+    # server_default=func.now(), not a Python-side default=datetime.datetime.utcnow
+    # — real bug found 2026-09-04: a naive Python datetime (utcnow() carries no
+    # tzinfo) inserted into a timestamptz column gets interpreted by asyncpg
+    # using the app server's LOCAL timezone (IST here), silently storing every
+    # audit event 5.5 hours off. This is literally why a scan the user had just
+    # started looked like it happened "5h ago" in the audit trail. Reproduced
+    # directly (insert with the old default, read back, compare to the DB's own
+    # now() at the same instant) before fixing.
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

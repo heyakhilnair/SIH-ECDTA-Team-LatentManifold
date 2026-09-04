@@ -36,6 +36,30 @@ export async function fetchWithAuth(
 }
 
 /**
+ * Same as fetchWithAuth but for non-JSON responses (e.g. ?format=xml) —
+ * returns the raw text body instead of parsing it as JSON.
+ */
+async function fetchTextWithAuth(url: string, getToken: () => Promise<string | null>): Promise<string> {
+  const token = await getToken();
+  const response = await fetch(`${API_BASE}${url}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new Error(`API error (${response.status}): ${response.statusText}`);
+  return response.text();
+}
+
+/** Triggers a browser "Save As" for text content — used by CBOM XML export. */
+export function downloadTextFile(filename: string, content: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/**
  * Creates a discovery job in the backend.
  */
 export async function createDiscoveryJob(
@@ -82,6 +106,44 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ threat_horizon_years: threatHorizonYears }),
       }),
+    readinessScore: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/readiness-score`, getToken),
+    quantumPosture: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/quantum-posture`, getToken),
+    policyViolations: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/policy-violations`, getToken),
+    alerts: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/alerts`, getToken),
+    executiveReport: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchTextWithAuth(`/api/workspaces/${wid}/reports/executive`, getToken),
+    technicalReport: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchTextWithAuth(`/api/workspaces/${wid}/reports/technical`, getToken),
+    evidence: (
+      wid: string,
+      getToken: () => Promise<string | null>,
+      params?: {
+        source_id?: string;
+        algorithm?: string;
+        source_type?: string;
+        detector?: string;
+        min_confidence?: number;
+        search?: string;
+        limit?: number;
+        offset?: number;
+      }
+    ) => {
+      const query = new URLSearchParams();
+      if (params?.source_id) query.set("source_id", params.source_id);
+      if (params?.algorithm) query.set("algorithm", params.algorithm);
+      if (params?.source_type) query.set("source_type", params.source_type);
+      if (params?.detector) query.set("detector", params.detector);
+      if (params?.min_confidence !== undefined) query.set("min_confidence", String(params.min_confidence));
+      if (params?.search) query.set("search", params.search);
+      if (params?.limit) query.set("limit", String(params.limit));
+      if (params?.offset) query.set("offset", String(params.offset));
+      const qs = query.toString();
+      return fetchWithAuth(`/api/workspaces/${wid}/evidence${qs ? `?${qs}` : ""}`, getToken);
+    },
   },
 
   sources: {
@@ -141,6 +203,15 @@ export const api = {
       fetchWithAuth(`/api/assets/${assetId}`, getToken),
     evidence: (assetId: string, getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/assets/${assetId}/evidence`, getToken),
+    updateMigrationStatus: (assetId: string, status: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/assets/${assetId}/migration-status`, getToken, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }),
+    verifyMigration: (assetId: string, jobId: string, sourceId: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/assets/${assetId}/verify-migration?job_id=${jobId}&source_id=${sourceId}`, getToken),
+    blastRadiusLite: (assetId: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/assets/${assetId}/blast-radius-lite`, getToken),
   },
 
   risk: {
@@ -180,20 +251,32 @@ export const api = {
   cbom: {
     getLatest: (wid: string, getToken: () => Promise<string | null>, sourceId?: string) =>
       fetchWithAuth(`/api/workspaces/${wid}/cbom${sourceId ? `?source_id=${sourceId}` : ""}`, getToken),
+    getLatestXml: (wid: string, getToken: () => Promise<string | null>, sourceId?: string) =>
+      fetchTextWithAuth(`/api/workspaces/${wid}/cbom?format=xml${sourceId ? `&source_id=${sourceId}` : ""}`, getToken),
     generate: (wid: string, getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/workspaces/${wid}/cbom/generate`, getToken, {
         method: "POST",
       }),
+    history: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/cbom/history`, getToken),
+    getSnapshot: (snapshotId: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/cbom/${snapshotId}`, getToken),
+    getSnapshotXml: (snapshotId: string, getToken: () => Promise<string | null>) =>
+      fetchTextWithAuth(`/api/cbom/${snapshotId}?format=xml`, getToken),
   },
 
   analyst: {
     status: (wid: string, getToken: () => Promise<string | null>) =>
       fetchWithAuth(`/api/workspaces/${wid}/analyst/status`, getToken),
-    query: (wid: string, question: string, getToken: () => Promise<string | null>, sourceId?: string) =>
+    query: (wid: string, question: string, getToken: () => Promise<string | null>, sourceId?: string, sessionId?: string) =>
       fetchWithAuth(`/api/workspaces/${wid}/analyst/query`, getToken, {
         method: "POST",
-        body: JSON.stringify({ question, source_id: sourceId }),
+        body: JSON.stringify({ question, source_id: sourceId, session_id: sessionId }),
       }),
+    sessions: (wid: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/analyst/sessions`, getToken),
+    session: (wid: string, sessionId: string, getToken: () => Promise<string | null>) =>
+      fetchWithAuth(`/api/workspaces/${wid}/analyst/sessions/${sessionId}`, getToken),
   },
 
   activity: {

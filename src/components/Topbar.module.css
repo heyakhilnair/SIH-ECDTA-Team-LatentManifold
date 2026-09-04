@@ -251,6 +251,7 @@
 }
 
 .iconBtn {
+  position: relative;
   background: none;
   border: none;
   color: #666;
@@ -275,10 +276,155 @@
   color: #b95532;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+}
+
+.scanDot, .scanDotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ccc;
+}
+
+.scanDotActive {
+  background: #b95532;
+  box-shadow: 0 0 6px rgba(185, 85, 50, 0.6);
+  animation: scanPulse 1.6s infinite;
+}
+
+@keyframes scanPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.notifDot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b95532;
 }
 
 .userMenu {
   display: flex;
   align-items: center;
+}
+
+/* --- Search dropdown --- */
+
+.searchWrapper {
+  position: relative;
+  width: 100%;
+  max-width: 450px;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #111;
+  font-family: var(--font-sans);
+}
+
+.searchDropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem 0;
+  max-height: 360px;
+  overflow-y: auto;
+  z-index: 60;
+}
+
+.searchGroup {
+  padding: 0.35rem 0 0.5rem;
+}
+
+.searchResult {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: #222;
+  cursor: pointer;
+  font-family: var(--font-sans);
+}
+
+.searchResult:hover {
+  background-color: #f5f5f5;
+}
+
+.searchEmpty {
+  padding: 1rem;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* --- Notifications dropdown --- */
+
+.notifDropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 320px;
+  background-color: #fff;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+  padding: 0.6rem 0;
+}
+
+.notifRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+.notifRow:hover {
+  background-color: #f9f9f7;
+}
+
+.notifText {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notifTime {
+  font-size: 0.7rem;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.notifViewAll {
+  display: block;
+  text-align: center;
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid #eaeaea;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #b95532;
+  text-decoration: none;
 }

@@ -54,13 +54,28 @@ from app.models.asset import CryptoAsset, EvidenceAsset
 from app.models.evidence import EvidenceModel
 from app.models.source import Source
 
-MAX_ASSETS_IN_CONTEXT = 15
-MAX_EVIDENCE_PER_ASSET = 3
+MAX_ASSETS_IN_CONTEXT = 10
+MAX_EVIDENCE_PER_ASSET = 2
 
 PRIORITY_ORDER = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3, "SAFE": 4, "UNKNOWN": 5}
 
-GEMINI_MODEL = "gemini-pro-latest"  # Google's rolling alias for its current best general-purpose model
+# Real bug found 2026-09-04: "gemini-pro-latest" resolves to a Pro-tier model
+# (gemini-3.1-pro at time of writing) whose free-tier quota on this key is
+# literally `limit: 0` — every single call failed with 429, regardless of
+# workspace size (reproduced directly: even a 1-word prompt failed). Flash
+# models get real free-tier quota; verified live against this same key.
+GEMINI_MODEL = "gemini-flash-latest"  # Google's rolling alias for its current best free-tier-eligible model
 GROQ_MODEL = "openai/gpt-oss-120b"  # strongest general-purpose text model on Groq at time of writing
+
+# Groq's free/on-demand tier caps openai/gpt-oss-120b at 8000 tokens/minute —
+# a HARD per-request ceiling, not a "calls per minute" count. Real bug found
+# 2026-09-04: the full context for a 25-asset workspace (even capped to the
+# top MAX_ASSETS_IN_CONTEXT=15 it used to be) came out to ~10,001 tokens,
+# over the limit — so Groq's fallback silently failed too on exactly the
+# workspaces large enough to need it most. MAX_ASSETS_IN_CONTEXT/
+# MAX_EVIDENCE_PER_ASSET above were both cut so the worst-case real prompt
+# stays comfortably under 8000 even on Groq's own tokenizer (which counts a
+# bit more generously than a naive chars/4 estimate).
 
 
 class AnalystResponse(BaseModel):

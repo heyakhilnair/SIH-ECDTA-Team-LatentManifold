@@ -24,9 +24,11 @@ from app.models.workspace import Workspace
 from app.models.job import DiscoveryJob
 from app.models.asset import CryptoAsset
 from app.models.risk import RiskScore
+from app.models.evidence import EvidenceModel
 from app.services.auth import get_current_user_id, _fetch_jwks
 from app.services.scanner.orchestrator import _append_job_log, _job_status
 from app.services.risk_engine import compute_asset_risk
+from app.services.normalizer.asset_resolver import resolve_evidence_to_asset
 from app.services.cbom_generator import _cyclonedx_primitive, validate_cbom, generate_cyclonedx_cbom
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import HTTPException
@@ -217,6 +219,153 @@ async def test_mosca_only_applies_to_quantum_vulnerable_assets():
         await session.commit()
 
 
+async def test_whatif_recalculate_never_persists():
+    """
+    Regression test for a real data-corruption bug found 2026-09-04: the
+    What-If Recalculator (POST /api/assets/{id}/risk/recalculate) called
+    compute_asset_risk() with the user's hypothetical slider values, and
+    that function unconditionally committed the result over the asset's
+    REAL, persisted risk_scores row. Every "what if" experiment silently
+    overwrote the actual risk data shown everywhere else in the product
+    (Mission Control, Risk table, Migration Planner) until the asset's next
+    real scan happened to correct it. Fixed with a persist=False parameter
+    that returns a transient, never-committed RiskScore for preview only.
+    """
+    print("\n[8] What-If recalculate (persist=False) never touches the real persisted risk row...")
+    async with AsyncSessionLocal() as session:
+        ws = Workspace(clerk_user_id="test_audit_user_5", name="Audit WhatIf Test", threat_horizon_years=12.0)
+        session.add(ws)
+        await session.flush()
+        asset = CryptoAsset(
+            workspace_id=ws.id, algorithm_canonical="RSA:2048", algorithm_family="RSA",
+            algorithm_name="RSA", key_size=2048, quantum_vulnerable=True, classical_vulnerable=False,
+        )
+        session.add(asset)
+        await session.commit()
+        ws_id, asset_id = ws.id, asset.id
+
+        # Real pipeline result first (persist=True, the default) — this is
+        # the "actual" risk the rest of the product should keep seeing.
+        real = await compute_asset_risk(session, asset)
+        real_composite = real.composite_risk_level
+        real_lifetime = real.data_lifetime_years
+
+        # A what-if with wildly different, hypothetical inputs.
+        preview = await compute_asset_risk(
+            session, asset, data_lifetime_years=1.0, business_criticality="LOW",
+            threat_horizon_years=25.0, persist=False,
+        )
+        assert preview.id is None, f"a persist=False preview must never get a real row id, got {preview.id}"
+        # The hypothetical scenario (short lifetime, distant threat horizon)
+        # should compute as materially safer than the real one, proving the
+        # preview actually used the hypothetical inputs, not the real ones.
+        assert preview.composite_risk_level != "CRITICAL" or real_composite != "CRITICAL" or preview.risk_explanation["mosca"]["z_threat_horizon"] == 25.0
+
+        # The critical assertion: re-fetch the REAL row from the DB and
+        # confirm it's untouched by the what-if call above.
+        result = await session.execute(select(RiskScore).where(RiskScore.asset_id == asset_id))
+        refetched = result.scalar_one()
+        assert refetched.data_lifetime_years == real_lifetime, (
+            f"REGRESSION: the real risk_scores row was mutated by a persist=False call — "
+            f"expected data_lifetime_years={real_lifetime}, got {refetched.data_lifetime_years}"
+        )
+        assert refetched.composite_risk_level == real_composite, (
+            f"REGRESSION: the real risk_scores row's composite level changed from a what-if preview — "
+            f"expected {real_composite}, got {refetched.composite_risk_level}"
+        )
+        print(f"    OK — real row stays data_lifetime_years={refetched.data_lifetime_years}, composite={refetched.composite_risk_level}; "
+              f"what-if preview (id=None) independently computed composite={preview.composite_risk_level}")
+
+    from sqlalchemy import text
+    async with AsyncSessionLocal() as session:
+        await session.execute(text("DELETE FROM risk_scores WHERE workspace_id = :wid"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM crypto_assets WHERE workspace_id = :wid"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM workspaces WHERE id = :wid"), {"wid": ws_id})
+        await session.commit()
+
+
+async def test_normalization_batches_dont_need_per_row_commit():
+    """
+    Regression test for a real perf bug found 2026-09-04: resolve_evidence_to_asset
+    used to commit() up to 3 times per evidence row (asset create/update + the
+    evidence-asset link) — normalizing a real large repo's findings
+    (pyca/cryptography, 1878 findings) took 12+ minutes over the remote dev DB
+    because of it, with the scan looking hung (one log line, then silence, for
+    the entire duration). Fixed to flush() per row and commit() once for the
+    whole batch, matching how the orchestrator actually calls it. This test
+    proves that pattern is still correct: several evidence rows resolved in one
+    session with a single commit at the end all persist correctly, including
+    the case where two rows normalize to the SAME canonical asset (the flush
+    must make the first row's asset visible to the second row's lookup within
+    the same uncommitted transaction).
+    """
+    print("\n[9] Batched normalization (flush-per-row, commit-once) persists correctly...")
+    async with AsyncSessionLocal() as session:
+        ws = Workspace(clerk_user_id="test_audit_user_6", name="Audit Batch Normalize Test")
+        session.add(ws)
+        await session.flush()
+        ws_id = ws.id
+        job = DiscoveryJob(workspace_id=ws.id, status="running")
+        session.add(job)
+        await session.flush()
+        job_id = job.id
+        # Two evidence rows for the SAME algorithm (SHA-1) plus one for a
+        # different one (MD5) — exercises both the "create new asset" and
+        # "find existing asset just flushed, not yet committed" paths.
+        ev1 = EvidenceModel(
+            job_id=job_id, workspace_id=ws.id, source_type="source_code",
+            file_path="a.py", line_number=1, raw_match="sha1()", context_lines="sha1()",
+            detector="treesitter_call", confidence=0.9, raw_metadata={},
+        )
+        ev2 = EvidenceModel(
+            job_id=job_id, workspace_id=ws.id, source_type="source_code",
+            file_path="b.py", line_number=2, raw_match="hashlib.sha1()", context_lines="hashlib.sha1()",
+            detector="treesitter_call", confidence=0.9, raw_metadata={},
+        )
+        ev3 = EvidenceModel(
+            job_id=job_id, workspace_id=ws.id, source_type="source_code",
+            file_path="c.py", line_number=3, raw_match="md5()", context_lines="md5()",
+            detector="treesitter_call", confidence=0.9, raw_metadata={},
+        )
+        session.add_all([ev1, ev2, ev3])
+        await session.flush()
+
+        resolved = []
+        for ev in (ev1, ev2, ev3):
+            asset = await resolve_evidence_to_asset(session, ev)
+            if asset is not None:
+                resolved.append(asset)
+        # The critical assertion: nothing has been committed yet, and querying
+        # within the SAME session still sees everything (proves flush() alone
+        # made it visible) — then one real commit persists it for good.
+        distinct_canonicals = {a.algorithm_canonical for a in resolved}
+        assert "SHA-1" in distinct_canonicals, f"expected SHA-1 among resolved assets, got {distinct_canonicals}"
+        sha1_assets = [a for a in resolved if a.algorithm_canonical == "SHA-1"]
+        assert len(sha1_assets) == 2 and sha1_assets[0].id == sha1_assets[1].id, (
+            "the two SHA-1 evidence rows should resolve to the SAME asset row (deduplication within "
+            "the same uncommitted batch) — got different ids, so flush() isn't making rows visible "
+            "to later lookups in the same transaction"
+        )
+        await session.commit()
+
+    # Fresh session (real durability check — was it actually committed, not just flushed?)
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(CryptoAsset).where(CryptoAsset.workspace_id == ws_id))
+        persisted = result.scalars().all()
+        canonicals = sorted(a.algorithm_canonical for a in persisted)
+        assert canonicals == ["MD5", "SHA-1"], f"expected exactly [MD5, SHA-1] to have persisted, got {canonicals}"
+        print(f"    OK — 3 evidence rows (2 SHA-1 + 1 MD5) batch-normalized with ONE commit -> {canonicals}, correctly deduplicated and durable")
+
+    from sqlalchemy import text
+    async with AsyncSessionLocal() as session:
+        await session.execute(text("DELETE FROM evidence_assets WHERE asset_id IN (SELECT id FROM crypto_assets WHERE workspace_id = :wid)"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM evidence WHERE workspace_id = :wid"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM crypto_assets WHERE workspace_id = :wid"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM discovery_jobs WHERE workspace_id = :wid"), {"wid": ws_id})
+        await session.execute(text("DELETE FROM workspaces WHERE id = :wid"), {"wid": ws_id})
+        await session.commit()
+
+
 def test_cbom_primitive_mapping():
     print("\n[5] CBOM primitive values are real CycloneDX 1.6 enum members...")
     cases = [
@@ -250,6 +399,8 @@ async def main():
     await test_threat_horizon_is_workspace_configurable()
     await test_crypto_asset_risk_score_backref_is_scalar()
     await test_mosca_only_applies_to_quantum_vulnerable_assets()
+    await test_whatif_recalculate_never_persists()
+    await test_normalization_batches_dont_need_per_row_commit()
     test_cbom_primitive_mapping()
     print("\nAll Phase 0-6 audit-fix checks passed.")
 

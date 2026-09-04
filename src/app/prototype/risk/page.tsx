@@ -23,6 +23,29 @@ function primaryFactorReason(r: any): string {
   return r.quantum_reason || r.classical_reason || "—";
 }
 
+// Mirrors compute_asset_risk's composite branch precedence exactly (see
+// ecdat-backend/app/services/risk_engine.py) so the What-If modal can tell
+// the user, BEFORE they touch a single slider, which controls can actually
+// change this specific asset's urgency — a real "why did nothing move"
+// complaint traced back to: for a classically-broken algorithm (MD5, SHA-1,
+// DES, ...), classical_risk_level == CRITICAL short-circuits the composite
+// calculation unconditionally — Data Lifetime, Threat Horizon, and even
+// Business Criticality never get consulted at all. That's the mathematically
+// correct answer (it's already at maximum urgency), but the old UI never
+// said so until after a click, so it just looked broken.
+function relevantControls(r: any): { lifetime: boolean; horizon: boolean; criticality: boolean; reason: string } {
+  if (r.classical_risk_level === "CRITICAL") {
+    return { lifetime: false, horizon: false, criticality: false, reason: "classical-critical" };
+  }
+  if (r.classical_risk_level === "HIGH") {
+    return { lifetime: false, horizon: false, criticality: true, reason: "classical-high" };
+  }
+  if (r.quantum_vulnerable) {
+    return { lifetime: true, horizon: true, criticality: true, reason: "quantum" };
+  }
+  return { lifetime: false, horizon: false, criticality: false, reason: "already-safe" };
+}
+
 export default function RiskPage() {
   const { getToken, isLoaded, userId } = useAuth();
   const workspace = useWorkspace();
@@ -51,6 +74,16 @@ export default function RiskPage() {
   const [customHorizon, setCustomHorizon] = useState<number>(12);
   const [recalculating, setRecalculating] = useState(false);
   const [recalcResult, setRecalcResult] = useState<any | null>(null);
+
+  // Risk-over-time projection — real Mosca math swept across a range of
+  // threat-horizon (Z) checkpoints at the current X/criticality slider
+  // values, not a machine-learned prediction (there's no ML model here;
+  // this is the same deterministic formula the point recalculation uses,
+  // just run several times). Answers "how does urgency change if the
+  // threat horizon is 1 year away vs 25 years away" directly.
+  const TIMELINE_HORIZONS = [1, 3, 5, 8, 12, 16, 20, 25];
+  const [timeline, setTimeline] = useState<{ z: number; level: string }[] | null>(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
 
   // Detail drawer (full, untruncated explanation for one asset's risk)
   const [detailRisk, setDetailRisk] = useState<any | null>(null);
@@ -85,27 +118,57 @@ export default function RiskPage() {
     setCustomCriticality(riskItem.business_criticality || "HIGH");
     setCustomHorizon(threatHorizon);
     setRecalcResult(null);
+    setTimeline(null);
   };
 
   const handleRecalculate = async () => {
     if (!selectedRisk?.asset_id) return;
     setRecalculating(true);
+    const controls = relevantControls(selectedRisk);
+    // Only worth sweeping the threat horizon when it's actually a control
+    // that matters (see relevantControls) — for a classically-broken
+    // algorithm we already know from the same formula that every horizon
+    // computes to the same composite level, so firing 8 network calls to
+    // reconfirm a mathematical certainty is pure waste, not real precision.
+    if (controls.horizon) setTimelineLoading(true);
     try {
-      const result = await api.risk.recalculate(
-        selectedRisk.asset_id,
-        {
-          data_lifetime_years: Number(customLifetime),
-          business_criticality: customCriticality,
-          threat_horizon_years: Number(customHorizon),
-        },
-        getToken
-      );
+      const params = {
+        data_lifetime_years: Number(customLifetime),
+        business_criticality: customCriticality,
+      };
+      const result = await api.risk.recalculate(selectedRisk.asset_id, { ...params, threat_horizon_years: Number(customHorizon) }, getToken);
       setRecalcResult(result);
-      await loadRiskData();
+      // this used to also call loadRiskData() to reflect the recalculation —
+      // that was only ever needed because the old buggy endpoint persisted
+      // the hypothetical values as real data; now that it's a pure preview,
+      // there's nothing in the real workspace data to refresh.
+
+      if (controls.horizon) {
+        // Real math, not fake precision: the SAME deterministic Mosca formula
+        // the point calculation above uses, just swept across a range of
+        // possible threat horizons instead of the one on the slider — no
+        // backend endpoint needed since this recalculate call was already
+        // fixed to never persist (see risk_engine.py), so it's safe to fire
+        // many in parallel.
+        const sweepResults = await Promise.all(
+          TIMELINE_HORIZONS.map((z) =>
+            api.risk
+              .recalculate(selectedRisk.asset_id, { ...params, threat_horizon_years: z }, getToken)
+              .then((r: any) => ({ z, level: r.composite_risk_level }))
+              .catch(() => ({ z, level: "UNKNOWN" }))
+          )
+        );
+        setTimeline(sweepResults);
+      } else {
+        // Skip the sweep entirely and just show the one real, already-known
+        // outcome flat across the timeline — same true answer, zero wasted calls.
+        setTimeline(TIMELINE_HORIZONS.map((z) => ({ z, level: result.composite_risk_level })));
+      }
     } catch (err: any) {
       console.error("Recalculation error", err);
     } finally {
       setRecalculating(false);
+      setTimelineLoading(false);
     }
   };
 
@@ -544,59 +607,91 @@ export default function RiskPage() {
                 </button>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", marginBottom: "1.5rem" }}>
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
-                    <span>Data Lifetime X (How long data remains sensitive)</span>
-                    <strong>{customLifetime} Years</strong>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={20}
-                    value={customLifetime}
-                    onChange={(e) => setCustomLifetime(Number(e.target.value))}
-                    style={{ width: "100%" }}
-                  />
-                </div>
+              {(() => {
+                const controls = relevantControls(selectedRisk);
+                const banner: Record<string, string> = {
+                  "classical-critical": `${selectedRisk.algorithm_canonical} is broken by classical (non-quantum) cryptanalysis today — none of the controls below can change that. It's already at maximum urgency regardless of data lifetime or the quantum timeline.`,
+                  "classical-high": `${selectedRisk.algorithm_canonical} has a classically weak configuration (not quantum-related). Only Business Criticality changes the outcome here — Data Lifetime and Threat Horizon are grayed out because Mosca's inequality doesn't apply to a classical weakness.`,
+                  "quantum": `${selectedRisk.algorithm_canonical} is quantum-vulnerable — all three controls genuinely change the outcome via Mosca's inequality (X + Y vs Z). Try dragging Threat Horizon down to see it escalate.`,
+                  "already-safe": `${selectedRisk.algorithm_canonical} isn't classically or quantum broken today — these controls won't push it to CRITICAL because there's no known attack to accelerate.`,
+                };
+                return (
+                  <>
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: controls.reason === "quantum" ? "#166534" : "#555",
+                        background: controls.reason === "quantum" ? "#f0fdf4" : "#faf9f6",
+                        border: `1px solid ${controls.reason === "quantum" ? "#bbf7d0" : "#eaeaea"}`,
+                        borderRadius: "6px",
+                        padding: "0.75rem 1rem",
+                        marginBottom: "1.25rem",
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {banner[controls.reason]}
+                    </div>
 
-                <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
-                    <span>Estimated Threat Horizon Z (Arrival of CRQC)</span>
-                    <strong>{customHorizon} Years</strong>
-                  </div>
-                  <input
-                    type="range"
-                    min={5}
-                    max={25}
-                    value={customHorizon}
-                    onChange={(e) => setCustomHorizon(Number(e.target.value))}
-                    style={{ width: "100%" }}
-                  />
-                </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", marginBottom: "1.5rem" }}>
+                      <div style={{ opacity: controls.lifetime ? 1 : 0.4 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                          <span>Data Lifetime X (How long data remains sensitive) {!controls.lifetime && <em style={{ color: "#999" }}>— N/A</em>}</span>
+                          <strong>{customLifetime} Years</strong>
+                        </div>
+                        <input
+                          type="range"
+                          min={1}
+                          max={20}
+                          value={customLifetime}
+                          disabled={!controls.lifetime}
+                          onChange={(e) => setCustomLifetime(Number(e.target.value))}
+                          style={{ width: "100%", cursor: controls.lifetime ? "pointer" : "not-allowed" }}
+                        />
+                      </div>
 
-                <div>
-                  <label style={{ display: "block", fontSize: "0.85rem", marginBottom: "6px" }}>
-                    Business Criticality Tier
-                  </label>
-                  <select
-                    value={customCriticality}
-                    onChange={(e) => setCustomCriticality(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "0.5rem",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd",
-                      fontSize: "0.85rem",
-                    }}
-                  >
-                    <option value="CRITICAL">CRITICAL (Tier 0 — Payment / Identity / Core Ledger)</option>
-                    <option value="HIGH">HIGH (Tier 1 — Core Microservices)</option>
-                    <option value="MEDIUM">MEDIUM (Tier 2 — Internal APIs)</option>
-                    <option value="LOW">LOW (Tier 3 — Batch / Logging)</option>
-                  </select>
-                </div>
-              </div>
+                      <div style={{ opacity: controls.horizon ? 1 : 0.4 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "6px" }}>
+                          <span>Estimated Threat Horizon Z (Arrival of CRQC) {!controls.horizon && <em style={{ color: "#999" }}>— N/A</em>}</span>
+                          <strong>{customHorizon} Years</strong>
+                        </div>
+                        <input
+                          type="range"
+                          min={5}
+                          max={25}
+                          value={customHorizon}
+                          disabled={!controls.horizon}
+                          onChange={(e) => setCustomHorizon(Number(e.target.value))}
+                          style={{ width: "100%", cursor: controls.horizon ? "pointer" : "not-allowed" }}
+                        />
+                      </div>
+
+                      <div style={{ opacity: controls.criticality ? 1 : 0.4 }}>
+                        <label style={{ display: "block", fontSize: "0.85rem", marginBottom: "6px" }}>
+                          Business Criticality Tier {!controls.criticality && <em style={{ color: "#999" }}>— N/A</em>}
+                        </label>
+                        <select
+                          value={customCriticality}
+                          disabled={!controls.criticality}
+                          onChange={(e) => setCustomCriticality(e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "0.5rem",
+                            borderRadius: "6px",
+                            border: "1px solid #ddd",
+                            fontSize: "0.85rem",
+                            cursor: controls.criticality ? "pointer" : "not-allowed",
+                          }}
+                        >
+                          <option value="CRITICAL">CRITICAL (Tier 0 — Payment / Identity / Core Ledger)</option>
+                          <option value="HIGH">HIGH (Tier 1 — Core Microservices)</option>
+                          <option value="MEDIUM">MEDIUM (Tier 2 — Internal APIs)</option>
+                          <option value="LOW">LOW (Tier 3 — Batch / Logging)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
 
               {recalcResult && (
                 <div
@@ -624,6 +719,42 @@ export default function RiskPage() {
                   </div>
                   <p style={{ fontSize: "0.8rem", color: "#555", margin: "8px 0 0" }}>
                     {primaryFactorReason(recalcResult)}
+                  </p>
+                  {recalcResult.classical_risk_level === "CRITICAL" && (
+                    <p style={{ fontSize: "0.75rem", color: "#888", margin: "8px 0 0", fontStyle: "italic" }}>
+                      Data Lifetime and Threat Horizon won't move this: {recalcResult.algorithm_canonical || selectedRisk.algorithm_canonical} is broken by classical
+                      (non-quantum) attacks today, so it's already at the maximum urgency regardless of when a quantum computer arrives.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {(timelineLoading || timeline) && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#333" }}>Risk Over Time</span>
+                    <span style={{ fontSize: "0.7rem", color: "#999" }}>
+                      Real Mosca math at each threat horizon — not a prediction, a computation
+                    </span>
+                  </div>
+                  {timelineLoading ? (
+                    <div style={{ fontSize: "0.8rem", color: "#888" }}>Computing across {TIMELINE_HORIZONS.length} horizons…</div>
+                  ) : (
+                    <div style={{ display: "flex", gap: "4px", alignItems: "flex-end" }}>
+                      {timeline!.map((pt) => {
+                        const color =
+                          pt.level === "CRITICAL" ? "#D63939" : pt.level === "HIGH" ? "#D3A248" : pt.level === "MEDIUM" ? "#B95532" : "#2B7A4B";
+                        return (
+                          <div key={pt.z} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }} title={`If a quantum computer capable of breaking this arrives in ${pt.z} years: ${pt.level}`}>
+                            <div style={{ width: "100%", height: "28px", borderRadius: "4px", backgroundColor: color }} />
+                            <span style={{ fontSize: "0.65rem", color: "#888" }}>{pt.z}y</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <p style={{ fontSize: "0.72rem", color: "#999", margin: "8px 0 0" }}>
+                    X (Data Lifetime) and Business Criticality held at the values above; only the threat horizon (Z) changes left to right.
                   </p>
                 </div>
               )}

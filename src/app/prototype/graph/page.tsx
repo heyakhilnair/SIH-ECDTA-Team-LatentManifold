@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "../../../lib/api";
-import { motion } from "framer-motion";
 import { useWorkspace } from "../../../components/WorkspaceWrapper";
 import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import ProjectFilter from "@/components/ProjectFilter";
+import CryptoGraph3D from "@/components/CryptoGraph3D";
 import Link from "next/link";
 import "../prototype.css";
 
@@ -53,6 +53,19 @@ export default function GraphPage() {
   const sources = sourceId ? allSources.filter((s) => s.id === sourceId) : allSources;
 
   const quantumCount = assets.filter((a) => a.quantum_vulnerable).length;
+
+  // Real blast radius: the widest real cross-project reach any single algorithm
+  // actually has, from each asset's own `projects` field (serialize_asset() —
+  // the same data the Crypto Assets page's "Found in: 📁 X" badges use). This
+  // replaces the old `sources.length` placeholder, which showed the total
+  // source count for every single algorithm regardless of where it was
+  // actually found — that's what made Blowfish (or anything else selected)
+  // always look like it touched every registered repo.
+  const maxBlastRadius = useMemo(
+    () => assets.reduce((max, a) => Math.max(max, (a.projects || []).length), 0),
+    [assets]
+  );
+  const selectedProjects: string[] = selectedNode?.projects || [];
 
   return (
     <div className="ecdat-container">
@@ -105,13 +118,13 @@ export default function GraphPage() {
 
         <div className="ecdat-card" style={{ padding: "1.25rem" }}>
           <div style={{ fontSize: "0.75rem", color: "#888", textTransform: "uppercase", fontWeight: 700 }}>
-            Estimated Blast Radius
+            Widest Blast Radius
           </div>
           <div style={{ fontSize: "2rem", fontWeight: 800, color: "#181917", margin: "4px 0" }}>
-            {sources.length > 0 ? `${sources.length} Repos` : "0 Repos"}
+            {maxBlastRadius > 0 ? `${maxBlastRadius} Repos` : "0 Repos"}
           </div>
           <div style={{ fontSize: "0.8rem", color: "#687563" }}>
-            Downstream systems impacted by crypto migration
+            Highest number of projects any single algorithm actually appears in
           </div>
         </div>
       </div>
@@ -128,7 +141,7 @@ export default function GraphPage() {
         <div
           className="ecdat-card"
           style={{
-            padding: "2rem",
+            padding: "1.5rem",
             backgroundColor: "#faf9f6",
             border: "1px solid #eaeaea",
             borderRadius: "8px",
@@ -138,12 +151,12 @@ export default function GraphPage() {
             position: "relative",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "1rem" }}>
             <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#888", textTransform: "uppercase" }}>
-              Topology Graph // Layered Cryptographic Flow
+              Topology Graph // Real Evidence-Backed Connections
             </span>
             <span className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.75rem" }}>
-              Source → Library → Algorithm
+              Drag to rotate · Scroll to zoom · Click a node
             </span>
           </div>
 
@@ -159,75 +172,12 @@ export default function GraphPage() {
               </Link>
             </div>
           ) : (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-around" }}>
-              {/* Repositories Row */}
-              <div>
-                <div style={{ fontSize: "0.75rem", color: "#888", marginBottom: "8px", fontWeight: 700 }}>
-                  TIER 1: ENTERPRISE SOURCES
-                </div>
-                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                  {sources.map((s) => (
-                    <div
-                      key={s.id}
-                      style={{
-                        padding: "0.6rem 1rem",
-                        backgroundColor: "#181917",
-                        color: "#F3F0E8",
-                        borderRadius: "6px",
-                        fontSize: "0.85rem",
-                        fontFamily: "var(--font-mono)",
-                        border: "1px solid #333",
-                      }}
-                    >
-                      📦 {s.name}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Connecting Lines Indicator */}
-              <div style={{ display: "flex", justifyContent: "center", color: "#B95532", fontSize: "1.2rem" }}>
-                ↓ (USES)
-              </div>
-
-              {/* Algorithms Row */}
-              <div>
-                <div style={{ fontSize: "0.75rem", color: "#888", marginBottom: "8px", fontWeight: 700 }}>
-                  TIER 2: DISCOVERED CRYPTOGRAPHIC ALGORITHMS (BLAST RADIUS)
-                </div>
-                <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                  {assets.slice(0, 8).map((asset) => {
-                    const isSelected = selectedNode?.id === asset.id;
-                    return (
-                      <motion.div
-                        key={asset.id}
-                        whileHover={{ scale: 1.05 }}
-                        onClick={() => setSelectedNode(asset)}
-                        style={{
-                          padding: "0.6rem 1rem",
-                          backgroundColor: isSelected ? "var(--color-primary)" : "#fff",
-                          color: isSelected ? "#fff" : "#181917",
-                          borderRadius: "6px",
-                          fontSize: "0.85rem",
-                          fontFamily: "var(--font-mono)",
-                          fontWeight: 700,
-                          border: isSelected
-                            ? "2px solid var(--color-primary)"
-                            : asset.quantum_vulnerable
-                            ? "2px solid #B91C1C"
-                            : "1px solid #ddd",
-                          cursor: "pointer",
-                          boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                        }}
-                      >
-                        {asset.quantum_vulnerable ? "⚠️ " : "🔒 "}
-                        {asset.algorithm_canonical}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
+            <CryptoGraph3D
+              sources={sources}
+              assets={assets}
+              selectedId={selectedNode?.id || null}
+              onSelectNode={(asset) => setSelectedNode(asset)}
+            />
           )}
         </div>
 
@@ -268,9 +218,24 @@ export default function GraphPage() {
                   <span style={{ fontSize: "0.75rem", color: "#888", textTransform: "uppercase", fontWeight: 700 }}>
                     Affected Repositories
                   </span>
-                  <div style={{ fontSize: "0.85rem", color: "#333", marginTop: "4px" }}>
-                    {sources.length} active repositories depend on this algorithm
-                  </div>
+                  {selectedProjects.length === 0 ? (
+                    <div style={{ fontSize: "0.85rem", color: "#888", marginTop: "4px", fontStyle: "italic" }}>
+                      No project attribution on this evidence yet
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: "0.85rem", color: "#333", marginTop: "4px" }}>
+                        {selectedProjects.length} project{selectedProjects.length === 1 ? "" : "s"} actually use this algorithm
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "6px" }}>
+                        {selectedProjects.map((p) => (
+                          <span key={p} className="ecdat-badge ecdat-badge-neutral" style={{ fontSize: "0.7rem" }}>
+                            📁 {p}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div>

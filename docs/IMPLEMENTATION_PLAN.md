@@ -1907,14 +1907,144 @@ RETURN path, n ORDER BY n.tier
 ## PHASE 10 — ENTERPRISE HARDENING (V3, Future)
 - Multi-tenancy isolation (row-level security in PostgreSQL)
 - Full RBAC with Clerk Organizations + custom ECDAT permission layer
-- Migration workspace (task management, assignment, completion tracking)
+- Migration workspace (task management, assignment, completion tracking) — see Phase 11.1, the actual blocker was simpler than "task management": state was never persisted at all
 - CI/CD verification hooks
 - Continuous drift detection
 - Enterprise SSO (SAML/OIDC via Clerk Enterprise)
-- Compliance reporting (NIST CSF, CMMC, etc.)
-- Audit logs (all reads/writes/queries logged with actor + timestamp)
+- Compliance reporting (NIST CSF, CMMC, etc.) — see Phase 14
+- Audit logs (all reads/writes/queries logged with actor + timestamp) — **done**, see `docs/PHASE8_10_REPORT.md`
 - Data residency controls
 - Evidence integrity signatures
+
+---
+
+## PHASE 11 — MIGRATION STATE PERSISTENCE & QUANTUM READINESS SCORE (Post-SIH)
+**Source:** Phase 17 PDF §25–41, 99–103 (QRS); found via 2026-09-04 gap audit (state persistence)
+**Depends on:** Phase 4 (risk), Phase 5 (recommendations)
+
+### 11.1 — Migration State Persistence
+```python
+# app/models/asset.py — add to CryptoAsset
+migration_status: Mapped[str] = mapped_column(String, default="ASSESSED")
+# ASSESSED | PLANNED | IN_DEV | TESTING | MIGRATED — matches migration/page.tsx's MIGRATION_COLUMNS ids exactly
+```
+```
+PATCH /api/assets/{id}/migration-status  body: {status: str}  → logs MIGRATION_STATUS_CHANGED audit event
+```
+Frontend: `migration/page.tsx`'s `assetStates` (currently `useState<Record<string,string>>({})`,
+never sent to the backend) is replaced by a fetch of each asset's real `migration_status`
+plus a PATCH call on advance, with optimistic UI update + rollback on failure.
+
+### 11.2 — Quantum Readiness Score
+```python
+# app/services/readiness_engine.py
+def compute_readiness_score(workspace_id) -> dict:
+    coverage = sources_with_completed_scan / total_registered_sources
+    risk_posture = 1 - weighted_fraction(critical=1.0, high=0.6, from risk_summary)
+    pqc_adoption = count(asset.migration_status in (IN_DEV, TESTING, MIGRATED) for quantum_vulnerable assets) / count(quantum_vulnerable assets)
+    migration_progress = count(migration_status == MIGRATED) / count(quantum_vulnerable or classical_vulnerable)
+    governance = 1.0 if audit_log has an entry in last 30d else 0.5   # honest placeholder pre-Phase 14
+    crypto_agility = None   # not measured — no policy engine yet (Phase 14); show "not measured", never a fabricated number
+    score = weighted_sum({coverage: .20, risk_posture: .25, pqc_adoption: .20, migration_progress: .20, governance: .15})
+    return {"score": round(score), "level": readiness_level(score), "breakdown": {...}}
+
+def readiness_level(score: float) -> str:
+    # PDF §31 bands — configurable later, hardcode these defaults for now
+    return {0:"Critical", 21:"Low", 41:"Developing", 61:"Prepared", 81:"Highly Prepared"}[...]
+```
+```
+GET /api/workspaces/{id}/readiness-score → {score, level, breakdown}
+```
+**Rule (per PDF §26, §30):** never render the bare score without its breakdown attached; never invent a value for `crypto_agility` before Phase 14 exists to actually measure it — render "not measured" instead.
+
+---
+
+## PHASE 12 — MIGRATION VERIFICATION ENGINE (Post-SIH)
+**Source:** Phase 18 PDF §49–50; Phase 22 PDF Engine 5
+**Depends on:** Phase 3.4 (`cbom_snapshots`, already versioned), Phase 11.1
+
+```python
+# app/services/verification_engine.py
+def diff_cbom_snapshots(snapshot_a_id, snapshot_b_id, algorithm_canonical) -> dict:
+    # compares component presence + risk level for one algorithm between two persisted CBOM snapshots
+    ...
+```
+```
+POST /api/workspaces/{id}/verification/{asset_id}
+  → re-scans the asset's known evidence file locations, diffs against the pre-migration
+    snapshot, returns {status: VERIFIED|STILL_PRESENT|PARTIAL, before, after}
+```
+Only a real `VERIFIED` result (never a manual user click alone) may set `migration_status = MIGRATED`
+with a `verified_at` timestamp — same "no fake progress" principle already applied when
+Migration Planner's "Fully Migrated" column was fixed to require a real user action (Phase 10).
+
+---
+
+## PHASE 13 — UNIFIED EVIDENCE, QUANTUM POSTURE & BLAST-RADIUS-LITE (Post-SIH)
+**Source:** Phase 5 PDF (evidence), Phase 6 PDF (Shor/Grover stratification), Phase 16 PDF (blast radius)
+**Recommendation (not a PDF fact):** Neo4j (Phase 9) is real infrastructure investment for
+a true multi-hop Application→Library→Algorithm graph ECDAT doesn't model yet. These three
+endpoints deliver most of the same user value today over the existing relational schema —
+build this first, keep Phase 9 as the eventual graph-native upgrade if a real multi-hop
+use case justifies it.
+
+```
+GET /api/workspaces/{id}/evidence            → paginated, filterable evidence feed (algorithm, source, confidence)
+GET /api/workspaces/{id}/quantum-posture      → {shor_vulnerable: [...], grover_weakened: [...], safe: [...]} using asset_resolver.py's existing classification
+GET /api/assets/{id}/blast-radius-lite        → {project_count, file_count, shared_with_assets: [...]} via the same EvidenceAsset/Source joins serialize_asset()'s "projects" field already uses
+```
+Label `blast-radius-lite` honestly as file/project reach, **not** "N applications affected" — ECDAT has no `Application` entity, so claiming application-level blast radius would be fabricated.
+
+---
+
+## PHASE 14 — POLICY, COMPLIANCE & ALERTING (Post-SIH)
+**Source:** Phase 17 PDF §51–61; Phase 19 PDF
+**Depends on:** Phase 10 (audit logging, done)
+
+```python
+# app/models/policy.py
+class Policy(Base):
+    rule: str                 # e.g. "RSA < 2048"
+    algorithm_match: str
+    min_key_size: int | None
+    status: str                # FORBIDDEN | REVIEW | ALLOWED
+    scope: str                 # e.g. "production"
+```
+Seed policies from data `vulnerability_registry.py` already classifies (RSA<2048, SHA-1,
+MD5, DES/3DES forbidden) — do not invent new judgment calls.
+```
+GET /api/workspaces/{id}/policy-violations   → real violation list, counts by severity
+GET /api/workspaces/{id}/alerts              → new-critical-asset / new-forbidden-algorithm events, derived from audit_log (no new Slack/SIEM integration needed for SIH scope)
+```
+Replaces the `compliance/page.tsx` `RoadmapPlaceholder`. Do **not** attempt NIST
+CSF/CMMC framework mapping — no such constraint matrix exists in this codebase; the page
+must say so explicitly rather than fabricate a compliance percentage.
+
+---
+
+## PHASE 15 — GLOBAL SEARCH, AI SESSION PERSISTENCE & REPORT EXPORT (Post-SIH)
+**Source:** Phase 17 PDF §62–70; Phase 8 PDF (AI observability)
+
+- `CommandPalette` today only mounts on marketing pages (`MarketingWidgets.tsx`) — not
+  in `prototype/layout.tsx` — despite Phase 6.3's "Implement global search" checkbox
+  being marked done. Add a workspace-scoped instance querying real assets/sources/evidence.
+- `ai_sessions` / `ai_messages` tables + `GET /api/ai/sessions/{id}` — chat is currently
+  fully ephemeral (cleared on project switch by design, but also lost on any reload).
+- CBOM export: add `?format=xml` and `GET /api/cbom/{id}` (historical snapshot by id) —
+  both already spec'd in `docs/PRODUCT_REFERENCE.md` §5 but never implemented.
+- Executive/Technical report export (Markdown or PDF) from existing Mission Control/Risk/Migration data.
+
+---
+
+## PHASE 16 — MULTI-SOURCE DISCOVERY EXPANSION (Post-SIH, P3)
+**Source:** Phase 4 PDF, Phase 15 PDF, Phase 21 PDF
+**Do not build ahead of Phases 11–14** — the source PDFs themselves rank this below
+dashboard/risk/verification honesty work (Phase 22 PDF's MUST/SHOULD/NICE split).
+
+- Container scanning: Trivy/Syft subprocess, no `container_scanner.py` exists yet
+- Binary analysis: LIEF + YARA, no `binary_scanner.py` exists yet
+- Cloud/K8s/HSM/KMS discovery — P3 in the source PDFs themselves
+- Continuous/incremental scanning: Git hooks, CI/CD PR checks, scheduled scans — every job today is on-demand only
 
 ---
 

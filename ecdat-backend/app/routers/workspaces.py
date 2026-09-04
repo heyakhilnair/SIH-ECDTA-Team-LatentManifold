@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+import uuid
+from typing import Any, Dict, List
+
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
 
 from app.database import get_db
 from app.models.workspace import Workspace
 from app.schemas.workspace import WorkspaceCreate, WorkspaceResponse, WorkspaceSettingsUpdate
-from app.services.auth import get_current_user_id
+from app.services.auth import get_current_user_id, verify_workspace_access
 from app.services.audit import log_event
+from app.services.readiness_engine import compute_readiness_score
 
 router = APIRouter(prefix="/api/workspaces", tags=["Workspaces"])
 
@@ -97,3 +100,121 @@ async def update_my_workspace_settings(
         await compute_asset_risk(db, asset)  # threat_horizon_years=None -> reads the new workspace value
 
     return workspace
+
+
+@router.get("/{workspace_id}/readiness-score", response_model=Dict[str, Any])
+async def get_readiness_score(
+    workspace_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Phase 11.2 — Quantum Readiness Score. Real, computed dimensions only;
+    see readiness_engine.py's module docstring for why crypto_agility is
+    reported as null instead of guessed.
+    """
+    await verify_workspace_access(workspace_id, user_id, db)
+    return await compute_readiness_score(db, workspace_id)
+
+
+@router.get("/{workspace_id}/quantum-posture", response_model=Dict[str, Any])
+async def get_quantum_posture(
+    workspace_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Phase 13 — real Shor-vs-Grover-vs-safe stratification across every asset
+    in the workspace. Shor bucket reads CryptoAsset.quantum_vulnerable
+    (computed at scan time by asset_resolver.py); Grover bucket uses
+    vulnerability_registry.is_grover_weakened() — the real AES-128 bug found
+    while building this (see docs/TRACKER.md's bug list) is what made this
+    endpoint return zero Grover-weakened assets until it was fixed.
+
+    Deliberately restricted to symmetric-cipher families (AES/DES/Blowfish),
+    NOT is_grover_weakened()'s full registry as-is: that registry also lists
+    'SHA-256' (a hash, not a symmetric cipher) with its own note explicitly
+    saying it's "still considered acceptable" — bucketing it here under a
+    page whose own subtitle says "needs a key-size doubling" would be a real,
+    misleading mismatch (a hash has no key size to double). Hash-specific
+    Grover notes stay exactly where they already are: per-asset
+    vulnerability_notes on the asset detail view.
+    """
+    await verify_workspace_access(workspace_id, user_id, db)
+
+    from app.models.asset import CryptoAsset
+    from app.services.normalizer.vulnerability_registry import is_grover_weakened
+
+    SYMMETRIC_CIPHER_FAMILIES = {"AES", "DES", "BLOWFISH"}
+
+    result = await db.execute(select(CryptoAsset).where(CryptoAsset.workspace_id == workspace_id))
+    assets = result.scalars().all()
+
+    def entry(a):
+        return {
+            "id": str(a.id),
+            "algorithm_canonical": a.algorithm_canonical,
+            "algorithm_family": a.algorithm_family,
+            "key_size": a.key_size,
+        }
+
+    shor, grover, safe = [], [], []
+    for a in assets:
+        if a.quantum_vulnerable:
+            shor.append(entry(a))
+        elif a.algorithm_family in SYMMETRIC_CIPHER_FAMILIES and is_grover_weakened(a.algorithm_name, a.key_size):
+            grover.append(entry(a))
+        else:
+            safe.append(entry(a))
+
+    return {
+        "total_assets": len(assets),
+        "shor_vulnerable": {"count": len(shor), "assets": shor},
+        "grover_weakened": {"count": len(grover), "assets": grover},
+        "safe": {"count": len(safe), "assets": safe},
+    }
+
+
+@router.get("/{workspace_id}/policy-violations", response_model=Dict[str, Any])
+async def get_policy_violations(
+    workspace_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Phase 14 — real, evidence-backed policy violations. See
+    policy_engine.py's module docstring for why there's no Policy DB table
+    yet (no per-workspace policy-editing UI exists to justify one).
+    """
+    await verify_workspace_access(workspace_id, user_id, db)
+
+    from app.services.policy_engine import list_policy_violations
+
+    return await list_policy_violations(db, workspace_id)
+
+
+@router.get("/{workspace_id}/reports/executive")
+async def get_executive_report(
+    workspace_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Phase 15 — server-rendered Markdown, built entirely from data other real endpoints already compute."""
+    await verify_workspace_access(workspace_id, user_id, db)
+    from app.services.report_generator import generate_executive_report
+
+    md = await generate_executive_report(db, workspace_id)
+    return Response(content=md, media_type="text/markdown")
+
+
+@router.get("/{workspace_id}/reports/technical")
+async def get_technical_report(
+    workspace_id: uuid.UUID,
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    await verify_workspace_access(workspace_id, user_id, db)
+    from app.services.report_generator import generate_technical_report
+
+    md = await generate_technical_report(db, workspace_id)
+    return Response(content=md, media_type="text/markdown")

@@ -62,9 +62,29 @@ def test_serialize_asset_no_evidence_has_no_projects():
     assert data["projects"] == []
 
 
+def test_serialize_asset_reports_real_migration_status():
+    """
+    Phase 11.1 — serialize_asset() must surface the real, persisted
+    migration_status/migration_status_updated_at/migration_verified_at
+    columns, not a value the frontend has to invent (that invented-default
+    logic used to live in migration/page.tsx's useState — a real bug, since
+    it reset on every reload).
+    """
+    asset = CryptoAsset(
+        id=uuid.uuid4(), workspace_id=uuid.uuid4(), algorithm_canonical="SHA-1",
+        algorithm_family="HASH", algorithm_name="SHA-1",
+        migration_status="IN_DEV",
+    )
+    asset.evidence = []
+    data = serialize_asset(asset, source_names={})
+    assert data["migration_status"] == "IN_DEV"
+    assert data["migration_verified_at"] is None  # only Phase 12's verification engine sets this
+
+
 if __name__ == "__main__":
     test_serialize_asset_reports_the_projects_it_came_from()
     test_serialize_asset_shared_across_projects_lists_both_once()
     test_serialize_asset_unattributed_when_no_source_id()
     test_serialize_asset_no_evidence_has_no_projects()
+    test_serialize_asset_reports_real_migration_status()
     print("All asset project-attribution checks passed.")

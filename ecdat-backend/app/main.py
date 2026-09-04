@@ -22,6 +22,10 @@ app.include_router(sources.router)
 app.include_router(cbom.router)
 app.include_router(cbom.router, prefix="/api")
 
+# Phase 15: CBOM snapshot-by-id router (support both /cbom/... and /api/cbom/...)
+app.include_router(cbom.snapshot_router)
+app.include_router(cbom.snapshot_router, prefix="/api")
+
 # Phase 4: Risk engine routers (support both root and /api prefixes)
 # Workspace-scoped:  GET /api/workspaces/{id}/risk  |  GET /api/workspaces/{id}/risk/summary
 # Asset-scoped:      GET /api/assets/{id}/risk       |  POST /api/assets/{id}/risk/recalculate
@@ -63,9 +67,20 @@ app.include_router(analyst_router, prefix="/api")
 
 # Phase 10: Audit/Activity router (support both root and /api prefixes)
 # GET /api/workspaces/{id}/activity
-from app.routers.audit import router as audit_router
+from app.routers.audit import router as audit_router, alerts_router
 app.include_router(audit_router)
 app.include_router(audit_router, prefix="/api")
+
+# Phase 14: Alerts router (support both root and /api prefixes)
+# GET /api/workspaces/{id}/alerts
+app.include_router(alerts_router)
+app.include_router(alerts_router, prefix="/api")
+
+# Phase 13: Unified Evidence Feed router (support both root and /api prefixes)
+# GET /api/workspaces/{id}/evidence
+from app.routers.evidence import router as evidence_router
+app.include_router(evidence_router)
+app.include_router(evidence_router, prefix="/api")
 
 
 @app.get("/health")

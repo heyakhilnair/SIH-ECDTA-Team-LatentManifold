@@ -1,6 +1,5 @@
 import uuid
-import datetime
-from sqlalchemy import Column, String, Integer, Float, ForeignKey, DateTime, Text, Boolean
+from sqlalchemy import Column, String, Integer, Float, ForeignKey, DateTime, Text, Boolean, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship, backref
 from app.database import Base
@@ -31,8 +30,10 @@ class RiskScore(Base):
     classical_reason = Column(Text, nullable=True)
     risk_explanation = Column(JSONB, nullable=True)  # Structured multi-dimensional explanation
     
-    created_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    # server_default=func.now() — see models/audit.py's comment for why the old
+    # Python-side default=datetime.datetime.utcnow was a real, reproduced bug.
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
     #

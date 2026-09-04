@@ -173,6 +173,19 @@ async def run_discovery_job(job_id: str, workspace_id: str, scan_targets: list):
             await _persist_evidence(job_id, workspace_id, repo_findings, source_id=source_id)
             total_findings += len(repo_findings)
 
+            # Real bug found 2026-09-04 building the Quantum Readiness Score's
+            # coverage dimension: Source.last_scanned_at was declared on the
+            # model and even exposed in SourceStatus, but nothing anywhere in
+            # the codebase ever wrote to it — every source's "coverage" read
+            # as never-scanned regardless of how many real scans had run.
+            # Set on success (0 findings still counts as "a scan ran").
+            from app.models.source import Source
+            async with AsyncSessionLocal() as source_session:
+                await source_session.execute(
+                    update(Source).where(Source.id == source_id).values(last_scanned_at=datetime.datetime.now(datetime.timezone.utc))
+                )
+                await source_session.commit()
+
         except Exception as e:
             err_msg = f"Failed to process {url}: {e}"
             await _append_job_log(job_id, f"ERROR: {err_msg}")
@@ -200,18 +213,32 @@ async def run_discovery_job(job_id: str, workspace_id: str, scan_targets: list):
                 evidence_result = await session.execute(evidence_query)
                 evidence_rows = evidence_result.scalars().all()
 
-                # 2. Normalize and resolve each to CryptoAssets
+                # 2. Normalize and resolve each to CryptoAssets. resolve_evidence_to_asset
+                # only flushes (not commits) per row now — see its own comment for the
+                # real perf bug this fixed (a large repo's worth of findings, each
+                # doing up to 3 separate network-round-trip commits, made normalization
+                # take 12+ minutes on a remote DB). One commit here covers the whole batch.
                 assets_to_risk = set()
-                for evidence in evidence_rows:
+                for i, evidence in enumerate(evidence_rows):
                     asset = await resolve_evidence_to_asset(session, evidence)
                     if asset is not None:  # None = couldn't identify a specific algorithm, no asset created
                         assets_to_risk.add(asset)
+                    if (i + 1) % 200 == 0:
+                        await _append_job_log(job_id, f"Normalized {i + 1}/{len(evidence_rows)} findings so far")
+                await session.commit()
 
-                # 3. Compute Risk for all discovered assets
+                # 3. Compute Risk for all discovered assets, then check each
+                # against policy (Phase 14) — logging at most once per asset,
+                # ever, the first time it crosses into a real violation or a
+                # CRITICAL composite risk. This is what the alerts feed reads;
+                # see policy_engine.py's module docstring for why there's no
+                # separate Policy table.
                 await _append_job_log(job_id, f"Computing Mosca risk scores for {len(assets_to_risk)} assets")
                 from app.services.risk_engine import compute_asset_risk
+                from app.services.policy_engine import check_and_log_new_violation
                 for asset in assets_to_risk:
-                    await compute_asset_risk(session, asset)
+                    risk = await compute_asset_risk(session, asset)
+                    await check_and_log_new_violation(session, uuid.UUID(workspace_id), asset, risk)
 
                 # 4. Generate PQC recommendations for discovered assets
                 await _append_job_log(job_id, f"Generating PQC recommendations for {len(assets_to_risk)} assets")

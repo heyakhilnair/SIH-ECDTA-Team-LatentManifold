@@ -240,9 +240,10 @@ async def compute_asset_risk(
     business_criticality: str = "HIGH",
     exposure: str = "INTERNAL",
     threat_horizon_years: float | None = None,
+    persist: bool = True,
 ) -> RiskScore:
     """
-    Compute and persist a multi-dimensional risk score for a canonical CryptoAsset.
+    Compute a multi-dimensional risk score for a canonical CryptoAsset.
 
     threat_horizon_years (Z): if not explicitly passed (e.g. a what-if
     /risk/recalculate call), this is read from the asset's own workspace
@@ -251,7 +252,18 @@ async def compute_asset_risk(
     workspace setting instead of a hardcoded constant — see
     docs/BACKEND_AUDIT_PHASE0-6.md #10.
 
-    Returns the persisted RiskScore ORM object.
+    persist=False (real bug fixed 2026-09-04): the What-If Recalculator was
+    calling this with hypothetical slider values and this function
+    unconditionally committed the result over the asset's REAL, persisted
+    risk_scores row — so every "what if" experiment silently corrupted the
+    actual risk data shown everywhere else (Mission Control, Risk table,
+    Migration Planner) until the asset's next real scan overwrote it again.
+    persist=False returns a transient, never-committed RiskScore for preview
+    only. The real scan pipeline (risk.py's trigger after normalization)
+    always uses the default persist=True.
+
+    Returns a RiskScore ORM object — persisted when persist=True, transient
+    (never added to the session) when persist=False.
     """
     if threat_horizon_years is None:
         workspace = await db.get(Workspace, asset.workspace_id)
@@ -344,6 +356,38 @@ async def compute_asset_risk(
         "composite": composite,
         "migration_complexity": DEFAULT_MIGRATION_TIME.get(family, 2.0),
     }
+
+    if not persist:
+        # What-if preview — built entirely in memory, never added to the
+        # session (no db.add, no db.commit) so the real persisted row for
+        # this asset is completely untouched.
+        #
+        # Deliberately NOT setting `preview.asset = asset` here: RiskScore.asset
+        # is one side of a uselist=False one-to-one backref, and `asset` already
+        # has a live `risk_score` back-pointer to its REAL persisted row in this
+        # same session. Assigning the relationship reassigns that backref,
+        # which — as a real bug during testing confirmed — nulls out the real
+        # row's asset_id on the next autoflush (an "an asset has at most one
+        # risk_score" invariant the ORM enforces by detaching the old one).
+        # The router builds the response dict itself from `asset` (already in
+        # scope there) instead of routing this through serialize_risk()'s
+        # `r.asset.*` lookups, so no relationship needs to be wired here at all.
+        preview = RiskScore(
+            asset_id=asset.id,
+            workspace_id=asset.workspace_id,
+            data_lifetime_years=data_lifetime_years,
+            migration_time_years=migration_time,
+            business_criticality=business_criticality,
+            exposure=exposure,
+            mosca_threshold_exceeded=mosca["total_xy"] > mosca["z_threat_horizon"],
+            quantum_risk_level=quantum_risk_level,
+            classical_risk_level=classical_risk_level,
+            composite_risk_level=composite,
+            quantum_reason=get_quantum_reason(asset),
+            classical_reason=get_classical_reason(asset),
+            risk_explanation=risk_explanation,
+        )
+        return preview
 
     # --- Persist (upsert) ---
     query = select(RiskScore).where(RiskScore.asset_id == asset.id)

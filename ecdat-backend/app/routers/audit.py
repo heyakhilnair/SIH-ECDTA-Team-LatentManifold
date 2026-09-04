@@ -55,3 +55,50 @@ async def list_activity(
             for r in rows
         ],
     }
+
+
+# Phase 14 — alerting (Phase 17 PDF §56-61). Reuses this same audit_log
+# table rather than a new integration: policy_engine.py's
+# check_and_log_new_violation() already writes POLICY_VIOLATION_DETECTED and
+# NEW_CRITICAL_ASSET events (once per asset, ever — first occurrence only),
+# so "alerts" is just that filtered slice of real activity, not a separate
+# system. No Slack/SIEM/webhook delivery — out of scope for SIH. Separate
+# router (not a sub-route of `router` above) because that one's prefix
+# already ends in `/activity` and alerts needs its own top-level path.
+alerts_router = APIRouter(prefix="/workspaces/{workspace_id}/alerts", tags=["audit"])
+ALERT_EVENTS = ["POLICY_VIOLATION_DETECTED", "NEW_CRITICAL_ASSET"]
+
+
+@alerts_router.get("", response_model=Dict[str, Any])
+async def list_alerts(
+    workspace_id: uuid.UUID,
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    user_id: str = Depends(get_current_user_id),
+    db: AsyncSession = Depends(get_db),
+):
+    await verify_workspace_access(workspace_id, user_id, db)
+
+    conditions = [AuditLog.workspace_id == workspace_id, AuditLog.event.in_(ALERT_EVENTS)]
+    total_result = await db.execute(select(func.count(AuditLog.id)).where(*conditions))
+    total = total_result.scalar_one()
+
+    result = await db.execute(
+        select(AuditLog).where(*conditions).order_by(AuditLog.created_at.desc()).limit(limit).offset(offset)
+    )
+    rows = result.scalars().all()
+
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": str(r.id),
+                "event": r.event,
+                "resource_type": r.resource_type,
+                "resource_id": str(r.resource_id) if r.resource_id else None,
+                "details": r.details,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ],
+    }

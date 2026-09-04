@@ -5,28 +5,9 @@ import { useAuth } from "@clerk/nextjs";
 import { api } from "@/lib/api";
 import { useWorkspace } from "@/components/WorkspaceWrapper";
 import { motion } from "framer-motion";
+import { EVENT_LABELS, type ActivityItem } from "@/lib/activityLabels";
+import { formatISTDateTime } from "@/lib/formatTime";
 import "../prototype.css";
-
-interface ActivityItem {
-  id: string;
-  actor: string;
-  event: string;
-  resource_type: string | null;
-  resource_id: string | null;
-  details: Record<string, any> | null;
-  created_at: string;
-}
-
-const EVENT_LABELS: Record<string, string> = {
-  WORKSPACE_CREATED: "Workspace created",
-  POLICY_UPDATED: "Policy changed",
-  SOURCE_ADDED: "Source registered",
-  SCAN_STARTED: "Scan started",
-  SCAN_CANCELLED: "Scan cancelled",
-  CBOM_GENERATED: "CBOM generated",
-  AI_ACTION: "AI Analyst question",
-  SOURCE_AI_ACCESS_CHANGED: "AI access changed for source",
-};
 
 export default function ActivityPage() {
   const { getToken, isLoaded, userId } = useAuth();
@@ -92,7 +73,7 @@ export default function ActivityPage() {
                       {item.details ? JSON.stringify(item.details) : "—"}
                     </td>
                     <td style={{ fontSize: "0.8rem", color: "var(--color-secondary)" }}>
-                      {new Date(item.created_at).toLocaleString()}
+                      {formatISTDateTime(item.created_at)}
                     </td>
                   </tr>
                 ))

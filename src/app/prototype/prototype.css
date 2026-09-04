@@ -193,3 +193,11 @@
 .ecdat-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Mission Control's Live Activity Feed rows — dark terminal-style panel, so
+   the hover/border colors are hand-picked to match that background rather
+   than reusing the light-theme --color-* tokens. */
+.ecdat-activity-row:hover {
+  background-color: rgba(255, 255, 255, 0.035);
+  border-left-color: #B95532;
+}

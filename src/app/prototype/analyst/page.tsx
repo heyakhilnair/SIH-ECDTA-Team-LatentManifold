@@ -44,7 +44,15 @@ export default function AiAnalystPage() {
   const [asking, setAsking] = useState(false);
   const [sources, setSources] = useState<any[]>([]);
   const [sourceId, setSourceId] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const loadHistory = () => {
+    if (!workspace) return;
+    api.analyst.sessions(workspace.id, getToken).then(setHistory).catch(() => {});
+  };
 
   // Switching projects changes what the AI can even see — old answers were
   // scoped to whatever project was selected when asked, so leaving them on
@@ -53,6 +61,38 @@ export default function AiAnalystPage() {
   const changeProject = (id: string) => {
     setSourceId(id);
     setMessages([]);
+    setSessionId(null);
+  };
+
+  const newChat = () => {
+    setMessages([]);
+    setSessionId(null);
+    setShowHistory(false);
+  };
+
+  const openSession = async (id: string) => {
+    if (!workspace) return;
+    setShowHistory(false);
+    try {
+      const s = await api.analyst.session(workspace.id, id, getToken);
+      setSessionId(s.id);
+      setSourceId(s.source_id || "");
+      setMessages(
+        (s.messages || []).map((m: any) => ({
+          role: m.role,
+          text: m.text,
+          confidence: m.confidence,
+          evidenceCitations: m.evidence_citations,
+          assetCitations: m.asset_citations,
+          citationDetails: m.citation_details,
+          unknowns: m.unknowns,
+          scope: m.scope,
+          isError: m.is_error,
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to load session", err);
+    }
   };
 
   useEffect(() => {
@@ -61,6 +101,7 @@ export default function AiAnalystPage() {
       .then((res) => setConfigured(!!res.configured))
       .catch(() => setConfigured(false));
     api.sources.list(workspace.id, getToken).then(setSources).catch(() => {});
+    loadHistory();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, userId, workspace]);
 
@@ -74,7 +115,8 @@ export default function AiAnalystPage() {
     setInput("");
     setAsking(true);
     try {
-      const res = await api.analyst.query(workspace.id, question, getToken, sourceId || undefined);
+      const res = await api.analyst.query(workspace.id, question, getToken, sourceId || undefined, sessionId || undefined);
+      setSessionId(res.session_id || sessionId);
       setMessages((prev) => [...prev, {
         role: "assistant",
         text: res.answer,
@@ -85,6 +127,7 @@ export default function AiAnalystPage() {
         unknowns: res.unknowns || [],
         scope: res.scope,
       }]);
+      loadHistory(); // refresh the list so this session's title/timestamp shows up
     } catch (err: any) {
       setMessages((prev) => [...prev, {
         role: "assistant",
@@ -109,7 +152,50 @@ export default function AiAnalystPage() {
             <h1 style={{ fontSize: "2.25rem", marginBottom: "0.25rem" }}>AI Analyst</h1>
             <p>Ask about your real scan results — every answer is grounded in your workspace's actual evidence, risk, and recommendation data. No source code is ever sent to the model, and any project marked private is left out entirely.</p>
           </div>
-          <ProjectFilter sources={sources} value={sourceId} onChange={changeProject} />
+          <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", position: "relative" }}>
+            <ProjectFilter sources={sources} value={sourceId} onChange={changeProject} />
+            <button className="ecdat-btn" style={{ padding: "0.5rem 0.9rem", fontSize: "0.8rem" }} onClick={newChat}>
+              + New Chat
+            </button>
+            <button
+              className="ecdat-btn"
+              style={{ padding: "0.5rem 0.9rem", fontSize: "0.8rem" }}
+              onClick={() => { loadHistory(); setShowHistory((v) => !v); }}
+            >
+              History {history.length > 0 ? `(${history.length})` : ""}
+            </button>
+            {showHistory && (
+              <div
+                style={{
+                  position: "absolute", top: "calc(100% + 6px)", right: 0, width: "320px", maxHeight: "360px",
+                  overflowY: "auto", backgroundColor: "#fff", border: "1px solid #eaeaea", borderRadius: "8px",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.08)", zIndex: 20,
+                }}
+              >
+                {history.length === 0 && (
+                  <div style={{ padding: "1rem", fontSize: "0.82rem", color: "#666" }}>No past sessions yet.</div>
+                )}
+                {history.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => openSession(s.id)}
+                    style={{
+                      display: "block", width: "100%", textAlign: "left", padding: "0.65rem 0.9rem",
+                      border: "none", borderBottom: "1px solid #f0f0ed", backgroundColor: s.id === sessionId ? "#faf9f6" : "#fff",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ fontSize: "0.82rem", color: "#181917", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {s.title || "Untitled session"}
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: "#999", marginTop: "2px" }}>
+                      {s.message_count} message{s.message_count === 1 ? "" : "s"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </motion.header>
 

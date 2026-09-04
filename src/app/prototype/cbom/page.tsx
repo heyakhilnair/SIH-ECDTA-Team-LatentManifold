@@ -9,6 +9,8 @@ import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import ProjectFilter from "@/components/ProjectFilter";
 import Link from "next/link";
+import { downloadTextFile } from "@/lib/api";
+import { formatRelativeTime } from "@/lib/formatTime";
 import "../prototype.css";
 
 export default function CbomPage() {
@@ -23,17 +25,22 @@ export default function CbomPage() {
   const [generating, setGenerating] = useState(false);
   const [showJsonModal, setShowJsonModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [downloadingXml, setDownloadingXml] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const loadCbom = async () => {
     if (!isLoaded || !userId || !workspace?.id) return;
     setLoading(true);
     try {
-      const [data, sourcesRes] = await Promise.all([
+      const [data, sourcesRes, historyRes] = await Promise.all([
         api.cbom.getLatest(workspace.id, getToken, sourceId),
         api.sources.list(workspace.id, getToken).catch(() => []),
+        api.cbom.history(workspace.id, getToken).catch(() => []),
       ]);
       setCbom(data);
       setSources(sourcesRes || []);
+      setHistory(historyRes || []);
     } catch (err: any) {
       console.error("Failed to load CBOM", err);
       setCbom(null);
@@ -81,6 +88,33 @@ export default function CbomPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownloadXml = async () => {
+    if (!workspace?.id) return;
+    setDownloadingXml(true);
+    try {
+      const xml = await api.cbom.getLatestXml(workspace.id, getToken, sourceId || undefined);
+      downloadTextFile(`cyclonedx-cbom-${workspace.id.substring(0, 8)}.xml`, xml, "application/xml");
+    } catch (err) {
+      console.error("Failed to download CBOM XML", err);
+    } finally {
+      setDownloadingXml(false);
+    }
+  };
+
+  const handleDownloadHistorySnapshot = async (snapshotId: string, format: "json" | "xml") => {
+    try {
+      if (format === "xml") {
+        const xml = await api.cbom.getSnapshotXml(snapshotId, getToken);
+        downloadTextFile(`cyclonedx-cbom-${snapshotId.substring(0, 8)}.xml`, xml, "application/xml");
+      } else {
+        const json = await api.cbom.getSnapshot(snapshotId, getToken);
+        downloadTextFile(`cyclonedx-cbom-${snapshotId.substring(0, 8)}.json`, JSON.stringify(json, null, 2), "application/json");
+      }
+    } catch (err) {
+      console.error("Failed to download historical CBOM snapshot", err);
+    }
+  };
+
   const components = cbom?.components || [];
 
   return (
@@ -90,7 +124,7 @@ export default function CbomPage() {
         title="Cryptographic Bill of Materials (CBOM)"
         description="A CycloneDX v1.6 export — the industry-standard machine-readable inventory format (like an SBOM, but for cryptography) listing every algorithm, key size, and quantum/classical posture found, for compliance and tooling handoff."
         actions={
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ display: "flex", gap: "10px", position: "relative" }}>
             <ProjectFilter sources={sources} value={sourceId} onChange={setSourceId} />
             <button
               onClick={handleGenerate}
@@ -99,6 +133,21 @@ export default function CbomPage() {
               style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
             >
               {generating ? "Generating..." : "Generate Fresh Snapshot"}
+            </button>
+            <button
+              onClick={() => setShowHistory((v) => !v)}
+              className="ecdat-btn"
+              style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
+            >
+              History {history.length > 0 ? `(${history.length})` : ""}
+            </button>
+            <button
+              onClick={handleDownloadXml}
+              disabled={!cbom || downloadingXml}
+              className="ecdat-btn"
+              style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}
+            >
+              {downloadingXml ? "Preparing…" : "Download XML ↓"}
             </button>
             <button
               onClick={handleDownloadJson}
@@ -113,6 +162,32 @@ export default function CbomPage() {
             >
               Download CycloneDX JSON ↓
             </button>
+
+            {showHistory && (
+              <div
+                style={{
+                  position: "absolute", top: "calc(100% + 6px)", right: 0, width: "340px", maxHeight: "320px",
+                  overflowY: "auto", backgroundColor: "#fff", border: "1px solid #eaeaea", borderRadius: "8px",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.08)", zIndex: 20,
+                }}
+              >
+                {history.length === 0 && (
+                  <div style={{ padding: "1rem", fontSize: "0.82rem", color: "#666" }}>No past snapshots yet.</div>
+                )}
+                {history.map((s) => (
+                  <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0.9rem", borderBottom: "1px solid #f0f0ed" }}>
+                    <div>
+                      <div style={{ fontSize: "0.82rem", color: "#181917", fontWeight: 600 }}>{s.asset_count} components</div>
+                      <div style={{ fontSize: "0.72rem", color: "#999" }}>{formatRelativeTime(s.created_at)}</div>
+                    </div>
+                    <div style={{ display: "flex", gap: "0.4rem" }}>
+                      <button className="ecdat-btn" style={{ padding: "0.25rem 0.5rem", fontSize: "0.7rem" }} onClick={() => handleDownloadHistorySnapshot(s.id, "json")}>JSON</button>
+                      <button className="ecdat-btn" style={{ padding: "0.25rem 0.5rem", fontSize: "0.7rem" }} onClick={() => handleDownloadHistorySnapshot(s.id, "xml")}>XML</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         }
       />

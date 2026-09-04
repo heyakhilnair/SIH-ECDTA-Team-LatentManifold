@@ -1,0 +1,222 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 25, 23, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+}
+
+/* Spotlight mode: four panels frame a cutout around the target instead of
+   one flat overlay — the target itself has nothing covering it, so it stays
+   fully sharp while everything else blurs. */
+.spotlightPanel {
+  position: fixed;
+  z-index: 999;
+  background: rgba(24, 25, 23, 0.62);
+  backdrop-filter: blur(6px);
+  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+  cursor: pointer;
+}
+
+.arrowSvg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1001;
+  pointer-events: none;
+}
+
+.arrowPath {
+  animation: arrowDraw 0.5s ease-out, arrowFade 0.25s ease-out;
+}
+
+@keyframes arrowDraw {
+  from { stroke-dashoffset: 260; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes arrowFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cardWrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1005;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Same layout, but lets clicks fall through to the spotlight panels / the
+   real page underneath the cutout instead of the wrapper itself catching
+   every click across the whole viewport. */
+.cardWrapSpotlight {
+  position: fixed;
+  inset: 0;
+  z-index: 1005;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+
+.cardWrapSpotlight .card {
+  pointer-events: auto;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 440px;
+  padding: 1.75rem;
+  box-shadow: 0 24px 64px rgba(24, 25, 23, 0.25);
+  border: 1px solid rgba(24, 25, 23, 0.08);
+  animation: rise 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.stepPill {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #B95532;
+  background: rgba(185, 85, 50, 0.1);
+  border: 1px solid rgba(185, 85, 50, 0.2);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+.closeBtn:hover { color: #181917; }
+
+.title {
+  font-family: var(--font-display, 'Outfit'), sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #181917;
+  margin: 0 0 0.6rem;
+}
+
+.description {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #5C5E5A;
+  margin: 0 0 1.1rem;
+}
+
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.linkPill {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #181917;
+  background: #F3F0E8;
+  border: 1px solid rgba(24, 25, 23, 0.1);
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.linkPill:hover {
+  border-color: #B95532;
+  color: #B95532;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(24, 25, 23, 0.08);
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: #5C5E5A;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 0.25rem;
+}
+.backBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.skipBtn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.85rem;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0.5rem;
+}
+.skipBtn:hover { color: #181917; }
+
+.nextBtn {
+  background: #181917;
+  color: #F3F0E8;
+  border: none;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nextBtn:hover {
+  background: #B95532;
+  transform: translateY(-1px);
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 1rem;
+}
+
+.dot, .dotActive {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(24, 25, 23, 0.15);
+}
+
+.dotActive {
+  background: #B95532;
+  width: 16px;
+  border-radius: 3px;
+  transition: all 0.2s;
+}

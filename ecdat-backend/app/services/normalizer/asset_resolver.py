@@ -1,6 +1,5 @@
 import uuid
 import re
-import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.evidence import EvidenceModel
@@ -114,8 +113,17 @@ async def resolve_evidence_to_asset(db: AsyncSession, evidence: EvidenceModel):
             vulnerability_notes=vuln_notes,
         )
         db.add(asset)
-        await db.commit()
-        await db.refresh(asset)
+        # flush (not commit) — a real perf bug found 2026-09-04: this used to
+        # commit here, per evidence row, per link below, and again on the
+        # update branch. Normalizing a real large repo (pyca/cryptography,
+        # 1878 findings) took 12+ minutes over a remote DB because every one
+        # of those findings did up to 3 separate network round-trip commits.
+        # flush() makes the INSERT visible to later queries *within this same
+        # transaction* (so duplicate-asset creation within one batch is still
+        # correctly avoided) without paying for transaction finalization on
+        # every row — the caller commits once after the whole batch.
+        await db.flush()
+        await db.refresh(asset)  # server_default=func.now() columns (first_seen etc.) aren't populated on the Python object until refreshed
     else:
         # Re-evaluate vulnerability status every time, not just at creation —
         # otherwise an asset's classification is frozen to whatever
@@ -124,12 +132,16 @@ async def resolve_evidence_to_asset(db: AsyncSession, evidence: EvidenceModel):
         # already-scanned Blowfish asset kept showing LOW/no-recommendation
         # until a fresh scan, because only brand-new assets ever got these
         # fields computed.
-        asset.last_seen = datetime.datetime.utcnow()
+        # last_seen intentionally not set here — CryptoAsset.last_seen now has
+        # onupdate=func.now() (DB-side clock, see models/asset.py's comment on
+        # why the old `datetime.datetime.utcnow()` here was a real bug), which
+        # fires automatically on this flush since the fields below make the
+        # row dirty anyway.
         asset.algorithm_family = family
         asset.quantum_vulnerable = q_vuln
         asset.classical_vulnerable = c_vuln
         asset.vulnerability_notes = vuln_notes
-        await db.commit()
+        await db.flush()
 
 
     # 4. Link Evidence to Asset
@@ -140,13 +152,13 @@ async def resolve_evidence_to_asset(db: AsyncSession, evidence: EvidenceModel):
     )
     link_result = await db.execute(link_query)
     existing_link = link_result.scalar_one_or_none()
-    
+
     if not existing_link:
         new_link = EvidenceAsset(
             evidence_id=evidence.id,
             asset_id=asset.id
         )
         db.add(new_link)
-        await db.commit()
-        
+        await db.flush()
+
     return asset

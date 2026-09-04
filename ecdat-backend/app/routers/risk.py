@@ -42,7 +42,7 @@ asset_router = APIRouter(
 def serialize_risk(r: RiskScore) -> Dict[str, Any]:
     """Convert a RiskScore ORM object to a dict suitable for API response."""
     return {
-        "id": str(r.id),
+        "id": str(r.id) if r.id else None,  # None for a persist=False what-if preview, which never gets a real row/id
         "asset_id": str(r.asset_id),
         "workspace_id": str(r.workspace_id),
         "algorithm_canonical": r.asset.algorithm_canonical if r.asset else None,
@@ -241,6 +241,11 @@ async def recalculate_asset_risk(
             detail=f"business_criticality must be one of: {', '.join(sorted(valid_criticality))}"
         )
 
+    # persist=False — this is a hypothetical "what if" preview, not a real
+    # scan result. Real bug fixed 2026-09-04: this used to persist=True,
+    # so every slider experiment silently overwrote the asset's actual risk
+    # score everywhere else in the product (Mission Control, Risk table,
+    # Migration Planner) until the next real scan corrected it.
     risk = await compute_asset_risk(
         db=db,
         asset=asset,
@@ -248,6 +253,29 @@ async def recalculate_asset_risk(
         business_criticality=body.business_criticality.upper(),
         exposure=body.exposure.upper(),
         threat_horizon_years=body.threat_horizon_years,
+        persist=False,
     )
 
-    return serialize_risk(risk)
+    # Built directly from `asset` + the transient preview, not serialize_risk()
+    # — a persist=False RiskScore has no `.asset` relationship wired (see the
+    # comment in risk_engine.py on why), so `serialize_risk`'s `r.asset.*`
+    # lookups would just raise here.
+    return {
+        "id": None,  # this is a preview, never a real persisted risk_scores row
+        "asset_id": str(asset.id),
+        "workspace_id": str(asset.workspace_id),
+        "algorithm_canonical": asset.algorithm_canonical,
+        "algorithm_family": asset.algorithm_family,
+        "quantum_vulnerable": asset.quantum_vulnerable,
+        "classical_vulnerable": asset.classical_vulnerable,
+        "composite_risk_level": risk.composite_risk_level,
+        "quantum_risk_level": risk.quantum_risk_level,
+        "classical_risk_level": risk.classical_risk_level,
+        "business_criticality": risk.business_criticality,
+        "data_lifetime_years": risk.data_lifetime_years,
+        "migration_time_years": risk.migration_time_years,
+        "mosca_threshold_exceeded": risk.mosca_threshold_exceeded,
+        "quantum_reason": risk.quantum_reason,
+        "classical_reason": risk.classical_reason,
+        "risk_explanation": risk.risk_explanation,
+    }

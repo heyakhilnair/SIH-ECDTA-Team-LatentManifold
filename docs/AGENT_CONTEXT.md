@@ -1,6 +1,6 @@
 # ECDAT — AGENT CONTEXT FILE
 **READ THIS FIRST before writing any code or making any changes.**  
-**Updated:** 2026-09-03 (Phases 0-8 complete, live, and verified via the real Claude Browser session. Phase 8 AI Analyst has real `GEMINI_API_KEY`/`GROQ_API_KEY` in `ecdat-backend/.env` (Gemini primary, Groq automatic fallback) plus per-source `ai_excluded` data-access control. Project/source scoping (`?source_id=`) added across assets/risk/recommendations/cbom/analyst, with a shared `ProjectFilter` dropdown on the frontend. See `docs/TRACKER.md`'s bottom "Next agent" note for a dev-server gotcha (Bash-backgrounded `uvicorn --reload` can leave a stale duplicate process bound to :8000 — manage it via the PowerShell tool instead). Phase 9 explicitly skipped, no Neo4j. Phase 10: real audit logging live; RLS deliberately deferred with reasoning documented.)
+**Updated:** 2026-09-04 (Phases 0-10 largely complete and live — see `docs/TRACKER.md`'s "Next agent" note for the dev-server gotcha (never hand-start `uvicorn`, use `preview_start`/`preview_stop` only). **Phases 11–15 are now ALL COMPLETE** (migration persistence + QRS, verification engine, evidence/quantum-posture/blast-radius-lite, policy/compliance/alerts, AI sessions + CBOM XML/history export + report export) — see `docs/TRACKER.md` for the full detail and real-bug list. Only Phase 16 (containers/binaries/cloud/continuous scanning) remains, and it's deliberately deferred — P3/post-SIH per its own source PDFs, needs new external tools (Trivy, Syft, LIEF, YARA) not present in this environment.)
 
 ---
 
